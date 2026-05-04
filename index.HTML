@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>מערכת מבחנים - קציני בטיחות</title>
-    <!-- ספרייה לשאיבת הנתונים מגוגל שיטס -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         :root { --p: #007bff; --bg: #f8f9fa; --txt: #333; --card: #fff; --correct: #28a745; --wrong: #dc3545; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 10px; padding-bottom: 80px; padding-top: 60px; }
+        .dark { --bg: #1a1a1a; --txt: #f1f1f1; --card: #2d2d2d; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 10px; padding-bottom: 80px; padding-top: 60px; transition: 0.3s; }
         
         .top-bar { position: fixed; top: 0; left: 0; right: 0; background: var(--card); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 1000; }
-        .top-btn { background: none; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .top-btn { background: none; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: var(--txt); }
         
         .container { max-width: 500px; margin: auto; }
         .card { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; }
@@ -23,7 +22,7 @@
         .bubble.answered { background: #d4edda; border-color: var(--correct); }
         .bubble.empty { background: #f8d7da; border-color: var(--wrong); }
 
-        .option { background: #f1f3f5; padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid transparent; cursor: pointer; font-size: 1.1rem; }
+        .option { background: var(--bg); padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid transparent; cursor: pointer; font-size: 1.1rem; }
         .selected { border-color: var(--p); background: #e7f1ff; }
         .practice-correct { background: #d4edda !important; border-color: var(--correct) !important; color: #155724; }
         .practice-wrong { background: #f8d7da !important; border-color: var(--wrong) !important; color: #721c24; }
@@ -35,11 +34,13 @@
         
         .timer { font-size: 1.5rem; text-align: center; font-weight: bold; color: var(--wrong); }
         .hidden { display: none !important; }
-        .q-img { width: 100%; max-height: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 8px; }
+        .q-img { width: 100%; max-height: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 8px; background: white; }
         .history-item { border-bottom: 1px solid #eee; padding: 10px 0; }
         .report-link { display: block; text-align: center; margin-top: 15px; color: var(--wrong); text-decoration: underline; cursor: pointer; font-size: 0.9rem; }
         
-        #loading { text-align: center; font-size: 1.5rem; font-weight: bold; color: var(--p); margin-top: 50px; }
+        /* מסך התחברות */
+        .input-pass { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 1.1rem; box-sizing: border-box; text-align: center; }
+        #login-msg { text-align: center; font-weight: bold; margin-top: 10px; color: var(--wrong); }
     </style>
 </head>
 <body>
@@ -47,12 +48,19 @@
 <div class="top-bar">
     <button class="top-btn" onclick="location.reload()">🏠 חזור לתפריט</button>
     <div id="exam-timer" class="timer hidden">90:00</div>
-    <button class="top-btn" id="admin-btn" style="color:transparent; border:none; background:none;">.</button>
+    <button class="top-btn" onclick="document.body.classList.toggle('dark')">🌙</button>
 </div>
 
 <div class="container">
-    <div id="loading">טוען שאלות מהמאגר... ⏳</div>
+    <!-- מסך התחברות -->
+    <div id="login-screen" class="card" style="margin-top: 50px;">
+        <h2 style="text-align: center;">הזן סיסמא לכניסה למערכת</h2>
+        <input type="password" id="pass-input" class="input-pass" placeholder="סיסמת כניסה">
+        <button class="btn" onclick="login()">התחבר</button>
+        <div id="login-msg"></div>
+    </div>
 
+    <!-- תפריט ראשי -->
     <div id="menu" class="hidden">
         <h1>לימוד קציני בטיחות</h1>
         <div class="card">
@@ -64,11 +72,13 @@
         </div>
     </div>
 
+    <!-- לוח היסטוריה -->
     <div id="history-page" class="hidden card">
         <h2>טבלת שיאים אישית</h2>
         <div id="history-list"></div>
     </div>
 
+    <!-- עמוד המבחן/תרגול -->
     <div id="quiz-screen" class="hidden">
         <div class="bubbles" id="bubbles-container"></div>
         <div class="card">
@@ -87,43 +97,51 @@
 </div>
 
 <script>
-    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDL6SHE2TbWNgpRri6JPW89Gxd5xpxKu1kNUiwtQbPvmBYfiYjmeOAEYXca2QbIM0GAcpAZ9Zbvmej/pub?gid=0&single=true&output=csv";
+    const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
     let questionsDB = [];
     let state = { mode: '', questions: [], index: 0, answers: [], start: null, time: 90 * 60 };
     let timerInterval;
 
-    // שאיבת הנתונים בעליית העמוד
-    window.onload = () => {
-        Papa.parse(sheetURL, {
-            download: true,
-            header: true,
-            complete: function(results) {
-                // סינון שורות ריקות והמרה למבנה שהמערכת צריכה
-                questionsDB = results.data.filter(row => row.Question && row.Question.trim() !== '').map(row => ({
+    // פונקציית התחברות ושאיבת נתונים מה-API
+    async function login() {
+        const pass = document.getElementById('pass-input').value;
+        const msg = document.getElementById('login-msg');
+        if(!pass) { msg.innerText = "נא להזין סיסמא."; return; }
+        
+        msg.innerText = "בודק הרשאות וטוען שאלות מהמאגר... ⏳";
+        msg.style.color = "var(--p)";
+
+        try {
+            const res = await fetch(`${apiURL}?pass=${encodeURIComponent(pass)}`);
+            const json = await res.json();
+            
+            if (json.error) {
+                msg.innerText = "סיסמא שגויה. נסה שוב.";
+                msg.style.color = "var(--wrong)";
+            } else if (json.success) {
+                // המרת ה-JSON למבנה השאלות של המערכת
+                questionsDB = json.data.filter(row => row.Question && String(row.Question).trim() !== '').map(row => ({
                     id: row.ID,
-                    type: row.Type ? row.Type.trim() : 'text',
-                    q: row.Question.trim(),
+                    type: row.Type ? String(row.Type).trim() : 'text',
+                    q: String(row.Question).trim(),
                     a: [row.Opt0, row.Opt1, row.Opt2, row.Opt3],
                     c: parseInt(row.Correct),
-                    img: row.Image ? row.Image.trim() : null
+                    img: row.Image ? String(row.Image).trim() : null
                 }));
-                document.getElementById('loading').classList.add('hidden');
+                
+                document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('menu').classList.remove('hidden');
-            },
-            error: function() {
-                document.getElementById('loading').innerText = "שגיאה בטעינת המאגר. רענן את העמוד.";
             }
-        });
-    };
+        } catch (err) {
+            msg.innerText = "שגיאת רשת. ודא שחיבור האינטרנט תקין ונסה שוב.";
+            msg.style.color = "var(--wrong)";
+        }
+    }
 
-    let adminBtn = document.getElementById('admin-btn');
-    let pressTimer;
-    adminBtn.onmousedown = adminBtn.ontouchstart = () => {
-        pressTimer = setTimeout(() => {
-            if(prompt('סיסמא:') === '159753!') alert('לעריכת שאלות, היכנס לקובץ הגוגל שיטס שלך.');
-        }, 2000);
-    };
-    adminBtn.onmouseup = adminBtn.ontouchend = () => clearTimeout(pressTimer);
+    // מאפשר לחיצה על אנטר בתיבת הסיסמא
+    document.getElementById('pass-input').addEventListener("keypress", function(event) {
+        if (event.key === "Enter") { event.preventDefault(); login(); }
+    });
 
     function startApp(mode) {
         state.mode = mode;
@@ -194,7 +212,7 @@
         document.getElementById('feedback').innerText = '';
 
         q.a.forEach((text, i) => {
-            if (!text) return; // הגנה למקרה של תשובה ריקה באקסל
+            if (!text && text !== 0) return; // הגנה
             const div = document.createElement('div');
             div.className = 'option';
             if (state.answers[state.index] === i) div.classList.add('selected');
@@ -213,7 +231,7 @@
                 if (!isExam) {
                     const fb = document.getElementById('feedback');
                     if (i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "green"; }
-                    else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "red"; }
+                    else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; }
                 }
                 renderQuestion();
             };
