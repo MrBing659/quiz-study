@@ -2,7 +2,6 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>מערכת מבחנים - קציני בטיחות</title>
     <style>
@@ -35,11 +34,9 @@
         
         .timer { font-size: 1.5rem; text-align: center; font-weight: bold; color: var(--wrong); }
         .hidden { display: none !important; }
-        .q-img { width: 100%; max-height: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 8px; background: white; }
         .history-item { border-bottom: 1px solid #eee; padding: 10px 0; }
         .report-link { display: block; text-align: center; margin-top: 15px; color: var(--wrong); text-decoration: underline; cursor: pointer; font-size: 0.9rem; }
         
-        /* מסך התחברות */
         .input-pass { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 1.1rem; box-sizing: border-box; text-align: center; }
         #login-msg { text-align: center; font-weight: bold; margin-top: 10px; color: var(--wrong); }
     </style>
@@ -47,13 +44,12 @@
 <body>
 
 <div class="top-bar">
-    <button class="top-btn" onclick="location.reload()">🏠 חזור לתפריט</button>
+    <button class="top-btn" onclick="location.reload()">🏠 חזור</button>
     <div id="exam-timer" class="timer hidden">90:00</div>
     <button class="top-btn" onclick="document.body.classList.toggle('dark')">🌙</button>
 </div>
 
 <div class="container">
-    <!-- מסך התחברות -->
     <div id="login-screen" class="card" style="margin-top: 50px;">
         <h2 style="text-align: center;">הזן סיסמא לכניסה למערכת</h2>
         <input type="password" id="pass-input" class="input-pass" placeholder="סיסמת כניסה">
@@ -61,29 +57,23 @@
         <div id="login-msg"></div>
     </div>
 
-    <!-- תפריט ראשי -->
     <div id="menu" class="hidden">
         <h1>לימוד קציני בטיחות</h1>
         <div class="card">
-            <button class="btn" onclick="startApp('practice_text')">תרגול שאלות</button>
-            <button class="btn" onclick="startApp('practice_signs')">תרגול תמרורים</button>
-            <button class="btn" onclick="startApp('exam_signs')">מבחן תמרורים בלבד</button>
-            <button class="btn" onclick="startApp('exam_all')">מבחן כללי (מעורב)</button>
+            <button class="btn" onclick="startApp('practice')">תרגול שאלות</button>
+            <button class="btn" onclick="startApp('exam')">מבחן מסכם</button>
             <button class="btn" style="background:#6c757d;" onclick="showHistory()">טבלת שיאים</button>
         </div>
     </div>
 
-    <!-- לוח היסטוריה -->
     <div id="history-page" class="hidden card">
         <h2>טבלת שיאים אישית</h2>
         <div id="history-list"></div>
     </div>
 
-    <!-- עמוד המבחן/תרגול -->
     <div id="quiz-screen" class="hidden">
         <div class="bubbles" id="bubbles-container"></div>
         <div class="card">
-            <img id="q-image" class="q-img hidden" src="">
             <div id="q-text" style="font-weight: bold; font-size: 1.2rem;"></div>
             <div id="options"></div>
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:10px;"></div>
@@ -103,7 +93,6 @@
     let state = { mode: '', questions: [], index: 0, answers: [], start: null, time: 90 * 60 };
     let timerInterval;
 
-    // פונקציית התחברות ושאיבת נתונים מה-API
     async function login() {
         const pass = document.getElementById('pass-input').value;
         const msg = document.getElementById('login-msg');
@@ -120,14 +109,11 @@
                 msg.innerText = "סיסמא שגויה. נסה שוב.";
                 msg.style.color = "var(--wrong)";
             } else if (json.success) {
-                // המרת ה-JSON למבנה השאלות של המערכת
                 questionsDB = json.data.filter(row => row.Question && String(row.Question).trim() !== '').map(row => ({
                     id: row.ID,
-                    type: row.Type ? String(row.Type).trim() : 'text',
                     q: String(row.Question).trim(),
                     a: [row.Opt0, row.Opt1, row.Opt2, row.Opt3],
-                    c: parseInt(row.Correct),
-                    img: row.Image ? String(row.Image).trim() : null
+                    c: parseInt(row.Correct)
                 }));
                 
                 document.getElementById('login-screen').classList.add('hidden');
@@ -139,7 +125,6 @@
         }
     }
 
-    // מאפשר לחיצה על אנטר בתיבת הסיסמא
     document.getElementById('pass-input').addEventListener("keypress", function(event) {
         if (event.key === "Enter") { event.preventDefault(); login(); }
     });
@@ -147,22 +132,17 @@
     function startApp(mode) {
         state.mode = mode;
         state.index = 0;
-        
-        let filtered = [];
-        if (mode === 'practice_text') filtered = questionsDB.filter(q => q.type === 'text');
-        else if (mode === 'practice_signs' || mode === 'exam_signs') filtered = questionsDB.filter(q => q.type === 'sign');
-        else filtered = [...questionsDB];
 
-        if (mode.startsWith('exam')) {
-            state.questions = filtered.sort(() => 0.5 - Math.random()).slice(0, 50);
+        if (mode === 'exam') {
+            state.questions = [...questionsDB].sort(() => 0.5 - Math.random()).slice(0, 50);
         } else {
-            state.questions = filtered;
-            let savedIdx = localStorage.getItem(mode + '_idx');
+            state.questions = [...questionsDB];
+            let savedIdx = localStorage.getItem('practice_idx');
             if (savedIdx && savedIdx < state.questions.length) state.index = parseInt(savedIdx);
         }
 
         if(state.questions.length === 0) {
-            alert('אין שאלות בקטגוריה זו כרגע. ודא שהאקסל מעודכן.');
+            alert('אין שאלות במאגר. ודא שהאקסל מעודכן.');
             return;
         }
 
@@ -173,7 +153,7 @@
         document.getElementById('quiz-screen').classList.remove('hidden');
         document.getElementById('nav-footer').classList.remove('hidden');
 
-        if (mode.startsWith('exam')) {
+        if (mode === 'exam') {
             document.getElementById('exam-timer').classList.remove('hidden');
             startTimer();
         }
@@ -197,23 +177,20 @@
 
     function renderQuestion() {
         const q = state.questions[state.index];
-        const isExam = state.mode.startsWith('exam');
+        const isExam = state.mode === 'exam';
         
         document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active'));
         document.getElementById(`bubble-${state.index}`).classList.add('active');
         document.getElementById(`bubble-${state.index}`).scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 
         document.getElementById('q-text').innerText = (state.index + 1) + ". " + q.q;
-        
-        const img = document.getElementById('q-image');
-        if (q.img && q.img !== '') { img.src = q.img; img.classList.remove('hidden'); } else { img.classList.add('hidden'); }
 
         const optCont = document.getElementById('options');
         optCont.innerHTML = '';
         document.getElementById('feedback').innerText = '';
 
         q.a.forEach((text, i) => {
-            if (!text && text !== 0) return; // הגנה
+            if (!text && text !== 0) return;
             const div = document.createElement('div');
             div.className = 'option';
             if (state.answers[state.index] === i) div.classList.add('selected');
@@ -239,7 +216,7 @@
             optCont.appendChild(div);
         });
 
-        if (!isExam) localStorage.setItem(state.mode + '_idx', state.index);
+        if (!isExam) localStorage.setItem('practice_idx', state.index);
 
         let btn = document.getElementById('main-action-btn');
         if (isExam && state.index === state.questions.length - 1) {
@@ -290,7 +267,7 @@
             total: state.questions.length,
             date: new Date().toLocaleString('he-IL'),
             pass: score >= 70,
-            mode: state.mode === 'exam_all' ? 'כללי' : 'תמרורים'
+            mode: 'מסכם'
         };
 
         let history = JSON.parse(localStorage.getItem('scores') || '[]');
