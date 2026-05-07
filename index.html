@@ -25,7 +25,7 @@
         .option { background: var(--bg); padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid transparent; cursor: pointer; font-size: 1.1rem; }
         .selected { border-color: var(--p); background: #e7f1ff; }
         .practice-correct { background: #d4edda !important; border-color: var(--correct) !important; color: #155724; }
-        .practice-wrong { background: #f8d7da !important; border-color: var(--wrong) !important; color: #721c24; }
+        .practice-wrong { background: #f8d7da !important; border-color: var(--wrong) !important; color: #721c24; text-decoration: line-through; }
         
         .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 10px; background: var(--p); color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
         
@@ -34,7 +34,7 @@
         
         .timer { font-size: 1.5rem; text-align: center; font-weight: bold; color: var(--wrong); }
         .hidden { display: none !important; }
-        .history-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .history-item { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; flex-direction: column; gap: 8px; }
         .report-link { display: block; text-align: center; margin-top: 15px; color: var(--wrong); text-decoration: underline; cursor: pointer; font-size: 0.9rem; }
         
         .input-pass { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 1.1rem; box-sizing: border-box; text-align: center; }
@@ -70,6 +70,8 @@
         <h2>טבלת שיאים אישית</h2>
         <div id="history-list"></div>
     </div>
+
+    <div id="review-screen" class="hidden"></div>
 
     <div id="quiz-screen" class="hidden">
         <div class="bubbles" id="bubbles-container"></div>
@@ -263,15 +265,19 @@
         let duration = Math.round((new Date() - state.start) / 1000 / 60);
 
         const result = {
+            id: Date.now(),
             score, correct, duration,
             total: state.questions.length,
             date: new Date().toLocaleString('he-IL'),
             pass: score >= 70,
-            mode: 'מסכם'
+            mode: 'מסכם',
+            examQuestions: state.questions.map(q => ({ q: q.q, a: q.a, c: q.c })),
+            examAnswers: [...state.answers]
         };
 
         let history = JSON.parse(localStorage.getItem('scores') || '[]');
         history.unshift(result);
+        if (history.length > 50) history.pop(); // Keep only last 50 to save memory
         localStorage.setItem('scores', JSON.stringify(history));
 
         alert(`המבחן הסתיים!\nציון: ${score}\n${result.pass ? 'עברת! 🏆' : 'נכשלת, לא נורא נסה שוב ❌'}`);
@@ -294,10 +300,58 @@
         
         list.innerHTML = history.map(r => `
             <div class="history-item">
-                <b>${r.date}</b> | מבחן ${r.mode}<br>
-                ציון: <span style="font-weight:bold; color:${r.pass?'green':'red'}">${r.score}</span> (${r.correct}/${r.total}) | זמן: ${r.duration} דקות
+                <div>
+                    <b>${r.date}</b> | ציון: <span style="font-weight:bold; font-size:1.1rem; color:${r.pass?'var(--correct)':'var(--wrong)'}">${r.score}</span>
+                    <br>(${r.correct}/${r.total}) | זמן: ${r.duration} דקות
+                </div>
+                ${r.examQuestions ? `<button class="btn" style="padding: 8px; margin: 0; font-size: 0.9rem;" onclick="reviewExam(${r.id})">צפה במבחן 📋</button>` : ''}
             </div>
         `).join('');
+    }
+
+    function reviewExam(examId) {
+        const history = JSON.parse(localStorage.getItem('scores') || '[]');
+        const exam = history.find(e => e.id === examId);
+        if (!exam || !exam.examQuestions) return;
+
+        document.getElementById('history-page').classList.add('hidden');
+        const reviewScreen = document.getElementById('review-screen');
+        reviewScreen.classList.remove('hidden');
+
+        let html = `<h2>תחקיר מבחן - ${exam.date}</h2>`;
+        html += `<h3 style="text-align:center; color:${exam.pass ? 'var(--correct)' : 'var(--wrong)'}">ציון: ${exam.score}</h3>`;
+        html += `<button class="btn" style="background:#6c757d; margin-bottom: 20px;" onclick="document.getElementById('review-screen').classList.add('hidden'); document.getElementById('history-page').classList.remove('hidden'); window.scrollTo(0,0);">🔙 חזור לרשימת השיאים</button>`;
+
+        exam.examQuestions.forEach((q, i) => {
+            const userAns = exam.examAnswers[i];
+            const isCorrect = userAns === q.c;
+            const isUnanswered = userAns === null;
+
+            html += `<div class="card" style="border: 2px solid ${isCorrect ? 'var(--correct)' : 'var(--wrong)'}">`;
+            html += `<div style="font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">${i + 1}. ${q.q}</div>`;
+
+            q.a.forEach((opt, optIdx) => {
+                if (!opt && opt !== 0) return;
+                
+                let optClass = "option";
+                if (optIdx === q.c) {
+                    optClass += " practice-correct"; // Always highlight correct answer in green
+                } else if (optIdx === userAns) {
+                    optClass += " practice-wrong"; // Highlight user's wrong answer in red with strikethrough
+                }
+
+                html += `<div class="${optClass}" style="cursor: default; padding: 10px;">${opt}</div>`;
+            });
+
+            if (isUnanswered) {
+                html += `<div style="color: var(--wrong); font-weight: bold; margin-top: 10px;">⚠️ דילגת על שאלה זו.</div>`;
+            }
+
+            html += `</div>`;
+        });
+
+        reviewScreen.innerHTML = html;
+        window.scrollTo(0, 0);
     }
 </script>
 </body>
