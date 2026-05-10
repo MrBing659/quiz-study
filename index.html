@@ -112,7 +112,6 @@
             <input type="checkbox" id="remember-me" checked> זכור אותי במכשיר זה
         </label>
         <button class="btn" onclick="manualLogin()">היכנס</button>
-        <button class="btn" style="background:var(--wrong); margin-top:5px; font-size:0.9rem;" onclick="logout()">🔄 איפוס התחברות</button>
         <div id="sys-msg"></div>
     </div>
 
@@ -188,10 +187,25 @@
     let currentUser = { id: "", name: "" };
     let cloudLastIdx = 0;
 
-    let appSettings = JSON.parse(localStorage.getItem('qbSettings')) || { dark: false, font: 16, autoNext: true };
+    let appSettings;
+    try {
+        appSettings = JSON.parse(localStorage.getItem('qbSettings')) || { dark: false, font: 16, autoNext: true };
+    } catch(e) {
+        appSettings = { dark: false, font: 16, autoNext: true };
+    }
 
+    // הוספת האזנה למקש אנטר במסך ההתחברות
+    function handleEnter(e) {
+        if (e.key === "Enter") manualLogin();
+    }
+    
     window.onload = () => {
         applySettings();
+        
+        document.getElementById('fname').addEventListener('keypress', handleEnter);
+        document.getElementById('lname').addEventListener('keypress', handleEnter);
+        document.getElementById('id-num').addEventListener('keypress', handleEnter);
+
         let savedID = localStorage.getItem('qbSavedID');
         if (savedID) {
             document.getElementById('login-screen').classList.add('hidden');
@@ -224,171 +238,11 @@
         if(!fname || !lname || !idNum) { msg.innerText = "נא למלא את כל השדות."; msg.style.color="var(--wrong)"; return; }
         if(idNum.length < 8) { msg.innerText = "תעודת זהות לא תקינה."; msg.style.color="var(--wrong)"; return; }
         
+        msg.style.display = 'block';
         msg.innerText = "מתחבר... ⏳"; msg.style.color = "var(--p)";
 
         try {
             const res = await fetch(`${apiURL}?action=login&id=${idNum}&fname=${fname}&lname=${lname}&auto=false`);
             const json = await res.json();
             handleLoginResponse(json, idNum, remember);
-        } catch (err) { msg.innerText = "שגיאת רשת."; msg.style.color="var(--wrong)"; }
-    }
-
-    async function autoLogin(idNum) {
-        try {
-            const res = await fetch(`${apiURL}?action=login&id=${idNum}&auto=true`);
-            const json = await res.json();
-            if(json.error) {
-                localStorage.removeItem('qbSavedID');
-                document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('sys-msg').innerText = "נותקת מהמערכת על ידי מנהל. אנא התחבר מחדש.";
-                document.getElementById('sys-msg').style.color="var(--wrong)";
-            } else {
-                handleLoginResponse(json, idNum, true);
-            }
-        } catch (err) { alert("שגיאת רשת בהתחברות אוטומטית."); document.getElementById('login-screen').classList.remove('hidden'); }
-    }
-
-    function handleLoginResponse(json, idNum, remember) {
-        const msg = document.getElementById('sys-msg');
-        if (json.error) {
-            localStorage.removeItem('qbSavedID'); 
-            msg.innerText = json.msg; msg.style.color = "var(--wrong)";
-            document.getElementById('login-screen').classList.remove('hidden');
-        } else if (json.success) {
-            if(json.isFirstTime) alert(`ברוך הבא ${json.name}!\nהשם ננעל לתעודת הזהות שלך במערכת.`);
-            
-            currentUser.id = idNum;
-            currentUser.name = json.name;
-            cloudLastIdx = parseInt(json.lastIdx);
-            if (isNaN(cloudLastIdx)) cloudLastIdx = 0; 
-
-            if(remember) localStorage.setItem('qbSavedID', idNum);
-            
-            questionsDB = json.data.map(row => ({
-                id: row.ID, q: String(row.Question).trim(),
-                a: [row.Opt0, row.Opt1, row.Opt2, row.Opt3], c: parseInt(row.Correct)
-            }));
-            
-            if (currentUser.id === ADMIN_ID) document.getElementById('admin-panel-btn').classList.remove('hidden');
-
-            document.getElementById('top-name').innerText = currentUser.name.split(" ")[0];
-            document.getElementById('user-menu-btn').style.display = 'flex';
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('sys-msg').style.display = 'none';
-            document.getElementById('menu').classList.remove('hidden');
-        }
-    }
-
-    function logout() {
-        localStorage.removeItem('qbSavedID');
-        location.reload();
-    }
-
-    // -- פאנל אדמין --
-    async function showAdminPanel() {
-        document.getElementById('dropdown').classList.remove('show');
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-        document.getElementById('admin-screen').classList.remove('hidden');
-        
-        const list = document.getElementById('admin-list');
-        list.innerHTML = "טוען נתוני מערכת... ⏳";
-
-        try {
-            const res = await fetch(`${apiURL}?action=getAdminData&adminId=${currentUser.id}`);
-            const json = await res.json();
-            if(json.success) {
-                let html = "";
-                json.users.forEach(u => {
-                    let isOnline = u.status === "ACTIVE";
-                    let dotClass = isOnline ? "status-on" : "status-off";
-                    let displayIdx = parseInt(u.lastIdx);
-                    let lastQText = isNaN(displayIdx) ? "טרם התחיל" : (displayIdx + 1);
-                    
-                    html += `
-                    <div class="lb-item" style="display:block; padding:12px; background:var(--bg); border-radius:8px; margin-bottom:10px;">
-                        <div style="font-weight:bold; font-size:1.1rem;">
-                            <span class="status-dot ${dotClass}"></span> ${u.name}
-                        </div>
-                        <div style="font-size:0.85rem; color:#666; margin: 5px 0;">
-                            ת"ז: ${u.id} <br>
-                            שאלה אחרונה: ${lastQText} <br>
-                            פעילות: ${u.lastSeen}
-                        </div>
-                        <div style="display:flex; gap:10px;">
-                            <button class="admin-action-btn btn-edit" onclick="editUserPrompt('${u.id}', '${u.name}')">✏️ ערוך נתונים</button>
-                            <button class="admin-action-btn btn-kick" onclick="disconnectUser('${u.id}', '${u.name}')">🔌 נתק משתמש</button>
-                        </div>
-                    </div>`;
-                });
-                list.innerHTML = html || "אין נתונים.";
-            }
-        } catch(e) { list.innerHTML = "שגיאה בטעינת פאנל ניהול."; }
-    }
-
-    async function disconnectUser(userId, userName) {
-        if(!confirm(`לנתק את ${userName} מהמערכת? הוא יידרש להתחבר מחדש.`)) return;
-        try {
-            await fetch(`${apiURL}`, {
-                method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId })
-            });
-            alert(`${userName} נותק.`);
-            showAdminPanel(); 
-        } catch(e) { alert("שגיאה."); }
-    }
-
-    function editUserPrompt(oldId, oldName) {
-        document.getElementById('edit-old-id').value = oldId;
-        document.getElementById('edit-name-input').value = oldName;
-        document.getElementById('edit-id-input').value = oldId;
-        document.getElementById('modal-backdrop').classList.remove('hidden');
-        document.getElementById('edit-modal').classList.remove('hidden');
-    }
-
-    function closeEditModal() {
-        document.getElementById('modal-backdrop').classList.add('hidden');
-        document.getElementById('edit-modal').classList.add('hidden');
-    }
-
-    async function saveEditUser() {
-        let oldId = document.getElementById('edit-old-id').value;
-        let newName = document.getElementById('edit-name-input').value.trim();
-        let newId = document.getElementById('edit-id-input').value.trim();
-        
-        if(!newName || !newId) { alert("השדות לא יכולים להיות ריקים."); return; }
-        if(newName === document.getElementById('edit-name-input').defaultValue && newId === oldId) { 
-            closeEditModal(); return; 
-        }
-
-        let btn = document.getElementById('btn-save-edit');
-        let origText = btn.innerText;
-        btn.innerText = "שומר... ⏳";
-
-        try {
-            await fetch(`${apiURL}`, {
-                method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName })
-            });
-            alert("הנתונים עודכנו בהצלחה!");
-            closeEditModal();
-            showAdminPanel();
-        } catch(e) { alert("שגיאה בעדכון."); }
-        finally { btn.innerText = origText; }
-    }
-
-    async function saveProgress() {
-        if (state.mode === 'practice') {
-            try {
-                const res = await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index }) });
-                const json = await res.json();
-                if(json.forceLogout) { 
-                    alert("נותקת על ידי מנהל המערכת. אנא התחבר מחדש.");
-                    logout();
-                }
-            } catch(e) {}
-        }
-    }
-
-    function startApp(mode) {
-        state.mode = mode; state.index = 0; qTimes = {};
-        if (mode === 'exam') state.questions = [...questionsDB].sort(() => 0.5 - Math.random()).slice(0, 50);
-        else { state.questions = [...questionsDB]; if (cloudLastIdx < state.questions.length) state.index = parseInt(cloudLastIdx); }
-        state.answers = new Array(state.questions.length).
+        } catch (err) { msg.innerText = "שגיאת רשת. נסה שוב."; msg.style.color
