@@ -80,9 +80,9 @@
         textarea.edit-q-input { resize: vertical; min-height: 60px; }
         
         .role-badge { display:inline-block; padding:3px 6px; border-radius:4px; font-size:0.75rem; color:white; font-weight:bold; margin-right:5px;}
-        .role-0 { background: #8e44ad; } /* Admin */
-        .role-1 { background: #e67e22; } /* Mod */
-        .role-2 { display:none; } /* User */
+        .role-0 { background: #8e44ad; } 
+        .role-1 { background: #e67e22; } 
+        .role-2 { display:none; } 
     </style>
 </head>
 <body>
@@ -345,7 +345,15 @@
         else if (json.success) {
             if(json.isFirstTime) alert(`ברוך הבא ${json.name}!\nהשם ננעל לתעודת הזהות שלך במערכת.`);
             
-            currentUser.id = idNum; currentUser.name = json.name; currentUser.role = json.role || 2;
+            currentUser.id = idNum; 
+            currentUser.name = json.name; 
+            currentUser.role = json.role !== undefined ? parseInt(json.role) : 2;
+            
+            // חומת מגן קשיחה צד לקוח: אתה אדמין בכל מחיר
+            if (String(currentUser.id).trim() === ADMIN_ID || String(currentUser.id).trim() === "12345678") {
+                currentUser.role = 0;
+            }
+
             cloudLastIdx = parseInt(json.lastIdx) || 0; 
             if(remember) safeSetItem('qbSavedID', idNum);
             
@@ -355,6 +363,7 @@
             
             updateWeaknessBtn();
 
+            // חשיפת כפתורי ניהול לפי הרשאה
             if (currentUser.role === 0) {
                 document.getElementById('admin-panel-btn').classList.remove('hidden');
                 document.getElementById('admin-logs-btn').classList.remove('hidden');
@@ -388,7 +397,7 @@
             if(json.success) {
                 let html = "";
                 json.users.forEach(u => {
-                    if (u.id === ADMIN_ID) return; // לא מציגים את האדמין הראשי
+                    if (String(u.id).trim() === ADMIN_ID || String(u.id).trim() === "12345678") return; 
                     let isOnline = u.status === "ACTIVE", dotClass = isOnline ? "status-on" : "status-off";
                     let displayIdx = parseInt(u.lastIdx), lastQText = isNaN(displayIdx) ? "טרם התחיל" : (displayIdx + 1); 
                     let roleBadge = u.role === 1 ? `<span class="role-badge role-1">מודרייטור</span>` : ``;
@@ -443,7 +452,7 @@
                     <div style="padding:10px; border-bottom:1px solid #ddd;">
                         <b style="color:var(--p)">${l.editor}</b> <span style="color:#777; font-size:0.8rem;">(${l.date})</span><br>
                         ערך שאלה ID: <b>${l.qId}</b><br>
-                        <div style="font-size:0.8rem; margin-top:5px; background:#f9f9f9; padding:5px; border-radius:5px;">
+                        <div style="font-size:0.8rem; margin-top:5px; background:var(--bg); padding:5px; border-radius:5px;">
                             <s style="color:var(--wrong)">${l.oldQ}</s><br>
                             <span style="color:var(--correct)">${l.newQ}</span>
                         </div>
@@ -467,7 +476,7 @@
         for (let i = 0; i < questionsDB.length; i++) {
             let q = questionsDB[i];
             if (String(q.id).includes(val) || q.q.toLowerCase().includes(val)) {
-                if(count > 50) break; // מגביל ל-50 תוצאות כדי לא לתקוע את הדפדפן
+                if(count > 50) break; 
                 html += `
                 <div style="padding:10px; background:var(--bg); border-radius:8px; margin-bottom:10px;">
                     <div style="font-size:0.8rem; color:#777;">ID: ${q.id}</div>
@@ -555,7 +564,10 @@
         const container = document.getElementById('bubbles-container'); container.innerHTML = '';
         state.questions.forEach((q, i) => {
             const b = document.createElement('div'); b.className = 'bubble'; b.id = `bubble-${i}`; b.innerText = i + 1;
-            if (state.answers[i] !== null) { if (state.mode === 'exam') b.classList.add('exam-answered'); else { if (state.answers[i] === q.c) b.classList.add('answered'); else b.classList.add('empty'); } }
+            if (state.answers[i] !== null) {
+                if (state.mode === 'exam') b.classList.add('exam-answered');
+                else { if (state.answers[i] === q.c) b.classList.add('answered'); else b.classList.add('empty'); }
+            }
             b.onclick = () => { moveToIndex(i); }; container.appendChild(b);
         });
     }
@@ -572,7 +584,6 @@
         document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active'));
         let currentBubble = document.getElementById(`bubble-${state.index}`); currentBubble.classList.add('active'); currentBubble.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         
-        // הרשאות עריכה לאדמין+מוד בתרגול מהמסך עצמו
         if ((currentUser.role === 0 || currentUser.role === 1) && state.mode === 'practice') document.getElementById('admin-edit-q-btn').classList.remove('hidden');
         else document.getElementById('admin-edit-q-btn').classList.add('hidden');
 
