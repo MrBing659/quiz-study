@@ -77,12 +77,15 @@
 
         .report-link { display: block; text-align: center; margin-top: 15px; color: var(--wrong); text-decoration: underline; cursor: pointer; font-size: 0.9rem; }
         
-        /* ספינר טעינה */
         #loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.85); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .dark #loader-overlay { background: rgba(0,0,0,0.85); }
         .spinner { border: 5px solid #ccc; border-top: 5px solid var(--p); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #loader-text { font-weight: bold; font-size: 1.1rem; color: var(--p); }
+
+        /* סגנון למסך סיום המבחן */
+        .summary-score { font-size: 5rem; font-weight: bold; margin: 15px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
+        .summary-text { font-size: 1.2rem; margin-bottom: 25px; line-height: 1.5; color: var(--txt); }
     </style>
 </head>
 <body>
@@ -185,6 +188,14 @@
             <span class="report-link" onclick="reportError()">דווח על בעיה בשאלה זו</span>
         </div>
     </div>
+
+    <div id="exam-summary-screen" class="hidden card" style="text-align: center; margin-top: 20px;">
+        <h2>🎉 המבחן הסתיים! 🎉</h2>
+        <div class="summary-score" id="summary-score-display">0</div>
+        <div class="summary-text" id="summary-stats-display"></div>
+        <button class="btn" style="background: #25D366;" onclick="shareToWhatsApp()">📲 שתף תוצאה עם חברים</button>
+        <button class="btn" style="background: #95a5a6;" onclick="location.reload()">חזור למסך הראשי</button>
+    </div>
 </div>
 
 <div id="nav-footer" class="nav-footer hidden">
@@ -193,7 +204,6 @@
 </div>
 
 <script>
-    // פונקציות גישה בטוחה לזיכרון
     function safeGetItem(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
     function safeSetItem(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
     function safeRemoveItem(key) { try { localStorage.removeItem(key); } catch(e) {} }
@@ -213,6 +223,9 @@
     let currentUser = { id: "", name: "" };
     let cloudLastIdx = 0;
     let appSettings = { dark: false, font: 16, autoNext: true };
+    
+    // משתנה לשמירת טקסט השיתוף בוואטסאפ
+    let currentShareText = "";
 
     function handleEnter(e) { if (e.key === "Enter") manualLogin(); }
     
@@ -453,7 +466,7 @@
 
     async function saveProgress() {
         if (state.mode === 'practice') {
-            safeSetItem('qbAnswers_' + currentUser.id, JSON.stringify(state.answers)); // שמירת תשובות לוקאלית
+            safeSetItem('qbAnswers_' + currentUser.id, JSON.stringify(state.answers)); 
             try {
                 const res = await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index }) });
                 const json = await res.json();
@@ -475,7 +488,6 @@
             state.questions = [...questionsDB]; 
             if (cloudLastIdx < state.questions.length) state.index = parseInt(cloudLastIdx); 
             
-            // טעינת תשובות מקומיות אם יש
             let localAns = safeGetItem('qbAnswers_' + currentUser.id);
             if (localAns) {
                 try { state.answers = JSON.parse(localAns); } 
@@ -540,7 +552,6 @@
             }
             div.innerText = text;
             div.onclick = () => {
-                // בתרגול מותר לשנות. במבחן מותר לשנות כל עוד לא הוגש. 
                 state.answers[state.index] = i;
                 
                 currentBubble.classList.remove('empty', 'answered', 'exam-answered');
@@ -599,9 +610,33 @@
             await fetch(`${apiURL}`, {
                 method: 'POST', body: JSON.stringify({ action: 'saveExam', examId: Date.now(), id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: durationMins, date: new Date().toLocaleString('he-IL'), stats: stats })
             });
-            alert(`המבחן הסתיים!\nציון: ${score}`);
-        } catch(e) {}
-        location.reload();
+            hideLoader();
+            
+            // הכנת נתוני מסך הסיכום
+            document.getElementById('summary-score-display').innerText = score;
+            document.getElementById('summary-score-display').style.color = score >= 70 ? 'var(--correct)' : 'var(--wrong)';
+            document.getElementById('summary-stats-display').innerHTML = `ענית נכון על <b>${correct}</b> מתוך 50 שאלות.<br>זמן ממוצע לשאלה: <b>${avgTime}</b> שניות.`;
+            
+            currentShareText = `הרגע סיימתי מבחן מסכם של קציני בטיחות והוצאתי ${score}! 🏆\nזמן ממוצע לשאלה: ${avgTime} שניות.\nנראה אתכם עוקפים אותי בטבלת השיאים! 😏\n${window.location.href}`;
+            
+            document.getElementById('exam-summary-screen').classList.remove('hidden');
+
+        } catch(e) {
+            hideLoader();
+            alert("שגיאה בשמירת המבחן. רענן ובדוק את טבלת השיאים.");
+            location.reload();
+        }
+    }
+
+    function shareToWhatsApp() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'תוצאת מבחן - קציני בטיחות',
+                text: currentShareText
+            }).catch(console.error);
+        } else {
+            window.open(`https://wa.me/?text=${encodeURIComponent(currentShareText)}`);
+        }
     }
 
     async function loadLeaderboard() {
@@ -619,7 +654,6 @@
             hideLoader();
             if(json.success) { 
                 globalLB = json.leaderboard; 
-                // קורא אקטיבית לפונקציית המיון עם הכפתור דיפולט
                 let defaultBtn = document.getElementById('sort-btn-score');
                 sortLB('score', defaultBtn); 
             }
