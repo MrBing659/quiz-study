@@ -78,6 +78,11 @@
         .admin-edit-q-btn { position: absolute; top: 10px; left: 10px; background: var(--p); color: white; border: none; border-radius: 5px; padding: 5px 8px; font-size: 0.8rem; cursor: pointer; }
         .edit-q-input { width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-family: inherit;}
         textarea.edit-q-input { resize: vertical; min-height: 60px; }
+        
+        .role-badge { display:inline-block; padding:3px 6px; border-radius:4px; font-size:0.75rem; color:white; font-weight:bold; margin-right:5px;}
+        .role-0 { background: #8e44ad; } /* Admin */
+        .role-1 { background: #e67e22; } /* Mod */
+        .role-2 { display:none; } /* User */
     </style>
 </head>
 <body>
@@ -91,8 +96,10 @@
         שלום <span id="top-name"></span> ▼
         <div class="dropdown" id="dropdown">
             <div class="drop-item" onclick="loadPersonalStats()">📊 הסטטיסטיקות שלי</div>
+            <div class="drop-item hidden" id="mod-qdb-btn" onclick="showQDBPanel()">📚 מאגר שאלות</div>
             <div class="drop-item" onclick="showSettings()">⚙️ הגדרות מערכת</div>
             <div class="drop-item hidden" id="admin-panel-btn" onclick="showAdminPanel()">👑 פאנל ניהול (אדמין)</div>
+            <div class="drop-item hidden" id="admin-logs-btn" onclick="showChangelogPanel()">📝 היסטוריית עריכות</div>
             <div class="drop-item" onclick="logout()">🚪 התנתק</div>
         </div>
     </div>
@@ -109,6 +116,7 @@
     </div>
 
     <div id="modal-backdrop" class="hidden" onclick="closeModals()" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:2000;"></div>
+    
     <div id="edit-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:350px;">
         <h3>✏️ עריכת משתמש</h3>
         <input type="text" id="edit-name-input" class="input-pass" placeholder="שם מלא">
@@ -121,14 +129,12 @@
     <div id="edit-q-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:400px; max-height: 90vh; overflow-y: auto;">
         <h3 style="margin-top:0;">✏️ עריכת שאלה</h3>
         <input type="hidden" id="edit-q-id">
-        <label>שאלה:</label>
-        <textarea id="edit-q-text" class="edit-q-input"></textarea>
-        <label>תשובה 1 (אינדקס 0):</label><input type="text" id="edit-q-opt0" class="edit-q-input">
-        <label>תשובה 2 (אינדקס 1):</label><input type="text" id="edit-q-opt1" class="edit-q-input">
-        <label>תשובה 3 (אינדקס 2):</label><input type="text" id="edit-q-opt2" class="edit-q-input">
-        <label>תשובה 4 (אינדקס 3):</label><input type="text" id="edit-q-opt3" class="edit-q-input">
-        <label>אינדקס תשובה נכונה (0-3):</label><input type="number" id="edit-q-correct" class="edit-q-input" min="0" max="3">
-        
+        <label>שאלה:</label><textarea id="edit-q-text" class="edit-q-input"></textarea>
+        <label>תשובה 1 (0):</label><input type="text" id="edit-q-opt0" class="edit-q-input">
+        <label>תשובה 2 (1):</label><input type="text" id="edit-q-opt1" class="edit-q-input">
+        <label>תשובה 3 (2):</label><input type="text" id="edit-q-opt2" class="edit-q-input">
+        <label>תשובה 4 (3):</label><input type="text" id="edit-q-opt3" class="edit-q-input">
+        <label>תשובה נכונה (0-3):</label><input type="number" id="edit-q-correct" class="edit-q-input" min="0" max="3">
         <button class="btn" style="background:var(--correct);" id="btn-save-q" onclick="saveEditQuestion()">שמור שאלה</button>
         <button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button>
     </div>
@@ -165,8 +171,21 @@
     </div>
 
     <div id="admin-screen" class="hidden card">
-        <h2>👑 פאנל ניהול</h2>
+        <h2>👑 פאנל ניהול משתמשים</h2>
         <div id="admin-list" style="margin-top: 15px;">טוען משתמשים...</div>
+        <button class="btn" style="background:#95a5a6; margin-top:15px;" onclick="goHome()">חזור לתפריט</button>
+    </div>
+
+    <div id="qdb-screen" class="hidden card">
+        <h2>📚 מאגר שאלות</h2>
+        <input type="text" id="qdb-search" class="input-pass" placeholder="חפש לפי ID או מילה בשאלה..." onkeyup="filterQDB()">
+        <div id="qdb-list" style="margin-top: 15px; max-height:60vh; overflow-y:auto;"></div>
+        <button class="btn" style="background:#95a5a6; margin-top:15px;" onclick="goHome()">חזור לתפריט</button>
+    </div>
+
+    <div id="changelog-screen" class="hidden card">
+        <h2>📝 היסטוריית עריכות</h2>
+        <div id="changelog-list" style="margin-top: 15px; max-height:60vh; overflow-y:auto; font-size:0.9rem;"></div>
         <button class="btn" style="background:#95a5a6; margin-top:15px;" onclick="goHome()">חזור לתפריט</button>
     </div>
 
@@ -192,13 +211,13 @@
     <div id="quiz-screen" class="hidden">
         <div class="bubbles" id="bubbles-container"></div>
         <div class="card">
-            <button id="admin-edit-q-btn" class="admin-edit-q-btn hidden" onclick="openEditQModal()">✏️ ערוך שאלה</button>
+            <button id="admin-edit-q-btn" class="admin-edit-q-btn hidden" onclick="openEditQModalFromQuiz()">✏️ ערוך</button>
             <div id="q-text" style="font-weight: bold; font-size: 1.2em; margin-top: 15px;"></div>
             <div id="options"></div>
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:10px;"></div>
             <div style="display:flex; justify-content:space-between; margin-top: 15px;">
                 <span class="report-link" onclick="reportError()">דיווח על שגיאה</span>
-                <span class="share-q-link" onclick="shareQuestion()">📤 שתף שאלה לדיון</span>
+                <span class="share-q-link" onclick="shareQuestion()">📤 שתף שאלה</span>
             </div>
         </div>
     </div>
@@ -231,7 +250,7 @@
     let questionsDB = [], globalLB = [];
     let state = { mode: '', questions: [], index: 0, answers: [], start: null, time: 90 * 60 };
     let timerInterval, qTimes = {}, currentQStart = 0;
-    let currentUser = { id: "", name: "" };
+    let currentUser = { id: "", name: "", role: 2 };
     let cloudLastIdx = 0;
     let userWeaknesses = []; 
     let appSettings = { dark: false, font: 16, autoNext: true };
@@ -293,10 +312,9 @@
     
     function shareQuestion() {
         const q = state.questions[state.index];
-        let txt = `🤔 שאלה לדיון:\n\n*${q.q}*\n\n`;
+        let txt = `🤔 שאלה לדיון (ID: ${q.id}):\n\n*${q.q}*\n\n`;
         q.a.forEach((opt, idx) => { if(opt && opt !== '') txt += `${idx+1}. ${opt}\n`; });
         txt += `\nמה התשובה לדעתכם?`;
-        
         if (navigator.share) { navigator.share({ title: 'שאלה לדיון', text: txt }).catch(console.error); } 
         else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
     }
@@ -327,7 +345,7 @@
         else if (json.success) {
             if(json.isFirstTime) alert(`ברוך הבא ${json.name}!\nהשם ננעל לתעודת הזהות שלך במערכת.`);
             
-            currentUser.id = idNum; currentUser.name = json.name;
+            currentUser.id = idNum; currentUser.name = json.name; currentUser.role = json.role || 2;
             cloudLastIdx = parseInt(json.lastIdx) || 0; 
             if(remember) safeSetItem('qbSavedID', idNum);
             
@@ -337,7 +355,14 @@
             
             updateWeaknessBtn();
 
-            if (String(currentUser.id) === ADMIN_ID) document.getElementById('admin-panel-btn').classList.remove('hidden');
+            if (currentUser.role === 0) {
+                document.getElementById('admin-panel-btn').classList.remove('hidden');
+                document.getElementById('admin-logs-btn').classList.remove('hidden');
+                document.getElementById('mod-qdb-btn').classList.remove('hidden');
+            } else if (currentUser.role === 1) {
+                document.getElementById('mod-qdb-btn').classList.remove('hidden');
+            }
+
             document.getElementById('top-name').innerText = currentUser.name.split(" ")[0];
             document.getElementById('user-menu-btn').style.display = 'flex';
             document.getElementById('login-screen').classList.add('hidden');
@@ -354,24 +379,29 @@
         else { btn.classList.remove('btn-weak'); btn.style.background = "#bdc3c7"; btn.disabled = true; }
     }
 
+    /* פאנל אדמין */
     async function showAdminPanel() {
-        document.getElementById('dropdown').classList.remove('show');
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-        document.getElementById('admin-screen').classList.remove('hidden');
+        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('admin-screen').classList.remove('hidden');
         document.getElementById('admin-list').innerHTML = ""; showLoader("טוען משתמשים...");
         try {
             const res = await fetch(`${apiURL}?action=getAdminData&adminId=${currentUser.id}`); const json = await res.json(); hideLoader();
             if(json.success) {
                 let html = "";
                 json.users.forEach(u => {
+                    if (u.id === ADMIN_ID) return; // לא מציגים את האדמין הראשי
                     let isOnline = u.status === "ACTIVE", dotClass = isOnline ? "status-on" : "status-off";
                     let displayIdx = parseInt(u.lastIdx), lastQText = isNaN(displayIdx) ? "טרם התחיל" : (displayIdx + 1); 
+                    let roleBadge = u.role === 1 ? `<span class="role-badge role-1">מודרייטור</span>` : ``;
+                    let roleBtnTxt = u.role === 1 ? "⬇️ הורד למשתמש" : "⬆️ שדרג למודרייטור";
+                    let newRoleCode = u.role === 1 ? 2 : 1;
+                    
                     html += `
                     <div class="lb-item" style="display:block; padding:12px; background:var(--bg); border-radius:8px; margin-bottom:10px;">
-                        <div style="font-weight:bold; font-size:1.1rem;"><span class="status-dot ${dotClass}"></span> ${u.name}</div>
+                        <div style="font-weight:bold; font-size:1.1rem;"><span class="status-dot ${dotClass}"></span> ${roleBadge}${u.name}</div>
                         <div style="font-size:0.85rem; color:#666; margin: 5px 0;">ת"ז: ${u.id} <br>שאלה אחרונה: ${lastQText} <br>פעילות: ${u.lastSeen}</div>
-                        <div style="display:flex; gap:10px;">
+                        <div style="display:flex; flex-wrap:wrap; gap:10px;">
                             <button class="admin-action-btn btn-edit" onclick="editUserPrompt('${u.id}', '${u.name}')">✏️ ערוך</button>
+                            <button class="admin-action-btn" style="background:#8e44ad; color:white;" onclick="changeRole('${u.id}', ${newRoleCode}, '${u.name}')">${roleBtnTxt}</button>
                             <button class="admin-action-btn btn-kick" onclick="disconnectUser('${u.id}', '${u.name}')">🔌 נתק</button>
                         </div>
                     </div>`;
@@ -381,6 +411,11 @@
         } catch(e) { hideLoader(); document.getElementById('admin-list').innerHTML = "שגיאה בטעינת פאנל ניהול."; }
     }
 
+    async function changeRole(userId, newRoleCode, userName) {
+        if(!confirm(`לשנות הרשאה למשתמש ${userName}?`)) return; showLoader("משנה הרשאה...");
+        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'changeRole', adminId: currentUser.id, targetId: userId, newRole: newRoleCode }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); }
+    }
+
     async function disconnectUser(userId, userName) {
         if(!confirm(`לנתק את ${userName}?`)) return; showLoader("מנתק...");
         try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId }) }); alert(`${userName} נותק.`); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); }
@@ -388,17 +423,80 @@
 
     function editUserPrompt(oldId, oldName) { document.getElementById('edit-old-id').value = oldId; document.getElementById('edit-name-input').value = oldName; document.getElementById('edit-id-input').value = oldId; document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('edit-modal').classList.remove('hidden'); }
     
-    function openEditQModal() {
+    async function saveEditUser() {
+        let oldId = document.getElementById('edit-old-id').value, newName = document.getElementById('edit-name-input').value.trim(), newId = document.getElementById('edit-id-input').value.trim();
+        if(!newName || !newId) return alert("השדות לא יכולים להיות ריקים."); if(newName === document.getElementById('edit-name-input').defaultValue && newId === oldId) return closeModals();
+        let btn = document.getElementById('btn-save-edit'), origText = btn.innerText; btn.innerText = "שומר...";
+        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName }) }); alert("עודכן בהצלחה!"); closeModals(); showAdminPanel(); } catch(e) { alert("שגיאה."); } finally { btn.innerText = origText; }
+    }
+
+    /* פאנל היסטוריית שינויים */
+    async function showChangelogPanel() {
+        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('changelog-screen').classList.remove('hidden');
+        document.getElementById('changelog-list').innerHTML = ""; showLoader("טוען לוגים...");
+        try {
+            const res = await fetch(`${apiURL}?action=getChangelog&adminId=${currentUser.id}`); const json = await res.json(); hideLoader();
+            if(json.success) {
+                let html = "";
+                json.logs.forEach(l => {
+                    html += `
+                    <div style="padding:10px; border-bottom:1px solid #ddd;">
+                        <b style="color:var(--p)">${l.editor}</b> <span style="color:#777; font-size:0.8rem;">(${l.date})</span><br>
+                        ערך שאלה ID: <b>${l.qId}</b><br>
+                        <div style="font-size:0.8rem; margin-top:5px; background:#f9f9f9; padding:5px; border-radius:5px;">
+                            <s style="color:var(--wrong)">${l.oldQ}</s><br>
+                            <span style="color:var(--correct)">${l.newQ}</span>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('changelog-list').innerHTML = html || "אין היסטוריית שינויים.";
+            }
+        } catch(e) { hideLoader(); document.getElementById('changelog-list').innerHTML = "שגיאה בטעינת לוג."; }
+    }
+
+    /* פאנל מאגר שאלות */
+    function showQDBPanel() {
+        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('qdb-screen').classList.remove('hidden');
+        document.getElementById('qdb-search').value = ""; filterQDB();
+    }
+
+    function filterQDB() {
+        let val = document.getElementById('qdb-search').value.toLowerCase();
+        let html = "";
+        let count = 0;
+        for (let i = 0; i < questionsDB.length; i++) {
+            let q = questionsDB[i];
+            if (String(q.id).includes(val) || q.q.toLowerCase().includes(val)) {
+                if(count > 50) break; // מגביל ל-50 תוצאות כדי לא לתקוע את הדפדפן
+                html += `
+                <div style="padding:10px; background:var(--bg); border-radius:8px; margin-bottom:10px;">
+                    <div style="font-size:0.8rem; color:#777;">ID: ${q.id}</div>
+                    <div style="font-weight:bold; margin-bottom:5px;">${q.q}</div>
+                    <button class="btn" style="padding:5px; font-size:0.9rem;" onclick="openEditQModalFromDB('${q.id}')">✏️ ערוך שאלה</button>
+                </div>`;
+                count++;
+            }
+        }
+        document.getElementById('qdb-list').innerHTML = html || "לא נמצאו תוצאות.";
+    }
+
+    /* עריכת שאלה */
+    function openEditQModalFromQuiz() {
         const q = state.questions[state.index];
-        document.getElementById('edit-q-id').value = q.id;
-        document.getElementById('edit-q-text').value = q.q;
-        document.getElementById('edit-q-opt0').value = q.a[0] || '';
-        document.getElementById('edit-q-opt1').value = q.a[1] || '';
-        document.getElementById('edit-q-opt2').value = q.a[2] || '';
-        document.getElementById('edit-q-opt3').value = q.a[3] || '';
+        fillAndShowQModal(q);
+    }
+    
+    function openEditQModalFromDB(qId) {
+        const q = questionsDB.find(x => String(x.id) === String(qId));
+        if(q) fillAndShowQModal(q);
+    }
+
+    function fillAndShowQModal(q) {
+        document.getElementById('edit-q-id').value = q.id; document.getElementById('edit-q-text').value = q.q;
+        document.getElementById('edit-q-opt0').value = q.a[0] || ''; document.getElementById('edit-q-opt1').value = q.a[1] || '';
+        document.getElementById('edit-q-opt2').value = q.a[2] || ''; document.getElementById('edit-q-opt3').value = q.a[3] || '';
         document.getElementById('edit-q-correct').value = q.c;
-        document.getElementById('modal-backdrop').classList.remove('hidden');
-        document.getElementById('edit-q-modal').classList.remove('hidden');
+        document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('edit-q-modal').classList.remove('hidden');
     }
 
     function closeModals() { 
@@ -407,45 +505,24 @@
         document.getElementById('edit-q-modal').classList.add('hidden'); 
     }
 
-    async function saveEditUser() {
-        let oldId = document.getElementById('edit-old-id').value, newName = document.getElementById('edit-name-input').value.trim(), newId = document.getElementById('edit-id-input').value.trim();
-        if(!newName || !newId) return alert("השדות לא יכולים להיות ריקים."); if(newName === document.getElementById('edit-name-input').defaultValue && newId === oldId) return closeModals();
-        let btn = document.getElementById('btn-save-edit'), origText = btn.innerText; btn.innerText = "שומר...";
-        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName }) }); alert("עודכן בהצלחה!"); closeModals(); showAdminPanel(); } catch(e) { alert("שגיאה."); } finally { btn.innerText = origText; }
-    }
-
     async function saveEditQuestion() {
         let qId = document.getElementById('edit-q-id').value;
         let qText = document.getElementById('edit-q-text').value.trim();
-        let opt0 = document.getElementById('edit-q-opt0').value.trim();
-        let opt1 = document.getElementById('edit-q-opt1').value.trim();
-        let opt2 = document.getElementById('edit-q-opt2').value.trim();
-        let opt3 = document.getElementById('edit-q-opt3').value.trim();
+        let opt0 = document.getElementById('edit-q-opt0').value.trim(), opt1 = document.getElementById('edit-q-opt1').value.trim(), opt2 = document.getElementById('edit-q-opt2').value.trim(), opt3 = document.getElementById('edit-q-opt3').value.trim();
         let correct = document.getElementById('edit-q-correct').value;
-        
         if(!qText || correct === "") return alert("יש למלא את השאלה ואת התשובה הנכונה.");
         
         let btn = document.getElementById('btn-save-q'), origText = btn.innerText; btn.innerText = "שומר בענן...";
-        
         try {
             await fetch(`${apiURL}`, {
-                method: 'POST', body: JSON.stringify({
-                    action: 'editQuestion', adminId: currentUser.id, qId: qId, qText: qText,
-                    opt0: opt0, opt1: opt1, opt2: opt2, opt3: opt3, correct: correct
-                })
+                method: 'POST', body: JSON.stringify({ action: 'editQuestion', editorId: currentUser.id, editorRole: currentUser.role, editorName: currentUser.name, qId: qId, qText: qText, opt0: opt0, opt1: opt1, opt2: opt2, opt3: opt3, correct: correct })
             });
-            
-            // עדכון המערך הלוקאלי כדי לראות את השינוי מיד
             let qIndex = questionsDB.findIndex(x => String(x.id) === String(qId));
-            if(qIndex > -1) {
-                questionsDB[qIndex].q = qText;
-                questionsDB[qIndex].a = [opt0, opt1, opt2, opt3];
-                questionsDB[qIndex].c = parseInt(correct);
-            }
-            alert("השאלה עודכנה בהצלחה באקסל!");
-            closeModals();
-            renderQuestion();
-        } catch(e) { alert("שגיאה בעדכון השאלה."); } finally { btn.innerText = origText; }
+            if(qIndex > -1) { questionsDB[qIndex].q = qText; questionsDB[qIndex].a = [opt0, opt1, opt2, opt3]; questionsDB[qIndex].c = parseInt(correct); }
+            alert("השאלה עודכנה!"); closeModals();
+            if(!document.getElementById('quiz-screen').classList.contains('hidden')) renderQuestion();
+            if(!document.getElementById('qdb-screen').classList.contains('hidden')) filterQDB();
+        } catch(e) { alert("שגיאה בעדכון."); } finally { btn.innerText = origText; }
     }
 
     function triggerSaveProgress() {
@@ -453,8 +530,7 @@
         saveTimeout = setTimeout(async () => {
             try {
                 const res = await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index, practiceAnswers: state.answers, weaknesses: userWeaknesses }) });
-                const json = await res.json();
-                if(json.forceLogout) { alert("נותקת על ידי מנהל המערכת."); logout(); }
+                const json = await res.json(); if(json.forceLogout) { alert("נותקת על ידי מנהל המערכת."); logout(); }
             } catch(e) {}
         }, 2000); 
     }
@@ -463,25 +539,14 @@
         let wq = questionsDB.filter(q => userWeaknesses.includes(q.id));
         if(wq.length === 0) return alert("אין לך חולשות במאגר!");
         state.mode = 'weak'; state.questions = wq; state.answers = new Array(wq.length).fill(null); state.index = 0; qTimes = {}; state.start = new Date();
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-        document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden');
-        renderBubbles(); renderQuestion();
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); renderBubbles(); renderQuestion();
     }
 
     function startApp(mode) {
         state.mode = mode; state.index = 0; qTimes = {};
-        if (mode === 'exam') {
-            state.questions = [...questionsDB].sort(() => 0.5 - Math.random()).slice(0, 50);
-            state.answers = new Array(state.questions.length).fill(null);
-        } else { 
-            state.questions = [...questionsDB]; 
-            if (cloudLastIdx < state.questions.length) state.index = parseInt(cloudLastIdx); 
-        }
-        
-        state.start = new Date();
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-        document.getElementById('quiz-screen').classList.remove('hidden');
-        document.getElementById('nav-footer').classList.remove('hidden');
+        if (mode === 'exam') { state.questions = [...questionsDB].sort(() => 0.5 - Math.random()).slice(0, 50); state.answers = new Array(state.questions.length).fill(null); } 
+        else { state.questions = [...questionsDB]; if (cloudLastIdx < state.questions.length) state.index = parseInt(cloudLastIdx); }
+        state.start = new Date(); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden');
         if (mode === 'exam') { document.getElementById('exam-timer').classList.remove('hidden'); startTimer(); }
         renderBubbles(); renderQuestion();
     }
@@ -490,10 +555,7 @@
         const container = document.getElementById('bubbles-container'); container.innerHTML = '';
         state.questions.forEach((q, i) => {
             const b = document.createElement('div'); b.className = 'bubble'; b.id = `bubble-${i}`; b.innerText = i + 1;
-            if (state.answers[i] !== null) {
-                if (state.mode === 'exam') b.classList.add('exam-answered');
-                else { if (state.answers[i] === q.c) b.classList.add('answered'); else b.classList.add('empty'); }
-            }
+            if (state.answers[i] !== null) { if (state.mode === 'exam') b.classList.add('exam-answered'); else { if (state.answers[i] === q.c) b.classList.add('answered'); else b.classList.add('empty'); } }
             b.onclick = () => { moveToIndex(i); }; container.appendChild(b);
         });
     }
@@ -506,19 +568,13 @@
     function move(step) { let newIdx = state.index + step; if (newIdx >= 0 && newIdx < state.questions.length) moveToIndex(newIdx); }
 
     function renderQuestion() {
-        currentQStart = Date.now(); 
-        const q = state.questions[state.index]; const isExam = state.mode === 'exam';
-        
+        currentQStart = Date.now(); const q = state.questions[state.index]; const isExam = state.mode === 'exam';
         document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active'));
-        let currentBubble = document.getElementById(`bubble-${state.index}`);
-        currentBubble.classList.add('active'); currentBubble.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        let currentBubble = document.getElementById(`bubble-${state.index}`); currentBubble.classList.add('active'); currentBubble.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         
-        // הרשאות עריכה לאדמין בלבד בתרגול
-        if (String(currentUser.id) === ADMIN_ID && state.mode === 'practice') {
-            document.getElementById('admin-edit-q-btn').classList.remove('hidden');
-        } else {
-            document.getElementById('admin-edit-q-btn').classList.add('hidden');
-        }
+        // הרשאות עריכה לאדמין+מוד בתרגול מהמסך עצמו
+        if ((currentUser.role === 0 || currentUser.role === 1) && state.mode === 'practice') document.getElementById('admin-edit-q-btn').classList.remove('hidden');
+        else document.getElementById('admin-edit-q-btn').classList.add('hidden');
 
         document.getElementById('q-text').innerText = (state.index + 1) + ". " + q.q;
         const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
@@ -531,15 +587,9 @@
             div.innerText = text;
             div.onclick = () => {
                 state.answers[state.index] = i;
-                
-                if (i !== q.c && !userWeaknesses.includes(q.id)) userWeaknesses.push(q.id);
-                else if (i === q.c && userWeaknesses.includes(q.id)) userWeaknesses = userWeaknesses.filter(id => id !== q.id);
-                updateWeaknessBtn();
-
+                if (i !== q.c && !userWeaknesses.includes(q.id)) userWeaknesses.push(q.id); else if (i === q.c && userWeaknesses.includes(q.id)) userWeaknesses = userWeaknesses.filter(id => id !== q.id); updateWeaknessBtn();
                 currentBubble.classList.remove('empty', 'answered', 'exam-answered');
-                if (isExam) { currentBubble.classList.add('exam-answered'); } 
-                else { if (i === q.c) currentBubble.classList.add('answered'); else currentBubble.classList.add('empty'); }
-                
+                if (isExam) { currentBubble.classList.add('exam-answered'); } else { if (i === q.c) currentBubble.classList.add('answered'); else currentBubble.classList.add('empty'); }
                 if (!isExam) {
                     const fb = document.getElementById('feedback');
                     if (i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; if(appSettings.autoNext) setTimeout(() => move(1), 600); }
@@ -551,10 +601,7 @@
         });
 
         let btn = document.getElementById('main-action-btn');
-        if ((isExam || state.mode === 'weak') && state.index === state.questions.length - 1) { 
-            btn.innerText = "סיים והגש"; btn.style.background = "var(--correct)"; 
-            btn.onclick = isExam ? submitExam : () => { alert("סיימת את תרגול החולשות!"); goHomeFull(); }; 
-        } 
+        if ((isExam || state.mode === 'weak') && state.index === state.questions.length - 1) { btn.innerText = "סיים והגש"; btn.style.background = "var(--correct)"; btn.onclick = isExam ? submitExam : () => { alert("סיימת את תרגול החולשות!"); goHomeFull(); }; } 
         else { btn.innerText = "הבא"; btn.style.background = "var(--p)"; btn.onclick = () => move(1); }
     }
 
@@ -571,199 +618,64 @@
         if(currentQStart > 0) qTimes[state.index] = (qTimes[state.index] || 0) + (Date.now() - currentQStart);
         let unanswered = state.answers.filter(a => a === null).length;
         if (unanswered > 0) { if (!confirm(`שים לב! לא ענית על ${unanswered} שאלות. להגיש בכל זאת?`)) return; }
-
-        showLoader("מחשב תוצאות ושומר בענן...");
-        document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden');
+        showLoader("מחשב תוצאות ושומר בענן..."); document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden');
         
-        let correct = 0; 
-        state.questions.forEach((q, i) => { 
-            if (state.answers[i] === q.c) {
-                correct++;
-                if (userWeaknesses.includes(q.id)) userWeaknesses = userWeaknesses.filter(id => id !== q.id);
-            } else {
-                if (!userWeaknesses.includes(q.id)) userWeaknesses.push(q.id);
-            }
-        });
-        updateWeaknessBtn();
+        let correct = 0; state.questions.forEach((q, i) => { if (state.answers[i] === q.c) { correct++; if (userWeaknesses.includes(q.id)) userWeaknesses = userWeaknesses.filter(id => id !== q.id); } else { if (!userWeaknesses.includes(q.id)) userWeaknesses.push(q.id); } }); updateWeaknessBtn();
 
-        let score = Math.round((correct / state.questions.length) * 100);
-        let durationMins = Math.round((new Date() - state.start) / 1000 / 60);
-
-        let timesArr = Object.values(qTimes).map(t => t / 1000);
-        let avgTime = timesArr.length ? (timesArr.reduce((a,b)=>a+b,0) / timesArr.length).toFixed(1) : 0;
-        let maxTime = timesArr.length ? Math.max(...timesArr).toFixed(1) : 0;
-        let minTime = timesArr.length ? Math.min(...timesArr).toFixed(1) : 0;
-        const stats = { avg: avgTime, max: maxTime, min: minTime };
-        const examData = { questions: state.questions, answers: state.answers };
+        let score = Math.round((correct / state.questions.length) * 100); let durationMins = Math.round((new Date() - state.start) / 1000 / 60);
+        let timesArr = Object.values(qTimes).map(t => t / 1000), avgTime = timesArr.length ? (timesArr.reduce((a,b)=>a+b,0) / timesArr.length).toFixed(1) : 0, maxTime = timesArr.length ? Math.max(...timesArr).toFixed(1) : 0, minTime = timesArr.length ? Math.min(...timesArr).toFixed(1) : 0;
+        const stats = { avg: avgTime, max: maxTime, min: minTime }, examData = { questions: state.questions, answers: state.answers };
 
         try {
-            await fetch(`${apiURL}`, {
-                method: 'POST', body: JSON.stringify({ action: 'saveExam', examId: Date.now(), id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: durationMins, date: new Date().toLocaleString('he-IL'), stats: stats, examData: examData, weaknesses: userWeaknesses })
-            });
-            hideLoader();
-            
-            document.getElementById('summary-score-display').innerText = score;
-            document.getElementById('summary-score-display').style.color = score >= 70 ? 'var(--correct)' : 'var(--wrong)';
-            document.getElementById('summary-stats-display').innerHTML = `ענית נכון על <b>${correct}</b> מתוך 50 שאלות.<br>זמן ממוצע לשאלה: <b>${avgTime}</b> שניות.`;
-            
-            currentShareText = `היי! הרגע סיימתי מבחן קציני בטיחות והוצאתי ${score}! 🏆\nזמן ממוצע לשאלה: ${avgTime} שניות.\nחושב שאתה יכול לעקוף אותי?\n${window.location.origin}${window.location.pathname}?s=${score}&n=${encodeURIComponent(currentUser.name.split(" ")[0])}&t=${avgTime}`;
-            
-            document.getElementById('exam-summary-screen').classList.remove('hidden');
-
+            await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'saveExam', examId: Date.now(), id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: durationMins, date: new Date().toLocaleString('he-IL'), stats: stats, examData: examData, weaknesses: userWeaknesses }) });
+            hideLoader(); document.getElementById('summary-score-display').innerText = score; document.getElementById('summary-score-display').style.color = score >= 70 ? 'var(--correct)' : 'var(--wrong)'; document.getElementById('summary-stats-display').innerHTML = `ענית נכון על <b>${correct}</b> מתוך 50 שאלות.<br>זמן ממוצע לשאלה: <b>${avgTime}</b> שניות.`; currentShareText = `היי! הרגע סיימתי מבחן קציני בטיחות והוצאתי ${score}! 🏆\nזמן ממוצע לשאלה: ${avgTime} שניות.\nחושב שאתה יכול לעקוף אותי?\n${window.location.origin}${window.location.pathname}?s=${score}&n=${encodeURIComponent(currentUser.name.split(" ")[0])}&t=${avgTime}`; document.getElementById('exam-summary-screen').classList.remove('hidden');
         } catch(e) { hideLoader(); alert("שגיאה בשמירת המבחן. רענן ובדוק את טבלת השיאים."); location.reload(); }
     }
 
     function shareFromLB(name, score, avgTime) {
         let txt = `תראו איזה ציון הבאתי! ${score} בסימולציית קציני בטיחות! 🏆\nזמן ממוצע: ${avgTime} שניות לשאלה.\nנראה אתכם עוברים אותי 😏\n${window.location.origin}${window.location.pathname}?s=${score}&n=${encodeURIComponent(name.split(" ")[0])}&t=${avgTime}`;
-        if (navigator.share) { navigator.share({ title: 'מבחן קציני בטיחות', text: txt }).catch(console.error); } 
-        else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
+        if (navigator.share) { navigator.share({ title: 'מבחן קציני בטיחות', text: txt }).catch(console.error); } else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
     }
-
-    function shareToWhatsApp() {
-        if (navigator.share) { navigator.share({ title: 'תוצאת מבחן - קציני בטיחות', text: currentShareText }).catch(console.error); } 
-        else { window.open(`https://wa.me/?text=${encodeURIComponent(currentShareText)}`); }
-    }
+    function shareToWhatsApp() { if (navigator.share) { navigator.share({ title: 'תוצאת מבחן - קציני בטיחות', text: currentShareText }).catch(console.error); } else { window.open(`https://wa.me/?text=${encodeURIComponent(currentShareText)}`); } }
 
     async function loadLeaderboard() {
-        document.getElementById('dropdown').classList.remove('show');
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-        document.getElementById('history-page').classList.remove('hidden');
-        document.getElementById('lb-filters').style.display = 'flex';
-        document.getElementById('lb-title').innerText = "🏆 טבלת שיאים כיתתית 🏆";
-        
-        const list = document.getElementById('history-list'); list.innerHTML = "";
-        showLoader("טוען טבלת שיאים...");
-
-        try {
-            const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json(); hideLoader();
-            if(json.success) { globalLB = json.leaderboard; let defaultBtn = document.getElementById('sort-btn-score'); sortLB('score', defaultBtn); }
-        } catch (e) { hideLoader(); list.innerHTML = "שגיאה בטעינת הנתונים."; }
+        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('history-page').classList.remove('hidden'); document.getElementById('lb-filters').style.display = 'flex'; document.getElementById('lb-title').innerText = "🏆 טבלת שיאים כיתתית 🏆"; const list = document.getElementById('history-list'); list.innerHTML = ""; showLoader("טוען טבלת שיאים...");
+        try { const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json(); hideLoader(); if(json.success) { globalLB = json.leaderboard; let defaultBtn = document.getElementById('sort-btn-score'); sortLB('score', defaultBtn); } } catch (e) { hideLoader(); list.innerHTML = "שגיאה בטעינת הנתונים."; }
     }
 
     async function loadPersonalStats() {
-        document.getElementById('dropdown').classList.remove('show');
-        showLoader("שואב נתונים אישיים מהענן...");
-        try {
-            const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json(); hideLoader();
-            if(json.success) { globalLB = json.leaderboard; showPersonalStatsView(); }
-        } catch(e) { hideLoader(); alert("שגיאה במשיכת נתונים."); }
+        document.getElementById('dropdown').classList.remove('show'); showLoader("שואב נתונים אישיים מהענן...");
+        try { const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json(); hideLoader(); if(json.success) { globalLB = json.leaderboard; showPersonalStatsView(); } } catch(e) { hideLoader(); alert("שגיאה במשיכת נתונים."); }
     }
 
     function showPersonalStatsView() {
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-        document.getElementById('history-page').classList.remove('hidden');
-        document.getElementById('lb-filters').style.display = 'none';
-        document.getElementById('lb-title').innerText = "📊 הסטטיסטיקות שלי 📊";
-        
-        let myExams = globalLB.filter(ex => parseInt(ex.id) === parseInt(currentUser.id) || String(ex.id).trim() === String(currentUser.id).trim());
-        myExams.sort((a,b) => b.examId - a.examId);
-        renderLB(myExams);
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('history-page').classList.remove('hidden'); document.getElementById('lb-filters').style.display = 'none'; document.getElementById('lb-title').innerText = "📊 הסטטיסטיקות שלי 📊"; let myExams = globalLB.filter(ex => parseInt(ex.id) === parseInt(currentUser.id) || String(ex.id).trim() === String(currentUser.id).trim()); myExams.sort((a,b) => b.examId - a.examId); renderLB(myExams);
     }
 
     function sortLB(type, btnElement) {
-        document.querySelectorAll('.lb-filter-btn').forEach(b => b.classList.remove('active')); if(btnElement) btnElement.classList.add('active');
-        let displayData = [];
-        if (type === 'score' || type === 'time') {
-            displayData = [...globalLB];
-            if (type === 'score') displayData.sort((a,b) => b.score - a.score || a.duration - b.duration); else displayData.sort((a,b) => a.duration - b.duration || b.score - a.score);
-            renderLB(displayData);
-        } else {
-            let userMap = {};
-            globalLB.forEach(ex => {
-                if(!userMap[ex.id]) userMap[ex.id] = { name: ex.name, count: 0, totalScore: 0 };
-                userMap[ex.id].count++; userMap[ex.id].totalScore += ex.score;
-            });
-            displayData = Object.values(userMap).map(u => ({ name: u.name, count: u.count, avgScore: Math.round(u.totalScore / u.count) }));
-            if(type === 'count') displayData.sort((a,b) => b.count - a.count); else displayData.sort((a,b) => b.avgScore - a.avgScore);
-            renderUserLB(displayData);
-        }
+        document.querySelectorAll('.lb-filter-btn').forEach(b => b.classList.remove('active')); if(btnElement) btnElement.classList.add('active'); let displayData = [];
+        if (type === 'score' || type === 'time') { displayData = [...globalLB]; if (type === 'score') displayData.sort((a,b) => b.score - a.score || a.duration - b.duration); else displayData.sort((a,b) => a.duration - b.duration || b.score - a.score); renderLB(displayData); } 
+        else { let userMap = {}; globalLB.forEach(ex => { if(!userMap[ex.id]) userMap[ex.id] = { name: ex.name, count: 0, totalScore: 0 }; userMap[ex.id].count++; userMap[ex.id].totalScore += ex.score; }); displayData = Object.values(userMap).map(u => ({ name: u.name, count: u.count, avgScore: Math.round(u.totalScore / u.count) })); if(type === 'count') displayData.sort((a,b) => b.count - a.count); else displayData.sort((a,b) => b.avgScore - a.avgScore); renderUserLB(displayData); }
     }
 
     function renderLB(data) {
-        const list = document.getElementById('history-list'); if(data.length === 0) { list.innerHTML = "אין מבחנים במערכת."; return; }
-        let html = '';
+        const list = document.getElementById('history-list'); if(data.length === 0) { list.innerHTML = "אין מבחנים במערכת."; return; } let html = '';
         data.forEach((ex, idx) => {
-            let medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx+1}`;
-            let isAdmin = String(currentUser.id).trim() === String(ADMIN_ID).trim() || parseInt(currentUser.id) === parseInt(ADMIN_ID);
-            let isMine = parseInt(ex.id) === parseInt(currentUser.id) || String(ex.id).trim() === String(currentUser.id).trim();
-            
-            html += `
-            <div class="lb-item" style="flex-direction:column; align-items:flex-start;">
-                <div style="width:100%; display:flex; justify-content:space-between;">
-                    <div style="font-weight:bold; font-size:1.1em;">${ex.name} ${medal}</div>
-                    <div style="font-size:0.85em; color:#777;">${ex.date}</div>
-                </div>
-                <div>ציון: <b style="color:${ex.score>=70?'var(--correct)':'var(--wrong)'}">${ex.score}</b> | זמן: ${ex.duration} דק'</div>
-                <div class="stats-box" style="width:100%; box-sizing:border-box;">
-                    ⏱️ ממוצע לשאלה: ${ex.stats.avg || 0} שנ'<br>
-                    🐢 איטית: ${ex.stats.max || 0} שנ' | 🐇 מהירה: ${ex.stats.min || 0} שנ'
-                </div>
-                <div style="margin-top:10px; display:flex; gap:10px; width:100%;">
-                    ${(isMine || isAdmin) ? `<button class="review-btn" onclick="reviewExam(${ex.examId})">📋 תחקר מבחן</button>` : ''}
-                    <button class="review-btn" style="background:#25D366;" onclick="shareFromLB('${ex.name}', ${ex.score}, ${ex.stats.avg || 0})">📲 שתף תוצאה</button>
-                    ${isAdmin ? `<button class="del-btn" onclick="deleteExam(${ex.examId})">🗑️</button>` : ''}
-                </div>
-            </div>`;
-        });
-        list.innerHTML = html;
+            let medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx+1}`; let isAdmin = String(currentUser.id).trim() === String(ADMIN_ID).trim() || parseInt(currentUser.id) === parseInt(ADMIN_ID); let isMine = parseInt(ex.id) === parseInt(currentUser.id) || String(ex.id).trim() === String(currentUser.id).trim();
+            html += `<div class="lb-item" style="flex-direction:column; align-items:flex-start;"><div style="width:100%; display:flex; justify-content:space-between;"><div style="font-weight:bold; font-size:1.1em;">${ex.name} ${medal}</div><div style="font-size:0.85em; color:#777;">${ex.date}</div></div><div>ציון: <b style="color:${ex.score>=70?'var(--correct)':'var(--wrong)'}">${ex.score}</b> | זמן: ${ex.duration} דק'</div><div class="stats-box" style="width:100%; box-sizing:border-box;">⏱️ ממוצע לשאלה: ${ex.stats.avg || 0} שנ'<br>🐢 איטית: ${ex.stats.max || 0} שנ' | 🐇 מהירה: ${ex.stats.min || 0} שנ'</div><div style="margin-top:10px; display:flex; gap:10px; width:100%;">${(isMine || isAdmin) ? `<button class="review-btn" onclick="reviewExam(${ex.examId})">📋 תחקר מבחן</button>` : ''}<button class="review-btn" style="background:#25D366;" onclick="shareFromLB('${ex.name}', ${ex.score}, ${ex.stats.avg || 0})">📲 שתף תוצאה</button>${isAdmin ? `<button class="del-btn" onclick="deleteExam(${ex.examId})">🗑️</button>` : ''}</div></div>`;
+        }); list.innerHTML = html;
     }
 
     function renderUserLB(data) {
         const list = document.getElementById('history-list'); let html = '';
-        data.forEach((u, idx) => {
-            let medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx+1}`;
-            html += `
-            <div class="lb-item">
-                <div style="flex:1;">
-                    <div style="font-weight:bold; font-size:1.1em;">${u.name} ${medal}</div>
-                    <div style="margin-top:5px;">מבחנים: <b>${u.count}</b> | ממוצע: <b>${u.avgScore}%</b></div>
-                </div>
-            </div>`;
-        });
-        list.innerHTML = html;
+        data.forEach((u, idx) => { let medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx+1}`; html += `<div class="lb-item"><div style="flex:1;"><div style="font-weight:bold; font-size:1.1em;">${u.name} ${medal}</div><div style="margin-top:5px;">מבחנים: <b>${u.count}</b> | ממוצע: <b>${u.avgScore}%</b></div></div></div>`; }); list.innerHTML = html;
     }
 
-    async function deleteExam(examId) {
-        if(!confirm("למחוק מבחן זה מהענן?")) return;
-        showLoader("מוחק נתונים...");
-        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'deleteExam', examId: examId, adminId: currentUser.id }) }); loadLeaderboard(); } 
-        catch(e) { hideLoader(); alert("שגיאה במחיקה"); }
-    }
+    async function deleteExam(examId) { if(!confirm("למחוק מבחן זה מהענן?")) return; showLoader("מוחק נתונים..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'deleteExam', examId: examId, adminId: currentUser.id }) }); loadLeaderboard(); } catch(e) { hideLoader(); alert("שגיאה במחיקה"); } }
 
     function reviewExam(examId) {
-        const exam = globalLB.find(e => e.examId === examId);
-        if (!exam || !exam.examData || !exam.examData.questions) return alert("נתוני התחקיר אינם זמינים למבחן זה.");
-        
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-        const reviewScreen = document.getElementById('review-screen');
-        reviewScreen.classList.remove('hidden');
-        
-        document.getElementById('review-score').innerText = `ציון: ${exam.score}`;
-        document.getElementById('review-score').style.color = exam.score >= 70 ? 'var(--correct)' : 'var(--wrong)';
-        
-        let html = '';
-        exam.examData.questions.forEach((q, i) => {
-            const userAns = exam.examData.answers[i];
-            const isCorrect = userAns === q.c;
-            const isUnanswered = userAns === null;
-
-            html += `<div class="card" style="border: 2px solid ${isCorrect ? 'var(--correct)' : 'var(--wrong)'}">`;
-            html += `<div style="font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">${i + 1}. ${q.q}</div>`;
-
-            q.a.forEach((opt, optIdx) => {
-                if (!opt && opt !== 0) return;
-                let optClass = "option";
-                if (optIdx === q.c) optClass += " practice-correct"; 
-                else if (optIdx === userAns) optClass += " practice-wrong"; 
-                html += `<div class="${optClass}" style="cursor: default; padding: 10px;">${opt}</div>`;
-            });
-
-            if (isUnanswered) html += `<div style="color: var(--wrong); font-weight: bold; margin-top: 10px;">⚠️ דילג על השאלה.</div>`;
-            html += `</div>`;
-        });
-        
-        document.getElementById('review-list').innerHTML = html;
-        window.scrollTo(0, 0);
+        const exam = globalLB.find(e => e.examId === examId); if (!exam || !exam.examData || !exam.examData.questions) return alert("נתוני התחקיר אינם זמינים למבחן זה."); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); const reviewScreen = document.getElementById('review-screen'); reviewScreen.classList.remove('hidden'); document.getElementById('review-score').innerText = `ציון: ${exam.score}`; document.getElementById('review-score').style.color = exam.score >= 70 ? 'var(--correct)' : 'var(--wrong)'; let html = '';
+        exam.examData.questions.forEach((q, i) => { const userAns = exam.examData.answers[i]; const isCorrect = userAns === q.c; const isUnanswered = userAns === null; html += `<div class="card" style="border: 2px solid ${isCorrect ? 'var(--correct)' : 'var(--wrong)'}">`; html += `<div style="font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">${i + 1}. ${q.q}</div>`; q.a.forEach((opt, optIdx) => { if (!opt && opt !== 0) return; let optClass = "option"; if (optIdx === q.c) optClass += " practice-correct"; else if (optIdx === userAns) optClass += " practice-wrong"; html += `<div class="${optClass}" style="cursor: default; padding: 10px;">${opt}</div>`; }); if (isUnanswered) html += `<div style="color: var(--wrong); font-weight: bold; margin-top: 10px;">⚠️ דילג על השאלה.</div>`; html += `</div>`; }); document.getElementById('review-list').innerHTML = html; window.scrollTo(0, 0);
     }
 </script>
 </body>
