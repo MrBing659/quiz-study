@@ -84,8 +84,9 @@
         .role-1 { background: #e67e22; } 
         .role-2 { display:none; } 
         
+        /* עיצוב להשוואת שינויים (Diff) - מקור באדום ומחוק, חדש בכחול בולט */
         .diff-old { color: var(--wrong); text-decoration: line-through; margin-left: 5px;}
-        .diff-new { color: var(--correct); font-weight: bold;}
+        .diff-new { color: var(--p); font-weight: bold;}
     </style>
 </head>
 <body>
@@ -408,15 +409,17 @@
         try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName }) }); alert("עודכן בהצלחה!"); closeModals(); showAdminPanel(); } catch(e) { alert("שגיאה."); } finally { btn.innerText = origText; }
     }
 
-    /* פונקציית עזר להשוואת טקסטים (Diff) */
     function diffText(oldTxt, newTxt) {
-        if (!oldTxt && oldTxt !== 0) oldTxt = "";
-        if (!newTxt && newTxt !== 0) newTxt = "";
-        if (String(oldTxt) === String(newTxt)) return String(oldTxt);
-        return `<span class="diff-old">${oldTxt}</span> <span class="diff-new">${newTxt}</span>`;
+        if (oldTxt === undefined || oldTxt === null) oldTxt = "";
+        if (newTxt === undefined || newTxt === null) newTxt = "";
+        if (String(oldTxt) === String(newTxt)) {
+            return String(oldTxt) === "" ? "<i>(ריק)</i>" : String(oldTxt);
+        }
+        let oldDisp = String(oldTxt) === "" ? "<i>(ריק)</i>" : String(oldTxt);
+        let newDisp = String(newTxt) === "" ? "<i>(ריק)</i>" : String(newTxt);
+        return `<span class="diff-old">${oldDisp}</span> <span class="diff-new">${newDisp}</span>`;
     }
 
-    /* פאנל היסטוריית שינויים מתקדם */
     async function showChangelogPanel() {
         document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('changelog-screen').classList.remove('hidden');
         document.getElementById('changelog-list').innerHTML = ""; showLoader("טוען לוגים...");
@@ -429,23 +432,23 @@
                     let o = l.oldState, n = l.newState;
                     
                     let qDiff = diffText(o.q, n.q);
-                    let opt0Diff = (o.a && n.a) ? diffText(o.a[0], n.a[0]) : '';
-                    let opt1Diff = (o.a && n.a) ? diffText(o.a[1], n.a[1]) : '';
-                    let opt2Diff = (o.a && n.a) ? diffText(o.a[2], n.a[2]) : '';
-                    let opt3Diff = (o.a && n.a) ? diffText(o.a[3], n.a[3]) : '';
-                    let cDiff = (o.c !== undefined && n.c !== undefined) ? diffText(o.c, n.c) : '';
+                    let opt0Diff = (o.a && n.a) ? diffText(o.a[0], n.a[0]) : diffText('', '');
+                    let opt1Diff = (o.a && n.a) ? diffText(o.a[1], n.a[1]) : diffText('', '');
+                    let opt2Diff = (o.a && n.a) ? diffText(o.a[2], n.a[2]) : diffText('', '');
+                    let opt3Diff = (o.a && n.a) ? diffText(o.a[3], n.a[3]) : diffText('', '');
+                    let cDiff = diffText(o.c, n.c);
 
                     html += `
                     <div style="padding:15px; border-bottom:1px solid #ddd; background:var(--bg); margin-bottom:10px; border-radius:8px;">
                         <b style="color:var(--p)">${l.editor}</b> <span style="color:#777; font-size:0.8rem;">(${l.date})</span><br>
                         עריכת שאלה ID: <b>${l.qId}</b><br>
-                        <div style="font-size:0.9rem; margin-top:10px; background:var(--card); padding:10px; border-radius:5px; border:1px solid #ccc;">
-                            <div style="margin-bottom:8px;"><b>שאלה:</b> ${qDiff}</div>
-                            ${opt0Diff ? `<div><b>תשובה 1:</b> ${opt0Diff}</div>` : ''}
-                            ${opt1Diff ? `<div><b>תשובה 2:</b> ${opt1Diff}</div>` : ''}
-                            ${opt2Diff ? `<div><b>תשובה 3:</b> ${opt2Diff}</div>` : ''}
-                            ${opt3Diff ? `<div><b>תשובה 4:</b> ${opt3Diff}</div>` : ''}
-                            ${cDiff ? `<div style="margin-top:5px;"><b>אינדקס תשובה נכונה:</b> ${cDiff}</div>` : ''}
+                        <div style="font-size:0.9rem; margin-top:10px; background:var(--card); padding:10px; border-radius:5px; border:1px solid #ccc; line-height: 1.6;">
+                            <div><b>שאלה:</b> ${qDiff}</div>
+                            <div><b>תשובה 1:</b> ${opt0Diff}</div>
+                            <div><b>תשובה 2:</b> ${opt1Diff}</div>
+                            <div><b>תשובה 3:</b> ${opt2Diff}</div>
+                            <div><b>תשובה 4:</b> ${opt3Diff}</div>
+                            <div style="margin-top:5px; border-top: 1px dashed #eee; padding-top: 5px;"><b>אינדקס תשובה נכונה:</b> ${cDiff}</div>
                         </div>
                         <div style="margin-top:10px; display:flex; gap:10px;">
                             <button class="btn" style="padding:6px; font-size:0.85rem; flex:1;" onclick="openEditQModalFromDB('${l.qId}')">✏️ ערוך שוב</button>
@@ -458,24 +461,23 @@
         } catch(e) { hideLoader(); document.getElementById('changelog-list').innerHTML = "שגיאה בטעינת לוג."; }
     }
 
-    /* שחזור שאלה מהלוג */
     async function restoreQuestion(logIdx) {
         let log = globalLogs[logIdx];
-        if(!confirm(`האם אתה בטוח שברצונך למחוק את השינוי האחרון ולשחזר את השאלה (ID: ${log.qId}) לגרסה הישנה הזו?`)) return;
+        if(!confirm(`לשחזר את השאלה (ID: ${log.qId}) לגרסה הישנה הזו?`)) return;
         
         let o = log.oldState;
-        if (!o.a) o.a = ['', '', '', '']; // הגנה למקרה של לוג ישן מאוד
+        if (!o.a) o.a = ['', '', '', '']; 
         if (o.c === undefined) o.c = 0;
 
         showLoader("משחזר גרסה...");
         try {
             await fetch(`${apiURL}`, {
-                method: 'POST', body: JSON.stringify({ action: 'editQuestion', editorId: currentUser.id, editorRole: currentUser.role, editorName: currentUser.name + " (שחזור גרסה)", qId: log.qId, qText: o.q, opt0: o.a[0]||'', opt1: o.a[1]||'', opt2: o.a[2]||'', opt3: o.a[3]||'', correct: o.c })
+                method: 'POST', body: JSON.stringify({ action: 'editQuestion', editorId: currentUser.id, editorRole: currentUser.role, editorName: currentUser.name + " (שחזור)", qId: log.qId, qText: o.q, opt0: o.a[0]||'', opt1: o.a[1]||'', opt2: o.a[2]||'', opt3: o.a[3]||'', correct: o.c })
             });
             let qIndex = questionsDB.findIndex(x => String(x.id) === String(log.qId));
             if(qIndex > -1) { questionsDB[qIndex].q = o.q; questionsDB[qIndex].a = [o.a[0]||'', o.a[1]||'', o.a[2]||'', o.a[3]||'']; questionsDB[qIndex].c = parseInt(o.c); }
             alert("השאלה שוחזרה בהצלחה!");
-            showChangelogPanel(); // רענון הלוג
+            showChangelogPanel(); 
         } catch(e) { hideLoader(); alert("שגיאה בשחזור."); }
     }
 
