@@ -25,16 +25,26 @@
         h1, h2, h3 { text-align: center; }
         
         .bubbles { display: flex; overflow-x: auto; gap: 8px; padding: 10px 5px; margin-bottom: 15px; scroll-behavior: smooth; border-bottom: 1px solid #ddd; }
-        .bubble { min-width: 35px; height: 35px; border-radius: 50%; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; background: var(--card); flex-shrink: 0; }
-        .bubble.active { border: 2px solid var(--p); font-weight: bold; background: #e7f1ff; }
-        .bubble.answered { background: #d4edda; border-color: var(--correct); }
-        .bubble.empty { background: #f8d7da; border-color: var(--wrong); }
+        .bubble { min-width: 35px; height: 35px; border-radius: 50%; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; background: var(--card); flex-shrink: 0; color: var(--txt); }
+        .bubble.active { border: 2px solid var(--p); font-weight: bold; background: #e7f1ff; color: #333; }
+        .bubble.answered { background: #d4edda; border-color: var(--correct); color: #155724; }
+        .bubble.empty { background: #f8d7da; border-color: var(--wrong); color: #721c24; }
 
-        .option { background: var(--bg); padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid transparent; cursor: pointer; font-size: 1.05em; transition: 0.2s;}
-        .selected { border-color: var(--p); background: #e7f1ff; }
-        .practice-correct { background: #d4edda !important; border-color: var(--correct) !important; color: #155724; }
-        .practice-wrong { background: #f8d7da !important; border-color: var(--wrong) !important; color: #721c24; text-decoration: line-through; }
+        /* Dark Mode overrides for Bubbles and Options */
+        .dark .bubble { border-color: #555; background: var(--card); color: var(--txt); }
+        .dark .bubble.active { border-color: var(--p); background: #0d47a1; color: #fff; }
+        .dark .bubble.answered { border-color: var(--correct); background: #1b5e20; color: #fff; }
+        .dark .bubble.empty { border-color: var(--wrong); background: #b71c1c; color: #fff; }
         
+        .option { background: var(--bg); padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid transparent; cursor: pointer; font-size: 1.05em; transition: 0.2s;}
+        .selected { border-color: var(--p); background: #e7f1ff; color: #333;}
+        .practice-correct { background: #d4edda !important; border-color: var(--correct) !important; color: #155724 !important; }
+        .practice-wrong { background: #f8d7da !important; border-color: var(--wrong) !important; color: #721c24 !important; text-decoration: line-through; }
+        
+        .dark .selected { border-color: var(--p); background: #0d47a1; color: #fff; }
+        .dark .practice-correct { border-color: var(--correct) !important; background: #1b5e20 !important; color: #fff !important; }
+        .dark .practice-wrong { border-color: var(--wrong) !important; background: #b71c1c !important; color: #fff !important; }
+
         .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 10px; background: var(--p); color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
         
         .nav-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 10px 15px; display: flex; justify-content: space-between; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
@@ -67,7 +77,7 @@
         <div class="dropdown" id="dropdown">
             <div class="drop-item" onclick="showPersonalStats()">📊 הסטטיסטיקות שלי</div>
             <div class="drop-item" onclick="showSettings()">⚙️ הגדרות מערכת</div>
-            <div class="drop-item" onclick="logout()">🚪 התנתק מכל המכשירים</div>
+            <div class="drop-item" onclick="logout()">🚪 התנתק</div>
         </div>
     </div>
 </div>
@@ -87,8 +97,9 @@
 
     <div id="menu" class="hidden">
         <h1 style="color:var(--p)">קציני בטיחות</h1>
+        <h3 id="welcome-msg" style="text-align:center; color:var(--p);"></h3>
         <div class="card">
-            <button class="btn" onclick="startApp('practice')">תרגול שאלות</button>
+            <button class="btn" onclick="startApp('practice')">תרגול חופשי (נשמר לענן)</button>
             <button class="btn" onclick="startApp('exam')">מבחן מסכם (50 שאלות)</button>
             <button class="btn" style="background:#6c757d;" onclick="loadLeaderboard()">🏆 טבלת שיאים כיתתית</button>
         </div>
@@ -108,7 +119,7 @@
             <span>גודל טקסט: <span id="font-val">רגיל</span></span>
             <input type="range" id="set-font" min="14" max="24" value="16" style="width:100%" oninput="updateFont(this.value)">
         </div>
-        <button class="btn" onclick="document.getElementById('settings-screen').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden');">חזור</button>
+        <button class="btn" onclick="document.getElementById('settings-screen').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden');">חזור לתפריט</button>
     </div>
 
     <div id="history-page" class="hidden card">
@@ -116,8 +127,8 @@
         <div class="lb-filters" id="lb-filters">
             <button class="lb-filter-btn active" onclick="sortLB('score')">הציון הגבוה</button>
             <button class="lb-filter-btn" onclick="sortLB('time')">הכי מהיר</button>
-            <button class="lb-filter-btn" onclick="sortLB('count')">מבחנים</button>
-            <button class="lb-filter-btn" onclick="sortLB('avg')">ממוצע ציון</button>
+            <button class="lb-filter-btn" onclick="sortLB('count')">שיאני מבחנים</button>
+            <button class="lb-filter-btn" onclick="sortLB('avg')">ממוצע גבוה</button>
         </div>
         <div id="history-list"></div>
         <button class="btn" style="background:#6c757d; margin-top:15px;" onclick="document.getElementById('history-page').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden');">חזור לתפריט</button>
@@ -151,6 +162,7 @@
     let timerInterval, qTimes = {}, currentQStart = 0;
     let currentUser = { id: "", name: "" };
     let cloudLastIdx = 0;
+    let cloudAnswers = [];
 
     // הגדרות
     let appSettings = JSON.parse(localStorage.getItem('qbSettings')) || { dark: false, font: 16, autoNext: true };
@@ -229,6 +241,7 @@
             currentUser.id = idNum;
             currentUser.name = json.name;
             cloudLastIdx = json.lastIdx || 0;
+            cloudAnswers = json.savedAnswers || []; // שומר את התשובות מהענן
             if(remember) localStorage.setItem('qbSavedID', idNum);
             
             questionsDB = json.data.map(row => ({
@@ -251,7 +264,10 @@
 
     function saveProgress() {
         if (state.mode === 'practice') {
-            fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index }) }).catch(e=>{});
+            fetch(`${apiURL}`, { 
+                method: 'POST', 
+                body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index, answers: state.answers }) 
+            }).catch(e=>{});
         }
     }
 
@@ -262,12 +278,22 @@
 
         if (mode === 'exam') {
             state.questions = [...questionsDB].sort(() => 0.5 - Math.random()).slice(0, 50);
+            state.answers = new Array(state.questions.length).fill(null);
         } else {
             state.questions = [...questionsDB];
+            // שחזור מיקום ותשובות בתרגול מהענן
+            if (cloudAnswers && cloudAnswers.length > 0) {
+                state.answers = [...cloudAnswers];
+                // השלמת מערך התשובות למקרה שהתווספו שאלות חדשות לאקסל
+                if(state.answers.length < state.questions.length) {
+                    state.answers = state.answers.concat(new Array(state.questions.length - state.answers.length).fill(null));
+                }
+            } else {
+                state.answers = new Array(state.questions.length).fill(null);
+            }
             if (cloudLastIdx < state.questions.length) state.index = parseInt(cloudLastIdx);
         }
 
-        state.answers = new Array(state.questions.length).fill(null);
         state.start = new Date();
 
         document.getElementById('menu').classList.add('hidden');
@@ -289,6 +315,10 @@
         state.questions.forEach((_, i) => {
             const b = document.createElement('div');
             b.className = 'bubble'; b.id = `bubble-${i}`; b.innerText = i + 1;
+            // צובע את הבועות שכבר ענינו עליהן מהענן
+            if (state.mode === 'practice' && state.answers[i] !== null) {
+                b.classList.add(state.answers[i] === state.questions[i].c ? 'answered' : 'empty');
+            }
             b.onclick = () => { moveToIndex(i); };
             container.appendChild(b);
         });
@@ -334,18 +364,26 @@
 
             div.innerText = text;
             div.onclick = () => {
-                if(!isExam && state.answers[state.index] !== null) return; // מניעת שינוי בתרגול
+                if(!isExam && state.answers[state.index] !== null) return; // מניעת שינוי תשובה בתרגול
                 state.answers[state.index] = i;
-                document.getElementById(`bubble-${state.index}`).classList.add('answered');
-                document.getElementById(`bubble-${state.index}`).classList.remove('empty');
+                
+                let bubble = document.getElementById(`bubble-${state.index}`);
+                bubble.classList.remove('empty');
                 
                 if (!isExam) {
                     const fb = document.getElementById('feedback');
                     if (i === q.c) { 
                         fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; 
-                        if(appSettings.autoNext) setTimeout(() => move(1), 800); // מעבר אוטומטי
+                        bubble.classList.add('answered');
+                        if(appSettings.autoNext) setTimeout(() => move(1), 800); 
                     }
-                    else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; }
+                    else { 
+                        fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; 
+                        bubble.classList.add('empty');
+                    }
+                    saveProgress(); // שמירה מיידית לענן בכל קליק בתרגול
+                } else {
+                    bubble.classList.add('answered');
                 }
                 renderQuestion(); 
             };
@@ -426,19 +464,28 @@
         } catch (e) { list.innerHTML = "שגיאה בטעינת הנתונים."; }
     }
 
-    function showPersonalStats() {
+    async function showPersonalStats() {
         document.getElementById('dropdown').classList.remove('show');
-        if(globalLB.length === 0) {
-            alert("אנא כנס קודם לטבלת השיאים כדי לטעון נתונים מהשרת."); return;
-        }
         document.getElementById('menu').classList.add('hidden');
         document.getElementById('settings-screen').classList.add('hidden');
         document.getElementById('history-page').classList.remove('hidden');
         document.getElementById('lb-filters').style.display = 'none';
         document.getElementById('lb-title').innerText = "📊 הסטטיסטיקות שלי 📊";
+        const list = document.getElementById('history-list');
 
-        let myExams = globalLB.filter(ex => ex.id === currentUser.id);
-        myExams.sort((a,b) => b.examId - a.examId); // הכי חדש למעלה
+        if(globalLB.length === 0) {
+            list.innerHTML = "טוען את המבחנים שלך מהענן... ⏳";
+            try {
+                const res = await fetch(`${apiURL}?action=getLeaderboard`);
+                const json = await res.json();
+                if(json.success) globalLB = json.leaderboard;
+            } catch (e) {
+                list.innerHTML = "שגיאה בטעינת הנתונים."; return;
+            }
+        }
+
+        let myExams = globalLB.filter(ex => String(ex.id) === String(currentUser.id));
+        myExams.sort((a,b) => b.examId - a.examId); 
         renderLB(myExams);
     }
 
