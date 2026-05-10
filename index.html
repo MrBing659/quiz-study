@@ -5,24 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>מערכת מבחנים - קציני בטיחות</title>
     <style>
-        :root { --p: #007bff; --bg: #f8f9fa; --txt: #333; --card: #fff; --correct: #28a745; --wrong: #dc3545; }
+        :root { --p: #007bff; --bg: #f8f9fa; --txt: #333; --card: #fff; --correct: #28a745; --wrong: #dc3545; --base-font: 16px; }
         .dark { --bg: #1a1a1a; --txt: #f1f1f1; --card: #2d2d2d; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 10px; padding-bottom: 80px; padding-top: 60px; transition: 0.3s; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 10px; padding-bottom: 80px; padding-top: 60px; font-size: var(--base-font); transition: 0.3s; }
         
         .top-bar { position: fixed; top: 0; left: 0; right: 0; background: var(--card); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 1000; }
         .top-btn { background: none; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: var(--txt); }
         
+        /* תפריט משתמש */
+        .user-nav { position: relative; cursor: pointer; font-weight: bold; color: var(--p); display: none; align-items: center; gap: 5px;}
+        .dropdown { position: absolute; top: 35px; left: 0; background: var(--card); border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; flex-direction: column; width: 180px; overflow: hidden; z-index: 1001; }
+        .dropdown.show { display: flex; }
+        .drop-item { padding: 12px; border-bottom: 1px solid #eee; color: var(--txt); text-decoration: none; font-size: 0.95rem; }
+        .drop-item:hover { background: #e7f1ff; color: var(--p); }
+        .drop-item:last-child { border-bottom: none; color: var(--wrong); }
+
         .container { max-width: 500px; margin: auto; }
         .card { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        h1 { text-align: center; font-size: 1.8rem; }
+        h1, h2, h3 { text-align: center; }
         
         .bubbles { display: flex; overflow-x: auto; gap: 8px; padding: 10px 5px; margin-bottom: 15px; scroll-behavior: smooth; border-bottom: 1px solid #ddd; }
-        .bubble { min-width: 35px; height: 35px; border-radius: 50%; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; background: var(--card); flex-shrink: 0; }
+        .bubble { min-width: 35px; height: 35px; border-radius: 50%; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; background: var(--card); flex-shrink: 0; }
         .bubble.active { border: 2px solid var(--p); font-weight: bold; background: #e7f1ff; }
         .bubble.answered { background: #d4edda; border-color: var(--correct); }
         .bubble.empty { background: #f8d7da; border-color: var(--wrong); }
 
-        .option { background: var(--bg); padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid transparent; cursor: pointer; font-size: 1.1rem; }
+        .option { background: var(--bg); padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid transparent; cursor: pointer; font-size: 1.05em; transition: 0.2s;}
         .selected { border-color: var(--p); background: #e7f1ff; }
         .practice-correct { background: #d4edda !important; border-color: var(--correct) !important; color: #155724; }
         .practice-wrong { background: #f8d7da !important; border-color: var(--wrong) !important; color: #721c24; text-decoration: line-through; }
@@ -34,41 +42,85 @@
         
         .timer { font-size: 1.5rem; text-align: center; font-weight: bold; color: var(--wrong); }
         .hidden { display: none !important; }
-        .history-item { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; flex-direction: column; gap: 8px; }
-        .report-link { display: block; text-align: center; margin-top: 15px; color: var(--wrong); text-decoration: underline; cursor: pointer; font-size: 0.9rem; }
         
-        .input-pass { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 1.1rem; box-sizing: border-box; text-align: center; }
-        #login-msg { text-align: center; font-weight: bold; margin-top: 10px; color: var(--wrong); }
+        .input-pass { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box; text-align: center; }
+        .remember-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 15px; font-weight: bold; }
+        #sys-msg { text-align: center; font-weight: bold; margin-top: 10px; color: var(--p); }
+
+        /* Leaderboard & Settings */
+        .lb-filters { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
+        .lb-filter-btn { flex: 1; padding: 8px; border: 1px solid var(--p); background: transparent; color: var(--txt); border-radius: 5px; cursor: pointer; white-space: nowrap; font-size: 0.85rem;}
+        .lb-filter-btn.active { background: var(--p); color: white; font-weight: bold; }
+        .lb-item { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+        .stats-box { background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.9em; }
+        .del-btn { background: var(--wrong); color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <button class="top-btn" onclick="location.reload()">🏠 חזור</button>
+    <button class="top-btn" onclick="location.reload()">🏠 ראשי</button>
     <div id="exam-timer" class="timer hidden">90:00</div>
-    <button class="top-btn" onclick="document.body.classList.toggle('dark')">🌙</button>
+    <div class="user-nav" id="user-menu-btn" onclick="document.getElementById('dropdown').classList.toggle('show')">
+        שלום <span id="top-name"></span> ▼
+        <div class="dropdown" id="dropdown">
+            <div class="drop-item" onclick="showPersonalStats()">📊 הסטטיסטיקות שלי</div>
+            <div class="drop-item" onclick="showSettings()">⚙️ הגדרות מערכת</div>
+            <div class="drop-item" onclick="logout()">🚪 התנתק מכל המכשירים</div>
+        </div>
+    </div>
 </div>
 
 <div class="container">
     <div id="login-screen" class="card" style="margin-top: 50px;">
-        <h2 style="text-align: center;">הזן סיסמא לכניסה למערכת</h2>
-        <input type="password" id="pass-input" class="input-pass" placeholder="סיסמת כניסה">
-        <button class="btn" onclick="login()">התחבר</button>
-        <div id="login-msg"></div>
+        <h2>התחברות למערכת</h2>
+        <input type="text" id="fname" class="input-pass" placeholder="שם פרטי">
+        <input type="text" id="lname" class="input-pass" placeholder="שם משפחה">
+        <input type="tel" id="id-num" class="input-pass" placeholder="תעודת זהות (9 ספרות)">
+        <label class="remember-row">
+            <input type="checkbox" id="remember-me" checked> זכור אותי במכשיר זה
+        </label>
+        <button class="btn" onclick="manualLogin()">היכנס</button>
+        <div id="sys-msg"></div>
     </div>
 
     <div id="menu" class="hidden">
-        <h1>לימוד קציני בטיחות</h1>
+        <h1 style="color:var(--p)">קציני בטיחות</h1>
         <div class="card">
             <button class="btn" onclick="startApp('practice')">תרגול שאלות</button>
-            <button class="btn" onclick="startApp('exam')">מבחן מסכם</button>
-            <button class="btn" style="background:#6c757d;" onclick="showHistory()">טבלת שיאים אישית</button>
+            <button class="btn" onclick="startApp('exam')">מבחן מסכם (50 שאלות)</button>
+            <button class="btn" style="background:#6c757d;" onclick="loadLeaderboard()">🏆 טבלת שיאים עולמית</button>
         </div>
     </div>
 
+    <div id="settings-screen" class="hidden card">
+        <h2>⚙️ הגדרות מערכת</h2>
+        <div class="setting-row">
+            <span>מצב לילה (Dark Mode)</span>
+            <input type="checkbox" id="set-dark" onchange="toggleDark(this.checked)" style="transform: scale(1.5);">
+        </div>
+        <div class="setting-row">
+            <span>מעבר אוטומטי בתשובה נכונה</span>
+            <input type="checkbox" id="set-auto" onchange="appSettings.autoNext = this.checked; saveSettings();" style="transform: scale(1.5);">
+        </div>
+        <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap:10px;">
+            <span>גודל טקסט: <span id="font-val">רגיל</span></span>
+            <input type="range" id="set-font" min="14" max="24" value="16" style="width:100%" oninput="updateFont(this.value)">
+        </div>
+        <button class="btn" onclick="document.getElementById('settings-screen').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden');">חזור</button>
+    </div>
+
     <div id="history-page" class="hidden card">
-        <h2>טבלת שיאים אישית</h2>
+        <h2 id="lb-title">🏆 טבלת שיאים 🏆</h2>
+        <div class="lb-filters" id="lb-filters">
+            <button class="lb-filter-btn active" onclick="sortLB('score')">הציון הגבוה</button>
+            <button class="lb-filter-btn" onclick="sortLB('time')">הכי מהיר</button>
+            <button class="lb-filter-btn" onclick="sortLB('count')">מבחנים</button>
+            <button class="lb-filter-btn" onclick="sortLB('avg')">ממוצע ציון</button>
+        </div>
         <div id="history-list"></div>
+        <button class="btn" style="background:#6c757d; margin-top:15px;" onclick="document.getElementById('history-page').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden');">חזור לתפריט</button>
     </div>
 
     <div id="review-screen" class="hidden"></div>
@@ -76,10 +128,9 @@
     <div id="quiz-screen" class="hidden">
         <div class="bubbles" id="bubbles-container"></div>
         <div class="card">
-            <div id="q-text" style="font-weight: bold; font-size: 1.2rem;"></div>
+            <div id="q-text" style="font-weight: bold; font-size: 1.2em;"></div>
             <div id="options"></div>
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:10px;"></div>
-            <span class="report-link" onclick="reportError()">דווח על טעות בשאלה זו</span>
         </div>
     </div>
 </div>
@@ -90,62 +141,130 @@
 </div>
 
 <script>
+    // שים את הקישור שלך פה!!!
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
-    let questionsDB = [];
-    let state = { mode: '', questions: [], index: 0, answers: [], start: null, time: 90 * 60 };
-    let timerInterval;
+    const ADMIN_ID = "205652043";
 
-    async function login() {
-        const pass = document.getElementById('pass-input').value;
-        const msg = document.getElementById('login-msg');
-        if(!pass) { msg.innerText = "נא להזין סיסמא."; return; }
+    let questionsDB = [];
+    let globalLB = [];
+    let state = { mode: '', questions: [], index: 0, answers: [], start: null, time: 90 * 60 };
+    let timerInterval, qTimes = {}, currentQStart = 0;
+    let currentUser = { id: "", name: "" };
+    let cloudLastIdx = 0;
+
+    // הגדרות
+    let appSettings = JSON.parse(localStorage.getItem('qbSettings')) || { dark: false, font: 16, autoNext: true };
+
+    window.onload = () => {
+        applySettings();
+        let savedID = localStorage.getItem('qbSavedID');
+        if (savedID) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('sys-msg').innerText = "מזהה משתמש שמור... מתחבר אוטומטית ⏳";
+            document.getElementById('sys-msg').style.display = 'block';
+            autoLogin(savedID);
+        }
+    };
+
+    function applySettings() {
+        if(appSettings.dark) document.body.classList.add('dark');
+        document.documentElement.style.setProperty('--base-font', appSettings.font + 'px');
+        document.getElementById('set-dark').checked = appSettings.dark;
+        document.getElementById('set-auto').checked = appSettings.autoNext;
+        document.getElementById('set-font').value = appSettings.font;
+    }
+    
+    function saveSettings() { localStorage.setItem('qbSettings', JSON.stringify(appSettings)); }
+    function toggleDark(isDark) { appSettings.dark = isDark; isDark ? document.body.classList.add('dark') : document.body.classList.remove('dark'); saveSettings(); }
+    function updateFont(val) { appSettings.font = val; document.documentElement.style.setProperty('--base-font', val + 'px'); saveSettings(); }
+
+    function showSettings() {
+        document.getElementById('dropdown').classList.remove('show');
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('settings-screen').classList.remove('hidden');
+    }
+
+    async function manualLogin() {
+        const fname = document.getElementById('fname').value.trim();
+        const lname = document.getElementById('lname').value.trim();
+        const idNum = document.getElementById('id-num').value.trim();
+        const remember = document.getElementById('remember-me').checked;
+        const msg = document.getElementById('sys-msg');
         
-        msg.innerText = "בודק הרשאות וטוען שאלות מהמאגר... ⏳";
+        if(!fname || !lname || !idNum) { msg.innerText = "נא למלא את כל השדות."; msg.style.color="var(--wrong)"; return; }
+        if(idNum.length < 8) { msg.innerText = "תעודת זהות לא תקינה."; msg.style.color="var(--wrong)"; return; }
+        
+        msg.innerText = "מתחבר ובודק הרשאות... ⏳";
         msg.style.color = "var(--p)";
 
         try {
-            const res = await fetch(`${apiURL}?pass=${encodeURIComponent(pass)}`);
+            const res = await fetch(`${apiURL}?action=login&id=${idNum}&fname=${fname}&lname=${lname}&auto=false`);
             const json = await res.json();
-            
-            if (json.error) {
-                msg.innerText = "סיסמא שגויה. נסה שוב.";
-                msg.style.color = "var(--wrong)";
-            } else if (json.success) {
-                questionsDB = json.data.filter(row => row.Question && String(row.Question).trim() !== '').map(row => ({
-                    id: row.ID,
-                    q: String(row.Question).trim(),
-                    a: [row.Opt0, row.Opt1, row.Opt2, row.Opt3],
-                    c: parseInt(row.Correct)
-                }));
-                
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('menu').classList.remove('hidden');
+            handleLoginResponse(json, idNum, remember);
+        } catch (err) { msg.innerText = "שגיאת רשת. נסה שוב."; msg.style.color="var(--wrong)"; }
+    }
+
+    async function autoLogin(idNum) {
+        try {
+            const res = await fetch(`${apiURL}?action=login&id=${idNum}&auto=true`);
+            const json = await res.json();
+            if(json.error) {
+                localStorage.removeItem('qbSavedID');
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('sys-msg').innerText = "פג תוקף התחברות. אנא התחבר מחדש.";
+            } else {
+                handleLoginResponse(json, idNum, true);
             }
-        } catch (err) {
-            msg.innerText = "שגיאת רשת. ודא שחיבור האינטרנט תקין ונסה שוב.";
-            msg.style.color = "var(--wrong)";
+        } catch (err) { alert("שגיאת רשת בהתחברות אוטומטית."); document.getElementById('login-screen').classList.remove('hidden'); }
+    }
+
+    function handleLoginResponse(json, idNum, remember) {
+        const msg = document.getElementById('sys-msg');
+        if (json.error) {
+            msg.innerText = json.msg; msg.style.color = "var(--wrong)";
+            document.getElementById('login-screen').classList.remove('hidden');
+        } else if (json.success) {
+            if(json.isFirstTime) alert(`ברוך הבא ${json.name}!\nהשם ננעל לתעודת הזהות שלך במערכת.`);
+            
+            currentUser.id = idNum;
+            currentUser.name = json.name;
+            cloudLastIdx = json.lastIdx || 0;
+            if(remember) localStorage.setItem('qbSavedID', idNum);
+            
+            questionsDB = json.data.map(row => ({
+                id: row.ID, q: String(row.Question).trim(),
+                a: [row.Opt0, row.Opt1, row.Opt2, row.Opt3], c: parseInt(row.Correct)
+            }));
+            
+            document.getElementById('top-name').innerText = currentUser.name.split(" ")[0];
+            document.getElementById('user-menu-btn').style.display = 'flex';
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('sys-msg').style.display = 'none';
+            document.getElementById('menu').classList.remove('hidden');
         }
     }
 
-    document.getElementById('pass-input').addEventListener("keypress", function(event) {
-        if (event.key === "Enter") { event.preventDefault(); login(); }
-    });
+    function logout() {
+        localStorage.removeItem('qbSavedID');
+        location.reload();
+    }
+
+    function saveProgress() {
+        if (state.mode === 'practice') {
+            fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index }) }).catch(e=>{});
+        }
+    }
 
     function startApp(mode) {
         state.mode = mode;
         state.index = 0;
+        qTimes = {};
 
         if (mode === 'exam') {
             state.questions = [...questionsDB].sort(() => 0.5 - Math.random()).slice(0, 50);
         } else {
             state.questions = [...questionsDB];
-            let savedIdx = localStorage.getItem('practice_idx');
-            if (savedIdx && savedIdx < state.questions.length) state.index = parseInt(savedIdx);
-        }
-
-        if(state.questions.length === 0) {
-            alert('אין שאלות במאגר. ודא שהאקסל מעודכן.');
-            return;
+            if (cloudLastIdx < state.questions.length) state.index = parseInt(cloudLastIdx);
         }
 
         state.answers = new Array(state.questions.length).fill(null);
@@ -169,15 +288,26 @@
         container.innerHTML = '';
         state.questions.forEach((_, i) => {
             const b = document.createElement('div');
-            b.className = 'bubble';
-            b.id = `bubble-${i}`;
-            b.innerText = i + 1;
-            b.onclick = () => { state.index = i; renderQuestion(); };
+            b.className = 'bubble'; b.id = `bubble-${i}`; b.innerText = i + 1;
+            b.onclick = () => { moveToIndex(i); };
             container.appendChild(b);
         });
     }
 
+    function moveToIndex(i) {
+        if(currentQStart > 0) qTimes[state.index] = (qTimes[state.index] || 0) + (Date.now() - currentQStart);
+        state.index = i;
+        renderQuestion();
+        saveProgress();
+    }
+
+    function move(step) {
+        let newIdx = state.index + step;
+        if (newIdx >= 0 && newIdx < state.questions.length) moveToIndex(newIdx);
+    }
+
     function renderQuestion() {
+        currentQStart = Date.now(); 
         const q = state.questions[state.index];
         const isExam = state.mode === 'exam';
         
@@ -204,154 +334,186 @@
 
             div.innerText = text;
             div.onclick = () => {
+                if(!isExam && state.answers[state.index] !== null) return; // מניעת שינוי בתרגול
                 state.answers[state.index] = i;
                 document.getElementById(`bubble-${state.index}`).classList.add('answered');
                 document.getElementById(`bubble-${state.index}`).classList.remove('empty');
                 
                 if (!isExam) {
                     const fb = document.getElementById('feedback');
-                    if (i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "green"; }
+                    if (i === q.c) { 
+                        fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; 
+                        if(appSettings.autoNext) setTimeout(() => move(1), 800); // מעבר אוטומטי
+                    }
                     else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; }
                 }
-                renderQuestion();
+                renderQuestion(); 
             };
             optCont.appendChild(div);
         });
 
-        if (!isExam) localStorage.setItem('practice_idx', state.index);
-
         let btn = document.getElementById('main-action-btn');
         if (isExam && state.index === state.questions.length - 1) {
-            btn.innerText = "סיים והגש";
-            btn.style.background = "var(--correct)";
-            btn.onclick = submitExam;
+            btn.innerText = "סיים והגש"; btn.style.background = "var(--correct)"; btn.onclick = submitExam;
         } else {
-            btn.innerText = "הבא";
-            btn.style.background = "var(--p)";
-            btn.onclick = () => move(1);
-        }
-    }
-
-    function move(step) {
-        let newIdx = state.index + step;
-        if (newIdx >= 0 && newIdx < state.questions.length) {
-            state.index = newIdx;
-            renderQuestion();
+            btn.innerText = "הבא"; btn.style.background = "var(--p)"; btn.onclick = () => move(1);
         }
     }
 
     function startTimer() {
-        state.time = 90 * 60;
-        clearInterval(timerInterval);
+        state.time = 90 * 60; clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             state.time--;
-            let m = Math.floor(state.time / 60);
-            let s = state.time % 60;
+            let m = Math.floor(state.time / 60); let s = state.time % 60;
             document.getElementById('exam-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
             if (state.time <= 0) { clearInterval(timerInterval); alert('הזמן נגמר!'); submitExam(); }
         }, 1000);
     }
 
-    function submitExam() {
+    async function submitExam() {
+        if(currentQStart > 0) qTimes[state.index] = (qTimes[state.index] || 0) + (Date.now() - currentQStart);
         let unanswered = state.answers.filter(a => a === null).length;
         if (unanswered > 0) {
             state.answers.forEach((ans, i) => { if(ans === null) document.getElementById(`bubble-${i}`).classList.add('empty'); });
-            if (!confirm(`שים לב! לא ענית על ${unanswered} שאלות (מסומנות באדום למעלה). להגיש בכל זאת?`)) return;
+            if (!confirm(`שים לב! לא ענית על ${unanswered} שאלות. להגיש בכל זאת?`)) return;
         }
 
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('nav-footer').classList.add('hidden');
+        document.getElementById('exam-timer').classList.add('hidden');
+        
         let correct = 0;
         state.questions.forEach((q, i) => { if (state.answers[i] === q.c) correct++; });
         let score = Math.round((correct / state.questions.length) * 100);
-        let duration = Math.round((new Date() - state.start) / 1000 / 60);
+        let durationMins = Math.round((new Date() - state.start) / 1000 / 60);
 
-        const result = {
-            id: Date.now(),
-            score, correct, duration,
-            total: state.questions.length,
-            date: new Date().toLocaleString('he-IL'),
-            pass: score >= 70,
-            mode: 'מסכם',
-            examQuestions: state.questions.map(q => ({ q: q.q, a: q.a, c: q.c })),
-            examAnswers: [...state.answers]
-        };
+        let timesArr = Object.values(qTimes).map(t => t / 1000);
+        let avgTime = timesArr.length ? (timesArr.reduce((a,b)=>a+b,0) / timesArr.length).toFixed(1) : 0;
+        let maxTime = timesArr.length ? Math.max(...timesArr).toFixed(1) : 0;
+        let minTime = timesArr.length ? Math.min(...timesArr).toFixed(1) : 0;
+        const stats = { avg: avgTime, max: maxTime, min: minTime };
 
-        let history = JSON.parse(localStorage.getItem('scores') || '[]');
-        history.unshift(result);
-        if (history.length > 50) history.pop(); // Keep only last 50 to save memory
-        localStorage.setItem('scores', JSON.stringify(history));
+        alert(`המבחן הסתיים!\nציון: ${score}\nמעבד נתונים ושומר לשרת...`);
 
-        alert(`המבחן הסתיים!\nציון: ${score}\n${result.pass ? 'עברת! 🏆' : 'נכשלת, לא נורא נסה שוב ❌'}`);
+        try {
+            await fetch(`${apiURL}`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'saveExam', examId: Date.now(), id: currentUser.id, name: currentUser.name,
+                    score: score, correct: correct, total: state.questions.length, duration: durationMins,
+                    date: new Date().toLocaleString('he-IL'), stats: stats
+                })
+            });
+        } catch(e) {}
         location.reload();
     }
 
-    function reportError() {
-        const q = state.questions[state.index];
-        const msg = encodeURIComponent(`היי דניאל, מצאתי טעות בשאלה ID: ${q.id}\n"${q.q}"`);
-        window.open(`https://wa.me/?text=${msg}`);
-    }
-
-    function showHistory() {
+    async function loadLeaderboard() {
+        document.getElementById('dropdown').classList.remove('show');
         document.getElementById('menu').classList.add('hidden');
+        document.getElementById('settings-screen').classList.add('hidden');
         document.getElementById('history-page').classList.remove('hidden');
+        document.getElementById('lb-filters').style.display = 'flex';
+        document.getElementById('lb-title').innerText = "🏆 טבלת שיאים עולמית 🏆";
+        
         const list = document.getElementById('history-list');
-        const history = JSON.parse(localStorage.getItem('scores') || '[]');
-        
-        if (history.length === 0) { list.innerHTML = "אין מבחנים רשומים."; return; }
-        
-        list.innerHTML = history.map(r => `
-            <div class="history-item">
-                <div>
-                    <b>${r.date}</b> | ציון: <span style="font-weight:bold; font-size:1.1rem; color:${r.pass?'var(--correct)':'var(--wrong)'}">${r.score}</span>
-                    <br>(${r.correct}/${r.total}) | זמן: ${r.duration} דקות
-                </div>
-                ${r.examQuestions ? `<button class="btn" style="padding: 8px; margin: 0; font-size: 0.9rem;" onclick="reviewExam(${r.id})">צפה במבחן 📋</button>` : ''}
-            </div>
-        `).join('');
+        list.innerHTML = "טוען נתונים מהענן... ⏳";
+
+        try {
+            const res = await fetch(`${apiURL}?action=getLeaderboard`);
+            const json = await res.json();
+            if(json.success) { globalLB = json.leaderboard; sortLB('score'); }
+        } catch (e) { list.innerHTML = "שגיאה בטעינת הנתונים."; }
     }
 
-    function reviewExam(examId) {
-        const history = JSON.parse(localStorage.getItem('scores') || '[]');
-        const exam = history.find(e => e.id === examId);
-        if (!exam || !exam.examQuestions) return;
+    function showPersonalStats() {
+        document.getElementById('dropdown').classList.remove('show');
+        if(globalLB.length === 0) {
+            alert("אנא כנס קודם לטבלת השיאים כדי לטעון נתונים מהשרת."); return;
+        }
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('settings-screen').classList.add('hidden');
+        document.getElementById('history-page').classList.remove('hidden');
+        document.getElementById('lb-filters').style.display = 'none';
+        document.getElementById('lb-title').innerText = "📊 הסטטיסטיקות שלי 📊";
 
-        document.getElementById('history-page').classList.add('hidden');
-        const reviewScreen = document.getElementById('review-screen');
-        reviewScreen.classList.remove('hidden');
+        let myExams = globalLB.filter(ex => ex.id === currentUser.id);
+        myExams.sort((a,b) => b.examId - a.examId); // הכי חדש למעלה
+        renderLB(myExams);
+    }
 
-        let html = `<h2>תחקיר מבחן - ${exam.date}</h2>`;
-        html += `<h3 style="text-align:center; color:${exam.pass ? 'var(--correct)' : 'var(--wrong)'}">ציון: ${exam.score}</h3>`;
-        html += `<button class="btn" style="background:#6c757d; margin-bottom: 20px;" onclick="document.getElementById('review-screen').classList.add('hidden'); document.getElementById('history-page').classList.remove('hidden'); window.scrollTo(0,0);">🔙 חזור לרשימת השיאים</button>`;
+    function sortLB(type) {
+        document.querySelectorAll('.lb-filter-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        let displayData = [];
 
-        exam.examQuestions.forEach((q, i) => {
-            const userAns = exam.examAnswers[i];
-            const isCorrect = userAns === q.c;
-            const isUnanswered = userAns === null;
-
-            html += `<div class="card" style="border: 2px solid ${isCorrect ? 'var(--correct)' : 'var(--wrong)'}">`;
-            html += `<div style="font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">${i + 1}. ${q.q}</div>`;
-
-            q.a.forEach((opt, optIdx) => {
-                if (!opt && opt !== 0) return;
-                
-                let optClass = "option";
-                if (optIdx === q.c) {
-                    optClass += " practice-correct"; // Always highlight correct answer in green
-                } else if (optIdx === userAns) {
-                    optClass += " practice-wrong"; // Highlight user's wrong answer in red with strikethrough
-                }
-
-                html += `<div class="${optClass}" style="cursor: default; padding: 10px;">${opt}</div>`;
+        if (type === 'score' || type === 'time') {
+            displayData = [...globalLB];
+            if (type === 'score') displayData.sort((a,b) => b.score - a.score || a.duration - b.duration);
+            else displayData.sort((a,b) => a.duration - b.duration || b.score - a.score);
+            renderLB(displayData);
+        } else {
+            let userMap = {};
+            globalLB.forEach(ex => {
+                if(!userMap[ex.id]) userMap[ex.id] = { name: ex.name, count: 0, totalScore: 0 };
+                userMap[ex.id].count++; userMap[ex.id].totalScore += ex.score;
             });
+            displayData = Object.values(userMap).map(u => ({ name: u.name, count: u.count, avgScore: Math.round(u.totalScore / u.count) }));
+            if(type === 'count') displayData.sort((a,b) => b.count - a.count);
+            else displayData.sort((a,b) => b.avgScore - a.avgScore);
+            renderUserLB(displayData);
+        }
+    }
 
-            if (isUnanswered) {
-                html += `<div style="color: var(--wrong); font-weight: bold; margin-top: 10px;">⚠️ דילגת על שאלה זו.</div>`;
-            }
-
-            html += `</div>`;
+    function renderLB(data) {
+        const list = document.getElementById('history-list');
+        if(data.length === 0) { list.innerHTML = "אין מבחנים במערכת."; return; }
+        let html = '';
+        data.forEach((ex, idx) => {
+            let medal = idx === 0 ? "🏆" : idx === 1 ? "🥇" : idx === 2 ? "🥈" : idx === 3 ? "🥉" : `#${idx+1}`;
+            let isAdmin = currentUser.id === ADMIN_ID;
+            html += `
+            <div class="lb-item">
+                <div style="flex:1;">
+                    <div style="font-weight:bold; font-size:1.1em;">${ex.name} ${medal}</div>
+                    <div style="font-size:0.85em; color:#777;">${ex.date}</div>
+                    <div>ציון: <b style="color:${ex.score>=70?'var(--correct)':'var(--wrong)'}">${ex.score}</b> | זמן: ${ex.duration} דק'</div>
+                    <div class="stats-box">
+                        ⏱️ ממוצע לשאלה: ${ex.stats.avg || 0} שניות<br>
+                        🐢 הכי איטית: ${ex.stats.max || 0} שנ' | 🐇 הכי מהירה: ${ex.stats.min || 0} שנ'
+                    </div>
+                </div>
+                ${isAdmin ? `<button class="del-btn" onclick="deleteExam(${ex.examId})">🗑️</button>` : ''}
+            </div>`;
         });
+        list.innerHTML = html;
+    }
 
-        reviewScreen.innerHTML = html;
-        window.scrollTo(0, 0);
+    function renderUserLB(data) {
+        const list = document.getElementById('history-list');
+        let html = '';
+        data.forEach((u, idx) => {
+            let medal = idx === 0 ? "🏆" : idx === 1 ? "🥇" : idx === 2 ? "🥈" : idx === 3 ? "🥉" : `#${idx+1}`;
+            html += `
+            <div class="lb-item">
+                <div style="flex:1;">
+                    <div style="font-weight:bold; font-size:1.1em;">${u.name} ${medal}</div>
+                    <div style="margin-top:5px;">
+                        מבחנים שעשה: <b>${u.count}</b><br>
+                        ממוצע הצלחה כללי: <b>${u.avgScore}%</b>
+                    </div>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    async function deleteExam(examId) {
+        if(!confirm("למחוק את המבחן הזה מהענן? (פעולה זו בלתי הפיכה)")) return;
+        try {
+            await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'deleteExam', examId: examId, adminId: currentUser.id }) });
+            loadLeaderboard(); 
+        } catch(e) { alert("שגיאה במחיקה"); }
     }
 </script>
 </body>
