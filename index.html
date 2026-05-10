@@ -24,7 +24,7 @@
         .user-nav { position: relative; cursor: pointer; font-weight: bold; color: var(--p); display: none; align-items: center; gap: 5px;}
         .dropdown { position: absolute; top: 35px; left: 0; background: var(--card); border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; flex-direction: column; width: 190px; overflow: hidden; z-index: 1001; }
         .dropdown.show { display: flex; }
-        .drop-item { padding: 12px; border-bottom: 1px solid #eee; color: var(--txt); text-decoration: none; font-size: 0.95rem; }
+        .drop-item { padding: 12px; border-bottom: 1px solid #eee; color: var(--txt); text-decoration: none; font-size: 0.95rem; cursor: pointer;}
         .drop-item:hover { background: #e7f1ff; color: var(--p); }
         .drop-item:last-child { border-bottom: none; color: var(--wrong); }
 
@@ -74,12 +74,26 @@
         
         #modal-backdrop { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:2000; }
         #edit-modal { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:350px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+
+        .report-link { display: block; text-align: center; margin-top: 15px; color: var(--wrong); text-decoration: underline; cursor: pointer; font-size: 0.9rem; }
+        
+        /* ספינר טעינה */
+        #loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.85); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .dark #loader-overlay { background: rgba(0,0,0,0.85); }
+        .spinner { border: 5px solid #ccc; border-top: 5px solid var(--p); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loader-text { font-weight: bold; font-size: 1.1rem; color: var(--p); }
     </style>
 </head>
 <body>
 
+<div id="loader-overlay" class="hidden">
+    <div class="spinner"></div>
+    <div id="loader-text">טוען נתונים...</div>
+</div>
+
 <div class="top-bar">
-    <button class="top-btn" onclick="location.reload()">🏠 ראשי</button>
+    <button class="top-btn" onclick="goHomeFull()">🏠 ראשי</button>
     <div id="exam-timer" class="timer hidden">90:00</div>
     <div class="user-nav" id="user-menu-btn" onclick="document.getElementById('dropdown').classList.toggle('show')">
         שלום <span id="top-name"></span> ▼
@@ -87,7 +101,7 @@
             <div class="drop-item" onclick="showPersonalStats()">📊 הסטטיסטיקות שלי</div>
             <div class="drop-item" onclick="showSettings()">⚙️ הגדרות מערכת</div>
             <div class="drop-item hidden" id="admin-panel-btn" onclick="showAdminPanel()">👑 פאנל ניהול (אדמין)</div>
-            <div class="drop-item" onclick="logout()">🚪 התנתק </div>
+            <div class="drop-item" onclick="logout()">🚪 התנתק מכל המכשירים</div>
         </div>
     </div>
 </div>
@@ -151,10 +165,10 @@
     <div id="history-page" class="hidden card">
         <h2 id="lb-title">🏆 טבלת שיאים כיתתית 🏆</h2>
         <div class="lb-filters" id="lb-filters">
-            <button class="lb-filter-btn active" onclick="sortLB('score')">ציון גבוה</button>
-            <button class="lb-filter-btn" onclick="sortLB('time')">הכי מהיר</button>
-            <button class="lb-filter-btn" onclick="sortLB('count')">מבחנים</button>
-            <button class="lb-filter-btn" onclick="sortLB('avg')">ממוצע ציון</button>
+            <button class="lb-filter-btn" id="sort-btn-score" onclick="sortLB('score', this)">ציון גבוה</button>
+            <button class="lb-filter-btn" onclick="sortLB('time', this)">הכי מהיר</button>
+            <button class="lb-filter-btn" onclick="sortLB('count', this)">מבחנים</button>
+            <button class="lb-filter-btn" onclick="sortLB('avg', this)">ממוצע ציון</button>
         </div>
         <div id="history-list"></div>
         <button class="btn" style="background:#95a5a6; margin-top:15px;" onclick="goHome()">חזור לתפריט</button>
@@ -168,6 +182,7 @@
             <div id="q-text" style="font-weight: bold; font-size: 1.2em;"></div>
             <div id="options"></div>
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:10px;"></div>
+            <span class="report-link" onclick="reportError()">דווח על בעיה בשאלה זו</span>
         </div>
     </div>
 </div>
@@ -178,10 +193,16 @@
 </div>
 
 <script>
-    // פונקציות גישה בטוחה לזיכרון (מונע קריסה בגלישה בסתר)
+    // פונקציות גישה בטוחה לזיכרון
     function safeGetItem(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
     function safeSetItem(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
     function safeRemoveItem(key) { try { localStorage.removeItem(key); } catch(e) {} }
+
+    function showLoader(text = "טוען נתונים...") { 
+        document.getElementById('loader-text').innerText = text;
+        document.getElementById('loader-overlay').classList.remove('hidden'); 
+    }
+    function hideLoader() { document.getElementById('loader-overlay').classList.add('hidden'); }
 
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
     const ADMIN_ID = "012345678";
@@ -193,6 +214,8 @@
     let cloudLastIdx = 0;
     let appSettings = { dark: false, font: 16, autoNext: true };
 
+    function handleEnter(e) { if (e.key === "Enter") manualLogin(); }
+    
     window.onload = () => {
         try {
             let savedSettings = safeGetItem('qbSettings');
@@ -204,21 +227,21 @@
         
         applySettings();
         
-        document.getElementById('fname').addEventListener('keypress', (e) => { if(e.key === "Enter") manualLogin(); });
-        document.getElementById('lname').addEventListener('keypress', (e) => { if(e.key === "Enter") manualLogin(); });
-        document.getElementById('id-num').addEventListener('keypress', (e) => { if(e.key === "Enter") manualLogin(); });
+        document.getElementById('fname').addEventListener('keypress', handleEnter);
+        document.getElementById('lname').addEventListener('keypress', handleEnter);
+        document.getElementById('id-num').addEventListener('keypress', handleEnter);
 
         let savedID = safeGetItem('qbSavedID');
         if (savedID && savedID !== "undefined" && savedID !== "null") {
             document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('sys-msg').innerText = "מזהה משתמש שמור... ⏳";
-            document.getElementById('sys-msg').style.display = 'block';
+            showLoader("מזהה משתמש שמור...");
             autoLogin(savedID);
         }
     };
 
     function applySettings() {
         if(appSettings.dark) document.body.classList.add('dark');
+        else document.body.classList.remove('dark');
         document.documentElement.style.setProperty('--base-font', appSettings.font + 'px');
         document.getElementById('set-dark').checked = appSettings.dark;
         document.getElementById('set-auto').checked = appSettings.autoNext;
@@ -228,7 +251,28 @@
     function saveSettings() { safeSetItem('qbSettings', JSON.stringify(appSettings)); }
     function toggleDark(isDark) { appSettings.dark = isDark; isDark ? document.body.classList.add('dark') : document.body.classList.remove('dark'); saveSettings(); }
     function updateFont(val) { appSettings.font = val; document.documentElement.style.setProperty('--base-font', val + 'px'); saveSettings(); }
-    function goHome() { document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('menu').classList.remove('hidden'); }
+    
+    function goHome() { 
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); 
+        document.getElementById('menu').classList.remove('hidden'); 
+    }
+
+    function goHomeFull() {
+        showLoader("חוזר לראשי...");
+        setTimeout(() => location.reload(), 100);
+    }
+
+    function showSettings() {
+        document.getElementById('dropdown').classList.remove('show');
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+        document.getElementById('settings-screen').classList.remove('hidden');
+    }
+
+    function reportError() {
+        const q = state.questions[state.index];
+        const msg = encodeURIComponent(`היי דניאל, מצאתי טעות בשאלה ID: ${q.id}\n"${q.q}"`);
+        window.open(`https://wa.me/?text=${msg}`);
+    }
 
     async function manualLogin() {
         const fname = document.getElementById('fname').value.trim();
@@ -240,17 +284,17 @@
         if(!fname || !lname || !idNum) { msg.innerText = "נא למלא את כל השדות."; msg.style.color="var(--wrong)"; return; }
         if(idNum.length < 8) { msg.innerText = "תעודת זהות לא תקינה."; msg.style.color="var(--wrong)"; return; }
         
-        msg.style.display = 'block';
-        msg.innerText = "מתחבר לשרת... ⏳"; msg.style.color = "var(--p)";
+        showLoader("מתחבר לשרת...");
 
         try {
             const res = await fetch(`${apiURL}?action=login&id=${idNum}&fname=${fname}&lname=${lname}&auto=false`);
             const json = await res.json();
             handleLoginResponse(json, idNum, remember);
         } catch (err) { 
+            hideLoader();
+            msg.style.display = 'block';
             msg.innerText = "שגיאת רשת. ודא חיבור אינטרנט."; 
             msg.style.color="var(--wrong)"; 
-            alert("שגיאה טכנית בהתחברות: " + err.message);
         }
     }
 
@@ -259,24 +303,30 @@
             const res = await fetch(`${apiURL}?action=login&id=${idNum}&auto=true`);
             const json = await res.json();
             if(json.error) {
+                hideLoader();
                 safeRemoveItem('qbSavedID');
                 document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('sys-msg').style.display = 'block';
                 document.getElementById('sys-msg').innerText = "נותקת מהמערכת. אנא התחבר מחדש.";
                 document.getElementById('sys-msg').style.color="var(--wrong)";
             } else {
                 handleLoginResponse(json, idNum, true);
             }
         } catch (err) { 
+            hideLoader();
+            document.getElementById('login-screen').classList.remove('hidden'); 
+            document.getElementById('sys-msg').style.display = 'block';
             document.getElementById('sys-msg').innerText = "שגיאת רשת בהתחברות אוטומטית."; 
             document.getElementById('sys-msg').style.color="var(--wrong)"; 
-            document.getElementById('login-screen').classList.remove('hidden'); 
         }
     }
 
     function handleLoginResponse(json, idNum, remember) {
+        hideLoader();
         const msg = document.getElementById('sys-msg');
         if (json.error) {
             safeRemoveItem('qbSavedID'); 
+            msg.style.display = 'block';
             msg.innerText = json.msg; msg.style.color = "var(--wrong)";
             document.getElementById('login-screen').classList.remove('hidden');
         } else if (json.success) {
@@ -315,11 +365,13 @@
         document.getElementById('admin-screen').classList.remove('hidden');
         
         const list = document.getElementById('admin-list');
-        list.innerHTML = "טוען נתוני מערכת... ⏳";
+        list.innerHTML = "";
+        showLoader("טוען משתמשים...");
 
         try {
             const res = await fetch(`${apiURL}?action=getAdminData&adminId=${currentUser.id}`);
             const json = await res.json();
+            hideLoader();
             if(json.success) {
                 let html = "";
                 json.users.forEach(u => {
@@ -346,18 +398,19 @@
                 });
                 list.innerHTML = html || "אין נתונים.";
             }
-        } catch(e) { list.innerHTML = "שגיאה בטעינת פאנל ניהול."; }
+        } catch(e) { hideLoader(); list.innerHTML = "שגיאה בטעינת פאנל ניהול."; }
     }
 
     async function disconnectUser(userId, userName) {
         if(!confirm(`לנתק את ${userName} מהמערכת? הוא יידרש להתחבר מחדש.`)) return;
+        showLoader("מנתק משתמש...");
         try {
             await fetch(`${apiURL}`, {
                 method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId })
             });
             alert(`${userName} נותק.`);
             showAdminPanel(); 
-        } catch(e) { alert("שגיאה."); }
+        } catch(e) { hideLoader(); alert("שגיאה."); }
     }
 
     function editUserPrompt(oldId, oldName) {
@@ -385,8 +438,8 @@
 
         let btn = document.getElementById('btn-save-edit');
         let origText = btn.innerText;
-        btn.innerText = "שומר... ⏳";
-
+        btn.innerText = "שומר...";
+        
         try {
             await fetch(`${apiURL}`, {
                 method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName })
@@ -400,6 +453,7 @@
 
     async function saveProgress() {
         if (state.mode === 'practice') {
+            safeSetItem('qbAnswers_' + currentUser.id, JSON.stringify(state.answers)); // שמירת תשובות לוקאלית
             try {
                 const res = await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index }) });
                 const json = await res.json();
@@ -413,9 +467,24 @@
 
     function startApp(mode) {
         state.mode = mode; state.index = 0; qTimes = {};
-        if (mode === 'exam') state.questions = [...questionsDB].sort(() => 0.5 - Math.random()).slice(0, 50);
-        else { state.questions = [...questionsDB]; if (cloudLastIdx < state.questions.length) state.index = parseInt(cloudLastIdx); }
-        state.answers = new Array(state.questions.length).fill(null);
+        
+        if (mode === 'exam') {
+            state.questions = [...questionsDB].sort(() => 0.5 - Math.random()).slice(0, 50);
+            state.answers = new Array(state.questions.length).fill(null);
+        } else { 
+            state.questions = [...questionsDB]; 
+            if (cloudLastIdx < state.questions.length) state.index = parseInt(cloudLastIdx); 
+            
+            // טעינת תשובות מקומיות אם יש
+            let localAns = safeGetItem('qbAnswers_' + currentUser.id);
+            if (localAns) {
+                try { state.answers = JSON.parse(localAns); } 
+                catch(e) { state.answers = new Array(state.questions.length).fill(null); }
+            } else {
+                state.answers = new Array(state.questions.length).fill(null);
+            }
+        }
+        
         state.start = new Date();
         document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
         document.getElementById('quiz-screen').classList.remove('hidden');
@@ -471,7 +540,7 @@
             }
             div.innerText = text;
             div.onclick = () => {
-                if(!isExam && state.answers[state.index] !== null) return; 
+                // בתרגול מותר לשנות. במבחן מותר לשנות כל עוד לא הוגש. 
                 state.answers[state.index] = i;
                 
                 currentBubble.classList.remove('empty', 'answered', 'exam-answered');
@@ -484,7 +553,7 @@
                 
                 if (!isExam) {
                     const fb = document.getElementById('feedback');
-                    if (i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; if(appSettings.autoNext) setTimeout(() => move(1), 800); }
+                    if (i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; if(appSettings.autoNext) setTimeout(() => move(1), 600); }
                     else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; }
                 }
                 renderQuestion(); 
@@ -513,6 +582,7 @@
             if (!confirm(`שים לב! לא ענית על ${unanswered} שאלות. להגיש בכל זאת?`)) return;
         }
 
+        showLoader("שומר נתוני מבחן...");
         document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden');
         
         let correct = 0; state.questions.forEach((q, i) => { if (state.answers[i] === q.c) correct++; });
@@ -525,11 +595,11 @@
         let minTime = timesArr.length ? Math.min(...timesArr).toFixed(1) : 0;
         const stats = { avg: avgTime, max: maxTime, min: minTime };
 
-        alert(`המבחן הסתיים!\nציון: ${score}\nמעבד נתונים ושומר לשרת...`);
         try {
             await fetch(`${apiURL}`, {
                 method: 'POST', body: JSON.stringify({ action: 'saveExam', examId: Date.now(), id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: durationMins, date: new Date().toLocaleString('he-IL'), stats: stats })
             });
+            alert(`המבחן הסתיים!\nציון: ${score}`);
         } catch(e) {}
         location.reload();
     }
@@ -541,11 +611,19 @@
         document.getElementById('lb-filters').style.display = 'flex';
         document.getElementById('lb-title').innerText = "🏆 טבלת שיאים כיתתית 🏆";
         
-        const list = document.getElementById('history-list'); list.innerHTML = "טוען נתונים מהענן... ⏳";
+        const list = document.getElementById('history-list'); list.innerHTML = "";
+        showLoader("טוען טבלת שיאים...");
+
         try {
             const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json();
-            if(json.success) { globalLB = json.leaderboard; sortLB('score'); }
-        } catch (e) { list.innerHTML = "שגיאה בטעינת הנתונים."; }
+            hideLoader();
+            if(json.success) { 
+                globalLB = json.leaderboard; 
+                // קורא אקטיבית לפונקציית המיון עם הכפתור דיפולט
+                let defaultBtn = document.getElementById('sort-btn-score');
+                sortLB('score', defaultBtn); 
+            }
+        } catch (e) { hideLoader(); list.innerHTML = "שגיאה בטעינת הנתונים."; }
     }
 
     function showPersonalStats() {
@@ -561,9 +639,10 @@
         renderLB(myExams);
     }
 
-    function sortLB(type) {
+    function sortLB(type, btnElement) {
         document.querySelectorAll('.lb-filter-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
+        if(btnElement) btnElement.classList.add('active');
+
         let displayData = [];
         if (type === 'score' || type === 'time') {
             displayData = [...globalLB];
@@ -587,7 +666,7 @@
         if(data.length === 0) { list.innerHTML = "אין מבחנים במערכת."; return; }
         let html = '';
         data.forEach((ex, idx) => {
-            let medal = idx === 0 ? "🏆" : idx === 1 ? "🥇" : idx === 2 ? "🥈" : idx === 3 ? "🥉" : `#${idx+1}`;
+            let medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx+1}`;
             let isAdmin = currentUser.id === ADMIN_ID;
             html += `
             <div class="lb-item">
@@ -609,7 +688,7 @@
     function renderUserLB(data) {
         const list = document.getElementById('history-list'); let html = '';
         data.forEach((u, idx) => {
-            let medal = idx === 0 ? "🏆" : idx === 1 ? "🥇" : idx === 2 ? "🥈" : idx === 3 ? "🥉" : `#${idx+1}`;
+            let medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx+1}`;
             html += `
             <div class="lb-item">
                 <div style="flex:1;">
@@ -623,8 +702,9 @@
 
     async function deleteExam(examId) {
         if(!confirm("למחוק מבחן זה מהענן?")) return;
+        showLoader("מוחק נתונים...");
         try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'deleteExam', examId: examId, adminId: currentUser.id }) }); loadLeaderboard(); } 
-        catch(e) { alert("שגיאה במחיקה"); }
+        catch(e) { hideLoader(); alert("שגיאה במחיקה"); }
     }
 </script>
 </body>
