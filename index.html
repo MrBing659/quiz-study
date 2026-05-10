@@ -56,7 +56,7 @@
         .lb-item { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
         .stats-box { background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.9em; }
         .del-btn { background: var(--wrong); color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; margin-right: 5px;}
-        .review-btn { background: var(--p); color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-size: 0.85rem;}
+        .review-btn { background: var(--p); color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-size: 0.85rem; flex:1; text-align:center;}
         
         #loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.85); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .dark #loader-overlay { background: rgba(0,0,0,0.85); }
@@ -66,10 +66,12 @@
 
         .summary-score { font-size: 5rem; font-weight: bold; margin: 15px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
         
-        /* מסך שיתוף פתיחה */
-        #splash-screen { text-align: center; margin-top: 40px;}
-        .splash-medal { font-size: 5rem; margin-bottom: 10px;}
-        .splash-text { font-size: 1.4rem; font-weight: bold; margin-bottom: 20px;}
+        /* מסך תהילה למשתמשים אורחים */
+        #splash-screen { text-align: center; padding: 30px 20px;}
+        .splash-title { font-size: 1.8rem; font-weight: bold; color: var(--p); margin-bottom: 10px; }
+        .splash-name { font-size: 1.4rem; color: var(--txt); margin-bottom: 20px; }
+        .splash-score { font-size: 6rem; font-weight: bold; line-height: 1; margin: 10px 0; }
+        .splash-time { font-size: 1.1rem; color: #7f8c8d; margin-bottom: 30px; }
     </style>
 </head>
 <body>
@@ -92,10 +94,12 @@
 
 <div class="container">
     <div id="splash-screen" class="hidden card">
-        <div class="splash-medal">🏆</div>
-        <div class="splash-text" id="splash-msg"></div>
-        <div style="margin-bottom: 20px; font-size: 1.1rem;">חושב שאתה קצין בטיחות טוב יותר? כנס תוכיח.</div>
-        <button class="btn" onclick="closeSplashAndLogin()">התחבר למערכת</button>
+        <div class="splash-title">🏆 תוצאת מבחן רשמית 🏆</div>
+        <div class="splash-name" id="splash-name"></div>
+        <div class="splash-score" id="splash-score"></div>
+        <div class="splash-time" id="splash-time"></div>
+        <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 20px;">חושב שאתה יכול להוציא ציון גבוה יותר? 😏</div>
+        <button class="btn" onclick="closeSplashAndLogin()">היכנס למערכת והתחרה</button>
     </div>
 
     <div id="modal-backdrop" class="hidden" onclick="closeEditModal()" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:2000;"></div>
@@ -204,11 +208,9 @@
     let timerInterval, qTimes = {}, currentQStart = 0;
     let currentUser = { id: "", name: "" };
     let cloudLastIdx = 0;
-    let userWeaknesses = []; // מערך ה-IDs של השאלות שהמשתמש טעה בהן
+    let userWeaknesses = []; 
     let appSettings = { dark: false, font: 16, autoNext: true };
     let currentShareText = "";
-    
-    // מנגנון המתנה לשמירה ברקע
     let saveTimeout = null;
 
     function handleEnter(e) { if (e.key === "Enter") manualLogin(); }
@@ -218,16 +220,21 @@
         applySettings();
         document.getElementById('fname').addEventListener('keypress', handleEnter); document.getElementById('lname').addEventListener('keypress', handleEnter); document.getElementById('id-num').addEventListener('keypress', handleEnter);
 
-        // בדיקת שיתוף לינק
+        // בדיקת שיתוף לינק (אורחים נכנסים מפה)
         const urlParams = new URLSearchParams(window.location.search);
         const shareScore = urlParams.get('s');
         const shareName = urlParams.get('n');
+        const shareTime = urlParams.get('t');
         
         if (shareScore && shareName) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('splash-screen').classList.remove('hidden');
-            document.getElementById('splash-msg').innerText = `${shareName} הרגע סגר ${shareScore} במבחן!`;
-            return; // עוצר טעינה רגילה עד שהוא ילחץ התחבר
+            
+            document.getElementById('splash-name').innerText = `הנבחן: ${shareName}`;
+            document.getElementById('splash-score').innerText = shareScore;
+            document.getElementById('splash-score').style.color = parseInt(shareScore) >= 70 ? 'var(--correct)' : 'var(--wrong)';
+            if(shareTime && shareTime !== "0") document.getElementById('splash-time').innerText = `⏱️ זמן ממוצע לשאלה: ${shareTime} שניות`;
+            return; // עוצר הכל עד שהוא ילחץ היכנס
         }
 
         let savedID = safeGetItem('qbSavedID');
@@ -239,7 +246,10 @@
     };
 
     function closeSplashAndLogin() {
+        // מנקה את שורת הכתובת מפרמטרים כדי שלא יראה את זה שוב ברענון
+        window.history.replaceState({}, document.title, window.location.pathname);
         document.getElementById('splash-screen').classList.add('hidden');
+        
         let savedID = safeGetItem('qbSavedID');
         if (savedID && savedID !== "undefined" && savedID !== "null") { showLoader("מתחבר..."); autoLogin(savedID); }
         else { document.getElementById('login-screen').classList.remove('hidden'); }
@@ -255,7 +265,7 @@
     function toggleDark(isDark) { appSettings.dark = isDark; isDark ? document.body.classList.add('dark') : document.body.classList.remove('dark'); saveSettings(); }
     function updateFont(val) { appSettings.font = val; document.documentElement.style.setProperty('--base-font', val + 'px'); saveSettings(); }
     function goHome() { document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('menu').classList.remove('hidden'); }
-    function goHomeFull() { showLoader("חוזר לראשי..."); setTimeout(() => location.href = window.location.pathname, 100); } // מנקה את הלינק השיתופי אם יש
+    function goHomeFull() { window.history.replaceState({}, document.title, window.location.pathname); showLoader("חוזר לראשי..."); setTimeout(() => location.reload(), 100); } 
     function showSettings() { document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('settings-screen').classList.remove('hidden'); }
     function reportError() { const q = state.questions[state.index]; window.open(`https://wa.me/?text=` + encodeURIComponent(`היי דניאל, מצאתי טעות בשאלה ID: ${q.id}\n"${q.q}"`)); }
 
@@ -354,7 +364,6 @@
         try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName }) }); alert("עודכן בהצלחה!"); closeEditModal(); showAdminPanel(); } catch(e) { alert("שגיאה."); } finally { btn.innerText = origText; }
     }
 
-    // שמירה מושהית ברקע כדי לא לתקוע את המשתמש
     function triggerSaveProgress() {
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
@@ -363,7 +372,7 @@
                 const json = await res.json();
                 if(json.forceLogout) { alert("נותקת על ידי מנהל המערכת."); logout(); }
             } catch(e) {}
-        }, 2000); // מחכה 2 שניות מהלחיצה האחרונה לפני השמירה בענן
+        }, 2000); 
     }
 
     function startWeaknesses() {
@@ -432,7 +441,6 @@
             div.onclick = () => {
                 state.answers[state.index] = i;
                 
-                // עדכון קיר החולשות בזמן אמת
                 if (i !== q.c && !userWeaknesses.includes(q.id)) userWeaknesses.push(q.id);
                 else if (i === q.c && userWeaknesses.includes(q.id)) userWeaknesses = userWeaknesses.filter(id => id !== q.id);
                 updateWeaknessBtn();
@@ -507,11 +515,17 @@
             document.getElementById('summary-score-display').style.color = score >= 70 ? 'var(--correct)' : 'var(--wrong)';
             document.getElementById('summary-stats-display').innerHTML = `ענית נכון על <b>${correct}</b> מתוך 50 שאלות.<br>זמן ממוצע לשאלה: <b>${avgTime}</b> שניות.`;
             
-            currentShareText = `היי! הרגע סיימתי מבחן קציני בטיחות והוצאתי ${score}! 🏆\nזמן ממוצע לשאלה: ${avgTime} שניות.\nחושב שאתה יכול לעקוף אותי?\n${window.location.origin}${window.location.pathname}?s=${score}&n=${encodeURIComponent(currentUser.name.split(" ")[0])}`;
+            currentShareText = `היי! הרגע סיימתי מבחן מסכם והוצאתי ${score}! 🏆\nזמן ממוצע לשאלה: ${avgTime} שניות.\nחושב שאתה יכול לעקוף אותי?\n${window.location.origin}${window.location.pathname}?s=${score}&n=${encodeURIComponent(currentUser.name.split(" ")[0])}&t=${avgTime}`;
             
             document.getElementById('exam-summary-screen').classList.remove('hidden');
 
-        } catch(e) { hideLoader(); alert("שגיאה בשמירת המבחן."); location.reload(); }
+        } catch(e) { hideLoader(); alert("שגיאה בשמירת המבחן. רענן ובדוק את טבלת השיאים."); location.reload(); }
+    }
+
+    function shareFromLB(name, score, avgTime) {
+        let txt = `תראו איזה ציון הבאתי! ${score} בסימולציית קציני בטיחות! 🏆\nזמן ממוצע: ${avgTime} שניות לשאלה.\nנראה אתכם עוברים אותי 😏\n${window.location.origin}${window.location.pathname}?s=${score}&n=${encodeURIComponent(name.split(" ")[0])}&t=${avgTime}`;
+        if (navigator.share) { navigator.share({ title: 'מבחן קציני בטיחות', text: txt }).catch(console.error); } 
+        else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
     }
 
     function shareToWhatsApp() {
@@ -537,7 +551,7 @@
 
     async function loadPersonalStats() {
         document.getElementById('dropdown').classList.remove('show');
-        showLoader("שואב נתונים אישיים מהענן...");
+        showLoader("שואב נתונים אישיים...");
         try {
             const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json(); hideLoader();
             if(json.success) { globalLB = json.leaderboard; showPersonalStatsView(); }
@@ -549,7 +563,9 @@
         document.getElementById('history-page').classList.remove('hidden');
         document.getElementById('lb-filters').style.display = 'none';
         document.getElementById('lb-title').innerText = "📊 הסטטיסטיקות שלי 📊";
-        let myExams = globalLB.filter(ex => ex.id === currentUser.id);
+        
+        // החיתוך החשוב: השוואה גם בסטרינג וגם חיתוך רווחים ואפסים
+        let myExams = globalLB.filter(ex => parseInt(ex.id) === parseInt(currentUser.id) || String(ex.id).trim() === String(currentUser.id).trim());
         myExams.sort((a,b) => b.examId - a.examId);
         renderLB(myExams);
     }
@@ -578,8 +594,9 @@
         let html = '';
         data.forEach((ex, idx) => {
             let medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx+1}`;
-            let isAdmin = currentUser.id === ADMIN_ID;
-            let isMine = ex.id === currentUser.id;
+            let isAdmin = String(currentUser.id).trim() === String(ADMIN_ID).trim() || parseInt(currentUser.id) === parseInt(ADMIN_ID);
+            let isMine = parseInt(ex.id) === parseInt(currentUser.id) || String(ex.id).trim() === String(currentUser.id).trim();
+            
             html += `
             <div class="lb-item" style="flex-direction:column; align-items:flex-start;">
                 <div style="width:100%; display:flex; justify-content:space-between;">
@@ -591,9 +608,10 @@
                     ⏱️ ממוצע לשאלה: ${ex.stats.avg || 0} שנ'<br>
                     🐢 איטית: ${ex.stats.max || 0} שנ' | 🐇 מהירה: ${ex.stats.min || 0} שנ'
                 </div>
-                <div style="margin-top:10px; display:flex; gap:10px;">
+                <div style="margin-top:10px; display:flex; gap:10px; width:100%;">
                     ${(isMine || isAdmin) ? `<button class="review-btn" onclick="reviewExam(${ex.examId})">📋 תחקר מבחן</button>` : ''}
-                    ${isAdmin ? `<button class="del-btn" onclick="deleteExam(${ex.examId})">🗑️ מחיקה</button>` : ''}
+                    <button class="review-btn" style="background:#25D366;" onclick="shareFromLB('${ex.name}', ${ex.score}, ${ex.stats.avg || 0})">📲 שתף תוצאה</button>
+                    ${isAdmin ? `<button class="del-btn" onclick="deleteExam(${ex.examId})">🗑️</button>` : ''}
                 </div>
             </div>`;
         });
