@@ -83,6 +83,9 @@
         .role-0 { background: #8e44ad; } 
         .role-1 { background: #e67e22; } 
         .role-2 { display:none; } 
+        
+        .diff-old { color: var(--wrong); text-decoration: line-through; margin-left: 5px;}
+        .diff-new { color: var(--correct); font-weight: bold;}
     </style>
 </head>
 <body>
@@ -247,7 +250,7 @@
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
     const ADMIN_ID = "012345678";
 
-    let questionsDB = [], globalLB = [];
+    let questionsDB = [], globalLB = [], globalLogs = [];
     let state = { mode: '', questions: [], index: 0, answers: [], start: null, time: 90 * 60 };
     let timerInterval, qTimes = {}, currentQStart = 0;
     let currentUser = { id: "", name: "", role: 2 };
@@ -345,14 +348,8 @@
         else if (json.success) {
             if(json.isFirstTime) alert(`ברוך הבא ${json.name}!\nהשם ננעל לתעודת הזהות שלך במערכת.`);
             
-            currentUser.id = idNum; 
-            currentUser.name = json.name; 
-            currentUser.role = json.role !== undefined ? parseInt(json.role) : 2;
-            
-            // חומת מגן קשיחה צד לקוח: אתה אדמין בכל מחיר
-            if (String(currentUser.id).trim() === ADMIN_ID || String(currentUser.id).trim() === "12345678") {
-                currentUser.role = 0;
-            }
+            currentUser.id = idNum; currentUser.name = json.name; currentUser.role = json.role !== undefined ? parseInt(json.role) : 2;
+            if (String(currentUser.id).trim() === ADMIN_ID || String(currentUser.id).trim() === "12345678") currentUser.role = 0;
 
             cloudLastIdx = parseInt(json.lastIdx) || 0; 
             if(remember) safeSetItem('qbSavedID', idNum);
@@ -363,14 +360,9 @@
             
             updateWeaknessBtn();
 
-            // חשיפת כפתורי ניהול לפי הרשאה
             if (currentUser.role === 0) {
-                document.getElementById('admin-panel-btn').classList.remove('hidden');
-                document.getElementById('admin-logs-btn').classList.remove('hidden');
-                document.getElementById('mod-qdb-btn').classList.remove('hidden');
-            } else if (currentUser.role === 1) {
-                document.getElementById('mod-qdb-btn').classList.remove('hidden');
-            }
+                document.getElementById('admin-panel-btn').classList.remove('hidden'); document.getElementById('admin-logs-btn').classList.remove('hidden'); document.getElementById('mod-qdb-btn').classList.remove('hidden');
+            } else if (currentUser.role === 1) { document.getElementById('mod-qdb-btn').classList.remove('hidden'); }
 
             document.getElementById('top-name').innerText = currentUser.name.split(" ")[0];
             document.getElementById('user-menu-btn').style.display = 'flex';
@@ -382,16 +374,12 @@
     function logout() { safeRemoveItem('qbSavedID'); location.reload(); }
 
     function updateWeaknessBtn() {
-        const btn = document.getElementById('weakness-btn');
-        document.getElementById('weak-count').innerText = userWeaknesses.length;
-        if(userWeaknesses.length > 0) { btn.classList.add('btn-weak'); btn.disabled = false; } 
-        else { btn.classList.remove('btn-weak'); btn.style.background = "#bdc3c7"; btn.disabled = true; }
+        const btn = document.getElementById('weakness-btn'); document.getElementById('weak-count').innerText = userWeaknesses.length;
+        if(userWeaknesses.length > 0) { btn.classList.add('btn-weak'); btn.disabled = false; } else { btn.classList.remove('btn-weak'); btn.style.background = "#bdc3c7"; btn.disabled = true; }
     }
 
-    /* פאנל אדמין */
     async function showAdminPanel() {
-        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('admin-screen').classList.remove('hidden');
-        document.getElementById('admin-list').innerHTML = ""; showLoader("טוען משתמשים...");
+        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('admin-screen').classList.remove('hidden'); document.getElementById('admin-list').innerHTML = ""; showLoader("טוען משתמשים...");
         try {
             const res = await fetch(`${apiURL}?action=getAdminData&adminId=${currentUser.id}`); const json = await res.json(); hideLoader();
             if(json.success) {
@@ -401,37 +389,18 @@
                     let isOnline = u.status === "ACTIVE", dotClass = isOnline ? "status-on" : "status-off";
                     let displayIdx = parseInt(u.lastIdx), lastQText = isNaN(displayIdx) ? "טרם התחיל" : (displayIdx + 1); 
                     let roleBadge = u.role === 1 ? `<span class="role-badge role-1">מודרייטור</span>` : ``;
-                    let roleBtnTxt = u.role === 1 ? "⬇️ הורד למשתמש" : "⬆️ שדרג למודרייטור";
-                    let newRoleCode = u.role === 1 ? 2 : 1;
+                    let roleBtnTxt = u.role === 1 ? "⬇️ למשתמש" : "⬆️ למודרייטור"; let newRoleCode = u.role === 1 ? 2 : 1;
                     
-                    html += `
-                    <div class="lb-item" style="display:block; padding:12px; background:var(--bg); border-radius:8px; margin-bottom:10px;">
-                        <div style="font-weight:bold; font-size:1.1rem;"><span class="status-dot ${dotClass}"></span> ${roleBadge}${u.name}</div>
-                        <div style="font-size:0.85rem; color:#666; margin: 5px 0;">ת"ז: ${u.id} <br>שאלה אחרונה: ${lastQText} <br>פעילות: ${u.lastSeen}</div>
-                        <div style="display:flex; flex-wrap:wrap; gap:10px;">
-                            <button class="admin-action-btn btn-edit" onclick="editUserPrompt('${u.id}', '${u.name}')">✏️ ערוך</button>
-                            <button class="admin-action-btn" style="background:#8e44ad; color:white;" onclick="changeRole('${u.id}', ${newRoleCode}, '${u.name}')">${roleBtnTxt}</button>
-                            <button class="admin-action-btn btn-kick" onclick="disconnectUser('${u.id}', '${u.name}')">🔌 נתק</button>
-                        </div>
-                    </div>`;
+                    html += `<div class="lb-item" style="display:block; padding:12px; background:var(--bg); border-radius:8px; margin-bottom:10px;"><div style="font-weight:bold; font-size:1.1rem;"><span class="status-dot ${dotClass}"></span> ${roleBadge}${u.name}</div><div style="font-size:0.85rem; color:#666; margin: 5px 0;">ת"ז: ${u.id} <br>שאלה אחרונה: ${lastQText} <br>פעילות: ${u.lastSeen}</div><div style="display:flex; flex-wrap:wrap; gap:10px;"><button class="admin-action-btn btn-edit" onclick="editUserPrompt('${u.id}', '${u.name}')">✏️ ערוך</button><button class="admin-action-btn" style="background:#8e44ad; color:white;" onclick="changeRole('${u.id}', ${newRoleCode}, '${u.name}')">${roleBtnTxt}</button><button class="admin-action-btn btn-kick" onclick="disconnectUser('${u.id}', '${u.name}')">🔌 נתק</button></div></div>`;
                 });
                 document.getElementById('admin-list').innerHTML = html || "אין נתונים.";
             }
         } catch(e) { hideLoader(); document.getElementById('admin-list').innerHTML = "שגיאה בטעינת פאנל ניהול."; }
     }
 
-    async function changeRole(userId, newRoleCode, userName) {
-        if(!confirm(`לשנות הרשאה למשתמש ${userName}?`)) return; showLoader("משנה הרשאה...");
-        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'changeRole', adminId: currentUser.id, targetId: userId, newRole: newRoleCode }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); }
-    }
-
-    async function disconnectUser(userId, userName) {
-        if(!confirm(`לנתק את ${userName}?`)) return; showLoader("מנתק...");
-        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId }) }); alert(`${userName} נותק.`); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); }
-    }
-
+    async function changeRole(userId, newRoleCode, userName) { if(!confirm(`לשנות הרשאה למשתמש ${userName}?`)) return; showLoader("משנה הרשאה..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'changeRole', adminId: currentUser.id, targetId: userId, newRole: newRoleCode }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
+    async function disconnectUser(userId, userName) { if(!confirm(`לנתק את ${userName}?`)) return; showLoader("מנתק..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId }) }); alert(`${userName} נותק.`); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
     function editUserPrompt(oldId, oldName) { document.getElementById('edit-old-id').value = oldId; document.getElementById('edit-name-input').value = oldName; document.getElementById('edit-id-input').value = oldId; document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('edit-modal').classList.remove('hidden'); }
-    
     async function saveEditUser() {
         let oldId = document.getElementById('edit-old-id').value, newName = document.getElementById('edit-name-input').value.trim(), newId = document.getElementById('edit-id-input').value.trim();
         if(!newName || !newId) return alert("השדות לא יכולים להיות ריקים."); if(newName === document.getElementById('edit-name-input').defaultValue && newId === oldId) return closeModals();
@@ -439,22 +408,48 @@
         try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName }) }); alert("עודכן בהצלחה!"); closeModals(); showAdminPanel(); } catch(e) { alert("שגיאה."); } finally { btn.innerText = origText; }
     }
 
-    /* פאנל היסטוריית שינויים */
+    /* פונקציית עזר להשוואת טקסטים (Diff) */
+    function diffText(oldTxt, newTxt) {
+        if (!oldTxt && oldTxt !== 0) oldTxt = "";
+        if (!newTxt && newTxt !== 0) newTxt = "";
+        if (String(oldTxt) === String(newTxt)) return String(oldTxt);
+        return `<span class="diff-old">${oldTxt}</span> <span class="diff-new">${newTxt}</span>`;
+    }
+
+    /* פאנל היסטוריית שינויים מתקדם */
     async function showChangelogPanel() {
         document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('changelog-screen').classList.remove('hidden');
         document.getElementById('changelog-list').innerHTML = ""; showLoader("טוען לוגים...");
         try {
             const res = await fetch(`${apiURL}?action=getChangelog&adminId=${currentUser.id}`); const json = await res.json(); hideLoader();
             if(json.success) {
+                globalLogs = json.logs;
                 let html = "";
-                json.logs.forEach(l => {
+                globalLogs.forEach((l, idx) => {
+                    let o = l.oldState, n = l.newState;
+                    
+                    let qDiff = diffText(o.q, n.q);
+                    let opt0Diff = (o.a && n.a) ? diffText(o.a[0], n.a[0]) : '';
+                    let opt1Diff = (o.a && n.a) ? diffText(o.a[1], n.a[1]) : '';
+                    let opt2Diff = (o.a && n.a) ? diffText(o.a[2], n.a[2]) : '';
+                    let opt3Diff = (o.a && n.a) ? diffText(o.a[3], n.a[3]) : '';
+                    let cDiff = (o.c !== undefined && n.c !== undefined) ? diffText(o.c, n.c) : '';
+
                     html += `
-                    <div style="padding:10px; border-bottom:1px solid #ddd;">
+                    <div style="padding:15px; border-bottom:1px solid #ddd; background:var(--bg); margin-bottom:10px; border-radius:8px;">
                         <b style="color:var(--p)">${l.editor}</b> <span style="color:#777; font-size:0.8rem;">(${l.date})</span><br>
-                        ערך שאלה ID: <b>${l.qId}</b><br>
-                        <div style="font-size:0.8rem; margin-top:5px; background:var(--bg); padding:5px; border-radius:5px;">
-                            <s style="color:var(--wrong)">${l.oldQ}</s><br>
-                            <span style="color:var(--correct)">${l.newQ}</span>
+                        עריכת שאלה ID: <b>${l.qId}</b><br>
+                        <div style="font-size:0.9rem; margin-top:10px; background:var(--card); padding:10px; border-radius:5px; border:1px solid #ccc;">
+                            <div style="margin-bottom:8px;"><b>שאלה:</b> ${qDiff}</div>
+                            ${opt0Diff ? `<div><b>תשובה 1:</b> ${opt0Diff}</div>` : ''}
+                            ${opt1Diff ? `<div><b>תשובה 2:</b> ${opt1Diff}</div>` : ''}
+                            ${opt2Diff ? `<div><b>תשובה 3:</b> ${opt2Diff}</div>` : ''}
+                            ${opt3Diff ? `<div><b>תשובה 4:</b> ${opt3Diff}</div>` : ''}
+                            ${cDiff ? `<div style="margin-top:5px;"><b>אינדקס תשובה נכונה:</b> ${cDiff}</div>` : ''}
+                        </div>
+                        <div style="margin-top:10px; display:flex; gap:10px;">
+                            <button class="btn" style="padding:6px; font-size:0.85rem; flex:1;" onclick="openEditQModalFromDB('${l.qId}')">✏️ ערוך שוב</button>
+                            <button class="btn" style="background:var(--wrong); padding:6px; font-size:0.85rem; flex:1;" onclick="restoreQuestion(${idx})">↩️ שחזר לגרסה זו</button>
                         </div>
                     </div>`;
                 });
@@ -463,42 +458,47 @@
         } catch(e) { hideLoader(); document.getElementById('changelog-list').innerHTML = "שגיאה בטעינת לוג."; }
     }
 
-    /* פאנל מאגר שאלות */
+    /* שחזור שאלה מהלוג */
+    async function restoreQuestion(logIdx) {
+        let log = globalLogs[logIdx];
+        if(!confirm(`האם אתה בטוח שברצונך למחוק את השינוי האחרון ולשחזר את השאלה (ID: ${log.qId}) לגרסה הישנה הזו?`)) return;
+        
+        let o = log.oldState;
+        if (!o.a) o.a = ['', '', '', '']; // הגנה למקרה של לוג ישן מאוד
+        if (o.c === undefined) o.c = 0;
+
+        showLoader("משחזר גרסה...");
+        try {
+            await fetch(`${apiURL}`, {
+                method: 'POST', body: JSON.stringify({ action: 'editQuestion', editorId: currentUser.id, editorRole: currentUser.role, editorName: currentUser.name + " (שחזור גרסה)", qId: log.qId, qText: o.q, opt0: o.a[0]||'', opt1: o.a[1]||'', opt2: o.a[2]||'', opt3: o.a[3]||'', correct: o.c })
+            });
+            let qIndex = questionsDB.findIndex(x => String(x.id) === String(log.qId));
+            if(qIndex > -1) { questionsDB[qIndex].q = o.q; questionsDB[qIndex].a = [o.a[0]||'', o.a[1]||'', o.a[2]||'', o.a[3]||'']; questionsDB[qIndex].c = parseInt(o.c); }
+            alert("השאלה שוחזרה בהצלחה!");
+            showChangelogPanel(); // רענון הלוג
+        } catch(e) { hideLoader(); alert("שגיאה בשחזור."); }
+    }
+
     function showQDBPanel() {
         document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('qdb-screen').classList.remove('hidden');
         document.getElementById('qdb-search').value = ""; filterQDB();
     }
 
     function filterQDB() {
-        let val = document.getElementById('qdb-search').value.toLowerCase();
-        let html = "";
-        let count = 0;
+        let val = document.getElementById('qdb-search').value.toLowerCase(); let html = ""; let count = 0;
         for (let i = 0; i < questionsDB.length; i++) {
             let q = questionsDB[i];
             if (String(q.id).includes(val) || q.q.toLowerCase().includes(val)) {
                 if(count > 50) break; 
-                html += `
-                <div style="padding:10px; background:var(--bg); border-radius:8px; margin-bottom:10px;">
-                    <div style="font-size:0.8rem; color:#777;">ID: ${q.id}</div>
-                    <div style="font-weight:bold; margin-bottom:5px;">${q.q}</div>
-                    <button class="btn" style="padding:5px; font-size:0.9rem;" onclick="openEditQModalFromDB('${q.id}')">✏️ ערוך שאלה</button>
-                </div>`;
+                html += `<div style="padding:10px; background:var(--bg); border-radius:8px; margin-bottom:10px;"><div style="font-size:0.8rem; color:#777;">ID: ${q.id}</div><div style="font-weight:bold; margin-bottom:5px;">${q.q}</div><button class="btn" style="padding:5px; font-size:0.9rem;" onclick="openEditQModalFromDB('${q.id}')">✏️ ערוך שאלה</button></div>`;
                 count++;
             }
         }
         document.getElementById('qdb-list').innerHTML = html || "לא נמצאו תוצאות.";
     }
 
-    /* עריכת שאלה */
-    function openEditQModalFromQuiz() {
-        const q = state.questions[state.index];
-        fillAndShowQModal(q);
-    }
-    
-    function openEditQModalFromDB(qId) {
-        const q = questionsDB.find(x => String(x.id) === String(qId));
-        if(q) fillAndShowQModal(q);
-    }
+    function openEditQModalFromQuiz() { const q = state.questions[state.index]; fillAndShowQModal(q); }
+    function openEditQModalFromDB(qId) { const q = questionsDB.find(x => String(x.id) === String(qId)); if(q) fillAndShowQModal(q); }
 
     function fillAndShowQModal(q) {
         document.getElementById('edit-q-id').value = q.id; document.getElementById('edit-q-text').value = q.q;
@@ -508,11 +508,7 @@
         document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('edit-q-modal').classList.remove('hidden');
     }
 
-    function closeModals() { 
-        document.getElementById('modal-backdrop').classList.add('hidden'); 
-        document.getElementById('edit-modal').classList.add('hidden'); 
-        document.getElementById('edit-q-modal').classList.add('hidden'); 
-    }
+    function closeModals() { document.getElementById('modal-backdrop').classList.add('hidden'); document.getElementById('edit-modal').classList.add('hidden'); document.getElementById('edit-q-modal').classList.add('hidden'); }
 
     async function saveEditQuestion() {
         let qId = document.getElementById('edit-q-id').value;
@@ -531,6 +527,7 @@
             alert("השאלה עודכנה!"); closeModals();
             if(!document.getElementById('quiz-screen').classList.contains('hidden')) renderQuestion();
             if(!document.getElementById('qdb-screen').classList.contains('hidden')) filterQDB();
+            if(!document.getElementById('changelog-screen').classList.contains('hidden')) showChangelogPanel();
         } catch(e) { alert("שגיאה בעדכון."); } finally { btn.innerText = origText; }
     }
 
