@@ -90,7 +90,7 @@
         <div class="card">
             <button class="btn" onclick="startApp('practice')">תרגול שאלות</button>
             <button class="btn" onclick="startApp('exam')">מבחן מסכם (50 שאלות)</button>
-            <button class="btn" style="background:#6c757d;" onclick="loadLeaderboard()">🏆 טבלת שיאים עולמית</button>
+            <button class="btn" style="background:#6c757d;" onclick="loadLeaderboard()">🏆 טבלת שיאים כיתתית</button>
         </div>
     </div>
 
@@ -414,7 +414,7 @@
         document.getElementById('settings-screen').classList.add('hidden');
         document.getElementById('history-page').classList.remove('hidden');
         document.getElementById('lb-filters').style.display = 'flex';
-        document.getElementById('lb-title').innerText = "🏆 טבלת שיאים עולמית 🏆";
+        document.getElementById('lb-title').innerText = "🏆 טבלת שיאים כיתתית 🏆";
         
         const list = document.getElementById('history-list');
         list.innerHTML = "טוען נתונים מהענן... ⏳";
