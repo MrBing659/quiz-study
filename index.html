@@ -20,7 +20,7 @@
         .drop-item:last-child { border-bottom: none; color: var(--wrong); }
 
         .container { max-width: 500px; margin: auto; }
-        .card { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .card { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; position: relative;}
         h1, h2, h3 { text-align: center; }
         
         .bubbles { display: flex; overflow-x: auto; gap: 8px; padding: 10px 5px; margin-bottom: 15px; scroll-behavior: smooth; border-bottom: 1px solid #ddd; }
@@ -66,12 +66,18 @@
 
         .summary-score { font-size: 5rem; font-weight: bold; margin: 15px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
         
-        /* מסך תהילה למשתמשים אורחים */
         #splash-screen { text-align: center; padding: 30px 20px;}
         .splash-title { font-size: 1.8rem; font-weight: bold; color: var(--p); margin-bottom: 10px; }
         .splash-name { font-size: 1.4rem; color: var(--txt); margin-bottom: 20px; }
         .splash-score { font-size: 6rem; font-weight: bold; line-height: 1; margin: 10px 0; }
         .splash-time { font-size: 1.1rem; color: #7f8c8d; margin-bottom: 30px; }
+
+        .report-link { color: var(--wrong); text-decoration: underline; cursor: pointer; font-size: 0.9rem; flex: 1; text-align: right;}
+        .share-q-link { color: var(--p); text-decoration: underline; cursor: pointer; font-size: 0.9rem; flex: 1; text-align: left;}
+        
+        .admin-edit-q-btn { position: absolute; top: 10px; left: 10px; background: var(--p); color: white; border: none; border-radius: 5px; padding: 5px 8px; font-size: 0.8rem; cursor: pointer; }
+        .edit-q-input { width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-family: inherit;}
+        textarea.edit-q-input { resize: vertical; min-height: 60px; }
     </style>
 </head>
 <body>
@@ -102,14 +108,29 @@
         <button class="btn" onclick="closeSplashAndLogin()">היכנס למערכת והתחרה</button>
     </div>
 
-    <div id="modal-backdrop" class="hidden" onclick="closeEditModal()" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:2000;"></div>
+    <div id="modal-backdrop" class="hidden" onclick="closeModals()" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:2000;"></div>
     <div id="edit-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:350px;">
         <h3>✏️ עריכת משתמש</h3>
         <input type="text" id="edit-name-input" class="input-pass" placeholder="שם מלא">
         <input type="tel" id="edit-id-input" class="input-pass" placeholder="תעודת זהות (9 ספרות)">
         <input type="hidden" id="edit-old-id">
         <button class="btn" style="background:var(--correct);" id="btn-save-edit" onclick="saveEditUser()">שמור שינויים</button>
-        <button class="btn" style="background:#bdc3c7;" onclick="closeEditModal()">ביטול</button>
+        <button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button>
+    </div>
+
+    <div id="edit-q-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:400px; max-height: 90vh; overflow-y: auto;">
+        <h3 style="margin-top:0;">✏️ עריכת שאלה</h3>
+        <input type="hidden" id="edit-q-id">
+        <label>שאלה:</label>
+        <textarea id="edit-q-text" class="edit-q-input"></textarea>
+        <label>תשובה 1 (אינדקס 0):</label><input type="text" id="edit-q-opt0" class="edit-q-input">
+        <label>תשובה 2 (אינדקס 1):</label><input type="text" id="edit-q-opt1" class="edit-q-input">
+        <label>תשובה 3 (אינדקס 2):</label><input type="text" id="edit-q-opt2" class="edit-q-input">
+        <label>תשובה 4 (אינדקס 3):</label><input type="text" id="edit-q-opt3" class="edit-q-input">
+        <label>אינדקס תשובה נכונה (0-3):</label><input type="number" id="edit-q-correct" class="edit-q-input" min="0" max="3">
+        
+        <button class="btn" style="background:var(--correct);" id="btn-save-q" onclick="saveEditQuestion()">שמור שאלה</button>
+        <button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button>
     </div>
 
     <div id="login-screen" class="card" style="margin-top: 50px;">
@@ -171,10 +192,14 @@
     <div id="quiz-screen" class="hidden">
         <div class="bubbles" id="bubbles-container"></div>
         <div class="card">
-            <div id="q-text" style="font-weight: bold; font-size: 1.2em;"></div>
+            <button id="admin-edit-q-btn" class="admin-edit-q-btn hidden" onclick="openEditQModal()">✏️ ערוך שאלה</button>
+            <div id="q-text" style="font-weight: bold; font-size: 1.2em; margin-top: 15px;"></div>
             <div id="options"></div>
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:10px;"></div>
-            <span class="report-link" onclick="reportError()">דווח על בעיה בשאלה זו</span>
+            <div style="display:flex; justify-content:space-between; margin-top: 15px;">
+                <span class="report-link" onclick="reportError()">דיווח על שגיאה</span>
+                <span class="share-q-link" onclick="shareQuestion()">📤 שתף שאלה לדיון</span>
+            </div>
         </div>
     </div>
 
@@ -220,7 +245,6 @@
         applySettings();
         document.getElementById('fname').addEventListener('keypress', handleEnter); document.getElementById('lname').addEventListener('keypress', handleEnter); document.getElementById('id-num').addEventListener('keypress', handleEnter);
 
-        // בדיקת שיתוף לינק (אורחים נכנסים מפה)
         const urlParams = new URLSearchParams(window.location.search);
         const shareScore = urlParams.get('s');
         const shareName = urlParams.get('n');
@@ -229,12 +253,11 @@
         if (shareScore && shareName) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('splash-screen').classList.remove('hidden');
-            
             document.getElementById('splash-name').innerText = `הנבחן: ${shareName}`;
             document.getElementById('splash-score').innerText = shareScore;
             document.getElementById('splash-score').style.color = parseInt(shareScore) >= 70 ? 'var(--correct)' : 'var(--wrong)';
             if(shareTime && shareTime !== "0") document.getElementById('splash-time').innerText = `⏱️ זמן ממוצע לשאלה: ${shareTime} שניות`;
-            return; // עוצר הכל עד שהוא ילחץ היכנס
+            return; 
         }
 
         let savedID = safeGetItem('qbSavedID');
@@ -246,10 +269,8 @@
     };
 
     function closeSplashAndLogin() {
-        // מנקה את שורת הכתובת מפרמטרים כדי שלא יראה את זה שוב ברענון
         window.history.replaceState({}, document.title, window.location.pathname);
         document.getElementById('splash-screen').classList.add('hidden');
-        
         let savedID = safeGetItem('qbSavedID');
         if (savedID && savedID !== "undefined" && savedID !== "null") { showLoader("מתחבר..."); autoLogin(savedID); }
         else { document.getElementById('login-screen').classList.remove('hidden'); }
@@ -267,7 +288,18 @@
     function goHome() { document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('menu').classList.remove('hidden'); }
     function goHomeFull() { window.history.replaceState({}, document.title, window.location.pathname); showLoader("חוזר לראשי..."); setTimeout(() => location.reload(), 100); } 
     function showSettings() { document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('settings-screen').classList.remove('hidden'); }
+    
     function reportError() { const q = state.questions[state.index]; window.open(`https://wa.me/?text=` + encodeURIComponent(`היי דניאל, מצאתי טעות בשאלה ID: ${q.id}\n"${q.q}"`)); }
+    
+    function shareQuestion() {
+        const q = state.questions[state.index];
+        let txt = `🤔 שאלה לדיון:\n\n*${q.q}*\n\n`;
+        q.a.forEach((opt, idx) => { if(opt && opt !== '') txt += `${idx+1}. ${opt}\n`; });
+        txt += `\nמה התשובה לדעתכם?`;
+        
+        if (navigator.share) { navigator.share({ title: 'שאלה לדיון', text: txt }).catch(console.error); } 
+        else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
+    }
 
     async function manualLogin() {
         const fname = document.getElementById('fname').value.trim(), lname = document.getElementById('lname').value.trim(), idNum = document.getElementById('id-num').value.trim();
@@ -305,7 +337,7 @@
             
             updateWeaknessBtn();
 
-            if (currentUser.id === ADMIN_ID) document.getElementById('admin-panel-btn').classList.remove('hidden');
+            if (String(currentUser.id) === ADMIN_ID) document.getElementById('admin-panel-btn').classList.remove('hidden');
             document.getElementById('top-name').innerText = currentUser.name.split(" ")[0];
             document.getElementById('user-menu-btn').style.display = 'flex';
             document.getElementById('login-screen').classList.add('hidden');
@@ -355,13 +387,65 @@
     }
 
     function editUserPrompt(oldId, oldName) { document.getElementById('edit-old-id').value = oldId; document.getElementById('edit-name-input').value = oldName; document.getElementById('edit-id-input').value = oldId; document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('edit-modal').classList.remove('hidden'); }
-    function closeEditModal() { document.getElementById('modal-backdrop').classList.add('hidden'); document.getElementById('edit-modal').classList.add('hidden'); }
+    
+    function openEditQModal() {
+        const q = state.questions[state.index];
+        document.getElementById('edit-q-id').value = q.id;
+        document.getElementById('edit-q-text').value = q.q;
+        document.getElementById('edit-q-opt0').value = q.a[0] || '';
+        document.getElementById('edit-q-opt1').value = q.a[1] || '';
+        document.getElementById('edit-q-opt2').value = q.a[2] || '';
+        document.getElementById('edit-q-opt3').value = q.a[3] || '';
+        document.getElementById('edit-q-correct').value = q.c;
+        document.getElementById('modal-backdrop').classList.remove('hidden');
+        document.getElementById('edit-q-modal').classList.remove('hidden');
+    }
+
+    function closeModals() { 
+        document.getElementById('modal-backdrop').classList.add('hidden'); 
+        document.getElementById('edit-modal').classList.add('hidden'); 
+        document.getElementById('edit-q-modal').classList.add('hidden'); 
+    }
 
     async function saveEditUser() {
         let oldId = document.getElementById('edit-old-id').value, newName = document.getElementById('edit-name-input').value.trim(), newId = document.getElementById('edit-id-input').value.trim();
-        if(!newName || !newId) return alert("השדות לא יכולים להיות ריקים."); if(newName === document.getElementById('edit-name-input').defaultValue && newId === oldId) return closeEditModal();
+        if(!newName || !newId) return alert("השדות לא יכולים להיות ריקים."); if(newName === document.getElementById('edit-name-input').defaultValue && newId === oldId) return closeModals();
         let btn = document.getElementById('btn-save-edit'), origText = btn.innerText; btn.innerText = "שומר...";
-        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName }) }); alert("עודכן בהצלחה!"); closeEditModal(); showAdminPanel(); } catch(e) { alert("שגיאה."); } finally { btn.innerText = origText; }
+        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName }) }); alert("עודכן בהצלחה!"); closeModals(); showAdminPanel(); } catch(e) { alert("שגיאה."); } finally { btn.innerText = origText; }
+    }
+
+    async function saveEditQuestion() {
+        let qId = document.getElementById('edit-q-id').value;
+        let qText = document.getElementById('edit-q-text').value.trim();
+        let opt0 = document.getElementById('edit-q-opt0').value.trim();
+        let opt1 = document.getElementById('edit-q-opt1').value.trim();
+        let opt2 = document.getElementById('edit-q-opt2').value.trim();
+        let opt3 = document.getElementById('edit-q-opt3').value.trim();
+        let correct = document.getElementById('edit-q-correct').value;
+        
+        if(!qText || correct === "") return alert("יש למלא את השאלה ואת התשובה הנכונה.");
+        
+        let btn = document.getElementById('btn-save-q'), origText = btn.innerText; btn.innerText = "שומר בענן...";
+        
+        try {
+            await fetch(`${apiURL}`, {
+                method: 'POST', body: JSON.stringify({
+                    action: 'editQuestion', adminId: currentUser.id, qId: qId, qText: qText,
+                    opt0: opt0, opt1: opt1, opt2: opt2, opt3: opt3, correct: correct
+                })
+            });
+            
+            // עדכון המערך הלוקאלי כדי לראות את השינוי מיד
+            let qIndex = questionsDB.findIndex(x => String(x.id) === String(qId));
+            if(qIndex > -1) {
+                questionsDB[qIndex].q = qText;
+                questionsDB[qIndex].a = [opt0, opt1, opt2, opt3];
+                questionsDB[qIndex].c = parseInt(correct);
+            }
+            alert("השאלה עודכנה בהצלחה באקסל!");
+            closeModals();
+            renderQuestion();
+        } catch(e) { alert("שגיאה בעדכון השאלה."); } finally { btn.innerText = origText; }
     }
 
     function triggerSaveProgress() {
@@ -429,6 +513,13 @@
         let currentBubble = document.getElementById(`bubble-${state.index}`);
         currentBubble.classList.add('active'); currentBubble.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         
+        // הרשאות עריכה לאדמין בלבד בתרגול
+        if (String(currentUser.id) === ADMIN_ID && state.mode === 'practice') {
+            document.getElementById('admin-edit-q-btn').classList.remove('hidden');
+        } else {
+            document.getElementById('admin-edit-q-btn').classList.add('hidden');
+        }
+
         document.getElementById('q-text').innerText = (state.index + 1) + ". " + q.q;
         const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
 
@@ -515,7 +606,7 @@
             document.getElementById('summary-score-display').style.color = score >= 70 ? 'var(--correct)' : 'var(--wrong)';
             document.getElementById('summary-stats-display').innerHTML = `ענית נכון על <b>${correct}</b> מתוך 50 שאלות.<br>זמן ממוצע לשאלה: <b>${avgTime}</b> שניות.`;
             
-            currentShareText = `היי! הרגע סיימתי מבחן מסכם והוצאתי ${score}! 🏆\nזמן ממוצע לשאלה: ${avgTime} שניות.\nחושב שאתה יכול לעקוף אותי?\n${window.location.origin}${window.location.pathname}?s=${score}&n=${encodeURIComponent(currentUser.name.split(" ")[0])}&t=${avgTime}`;
+            currentShareText = `היי! הרגע סיימתי מבחן קציני בטיחות והוצאתי ${score}! 🏆\nזמן ממוצע לשאלה: ${avgTime} שניות.\nחושב שאתה יכול לעקוף אותי?\n${window.location.origin}${window.location.pathname}?s=${score}&n=${encodeURIComponent(currentUser.name.split(" ")[0])}&t=${avgTime}`;
             
             document.getElementById('exam-summary-screen').classList.remove('hidden');
 
@@ -551,7 +642,7 @@
 
     async function loadPersonalStats() {
         document.getElementById('dropdown').classList.remove('show');
-        showLoader("שואב נתונים אישיים...");
+        showLoader("שואב נתונים אישיים מהענן...");
         try {
             const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json(); hideLoader();
             if(json.success) { globalLB = json.leaderboard; showPersonalStatsView(); }
@@ -564,7 +655,6 @@
         document.getElementById('lb-filters').style.display = 'none';
         document.getElementById('lb-title').innerText = "📊 הסטטיסטיקות שלי 📊";
         
-        // החיתוך החשוב: השוואה גם בסטרינג וגם חיתוך רווחים ואפסים
         let myExams = globalLB.filter(ex => parseInt(ex.id) === parseInt(currentUser.id) || String(ex.id).trim() === String(currentUser.id).trim());
         myExams.sort((a,b) => b.examId - a.examId);
         renderLB(myExams);
