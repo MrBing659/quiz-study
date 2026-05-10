@@ -55,7 +55,7 @@
         
         .input-pass { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box; text-align: center; }
         .remember-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 15px; font-weight: bold; }
-        #sys-msg { text-align: center; font-weight: bold; margin-top: 10px; color: var(--p); }
+        #sys-msg { text-align: center; font-weight: bold; margin-top: 10px; color: var(--p); min-height: 20px; }
 
         .lb-filters { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
         .lb-filter-btn { flex: 1; padding: 8px; border: 1px solid var(--p); background: transparent; color: var(--txt); border-radius: 5px; cursor: pointer; white-space: nowrap; font-size: 0.85rem;}
@@ -111,7 +111,7 @@
         <label class="remember-row">
             <input type="checkbox" id="remember-me" checked> זכור אותי במכשיר זה
         </label>
-        <button class="btn" onclick="manualLogin()">היכנס</button>
+        <button type="button" class="btn" onclick="manualLogin()">היכנס</button>
         <div id="sys-msg"></div>
     </div>
 
@@ -178,6 +178,11 @@
 </div>
 
 <script>
+    // פונקציות גישה בטוחה לזיכרון (מונע קריסה בגלישה בסתר)
+    function safeGetItem(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
+    function safeSetItem(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
+    function safeRemoveItem(key) { try { localStorage.removeItem(key); } catch(e) {} }
+
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
     const ADMIN_ID = "012345678";
 
@@ -186,28 +191,25 @@
     let timerInterval, qTimes = {}, currentQStart = 0;
     let currentUser = { id: "", name: "" };
     let cloudLastIdx = 0;
+    let appSettings = { dark: false, font: 16, autoNext: true };
 
-    let appSettings;
-    try {
-        appSettings = JSON.parse(localStorage.getItem('qbSettings')) || { dark: false, font: 16, autoNext: true };
-    } catch(e) {
-        appSettings = { dark: false, font: 16, autoNext: true };
-    }
-
-    // הוספת האזנה למקש אנטר במסך ההתחברות
-    function handleEnter(e) {
-        if (e.key === "Enter") manualLogin();
-    }
-    
     window.onload = () => {
+        try {
+            let savedSettings = safeGetItem('qbSettings');
+            if(savedSettings) {
+                let parsed = JSON.parse(savedSettings);
+                if(parsed && typeof parsed === 'object') appSettings = { ...appSettings, ...parsed };
+            }
+        } catch(e) {}
+        
         applySettings();
         
-        document.getElementById('fname').addEventListener('keypress', handleEnter);
-        document.getElementById('lname').addEventListener('keypress', handleEnter);
-        document.getElementById('id-num').addEventListener('keypress', handleEnter);
+        document.getElementById('fname').addEventListener('keypress', (e) => { if(e.key === "Enter") manualLogin(); });
+        document.getElementById('lname').addEventListener('keypress', (e) => { if(e.key === "Enter") manualLogin(); });
+        document.getElementById('id-num').addEventListener('keypress', (e) => { if(e.key === "Enter") manualLogin(); });
 
-        let savedID = localStorage.getItem('qbSavedID');
-        if (savedID) {
+        let savedID = safeGetItem('qbSavedID');
+        if (savedID && savedID !== "undefined" && savedID !== "null") {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('sys-msg').innerText = "מזהה משתמש שמור... ⏳";
             document.getElementById('sys-msg').style.display = 'block';
@@ -223,7 +225,7 @@
         document.getElementById('set-font').value = appSettings.font;
     }
     
-    function saveSettings() { localStorage.setItem('qbSettings', JSON.stringify(appSettings)); }
+    function saveSettings() { safeSetItem('qbSettings', JSON.stringify(appSettings)); }
     function toggleDark(isDark) { appSettings.dark = isDark; isDark ? document.body.classList.add('dark') : document.body.classList.remove('dark'); saveSettings(); }
     function updateFont(val) { appSettings.font = val; document.documentElement.style.setProperty('--base-font', val + 'px'); saveSettings(); }
     function goHome() { document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('menu').classList.remove('hidden'); }
@@ -239,10 +241,391 @@
         if(idNum.length < 8) { msg.innerText = "תעודת זהות לא תקינה."; msg.style.color="var(--wrong)"; return; }
         
         msg.style.display = 'block';
-        msg.innerText = "מתחבר... ⏳"; msg.style.color = "var(--p)";
+        msg.innerText = "מתחבר לשרת... ⏳"; msg.style.color = "var(--p)";
 
         try {
             const res = await fetch(`${apiURL}?action=login&id=${idNum}&fname=${fname}&lname=${lname}&auto=false`);
             const json = await res.json();
             handleLoginResponse(json, idNum, remember);
-        } catch (err) { msg.innerText = "שגיאת רשת. נסה שוב."; msg.style.color
+        } catch (err) { 
+            msg.innerText = "שגיאת רשת. ודא חיבור אינטרנט."; 
+            msg.style.color="var(--wrong)"; 
+            alert("שגיאה טכנית בהתחברות: " + err.message);
+        }
+    }
+
+    async function autoLogin(idNum) {
+        try {
+            const res = await fetch(`${apiURL}?action=login&id=${idNum}&auto=true`);
+            const json = await res.json();
+            if(json.error) {
+                safeRemoveItem('qbSavedID');
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('sys-msg').innerText = "נותקת מהמערכת. אנא התחבר מחדש.";
+                document.getElementById('sys-msg').style.color="var(--wrong)";
+            } else {
+                handleLoginResponse(json, idNum, true);
+            }
+        } catch (err) { 
+            document.getElementById('sys-msg').innerText = "שגיאת רשת בהתחברות אוטומטית."; 
+            document.getElementById('sys-msg').style.color="var(--wrong)"; 
+            document.getElementById('login-screen').classList.remove('hidden'); 
+        }
+    }
+
+    function handleLoginResponse(json, idNum, remember) {
+        const msg = document.getElementById('sys-msg');
+        if (json.error) {
+            safeRemoveItem('qbSavedID'); 
+            msg.innerText = json.msg; msg.style.color = "var(--wrong)";
+            document.getElementById('login-screen').classList.remove('hidden');
+        } else if (json.success) {
+            if(json.isFirstTime) alert(`ברוך הבא ${json.name}!\nהשם ננעל לתעודת הזהות שלך במערכת.`);
+            
+            currentUser.id = idNum;
+            currentUser.name = json.name;
+            cloudLastIdx = parseInt(json.lastIdx);
+            if (isNaN(cloudLastIdx)) cloudLastIdx = 0; 
+
+            if(remember) safeSetItem('qbSavedID', idNum);
+            
+            questionsDB = json.data.map(row => ({
+                id: row.ID, q: String(row.Question).trim(),
+                a: [row.Opt0, row.Opt1, row.Opt2, row.Opt3], c: parseInt(row.Correct)
+            }));
+            
+            if (currentUser.id === ADMIN_ID) document.getElementById('admin-panel-btn').classList.remove('hidden');
+
+            document.getElementById('top-name').innerText = currentUser.name.split(" ")[0];
+            document.getElementById('user-menu-btn').style.display = 'flex';
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('sys-msg').style.display = 'none';
+            document.getElementById('menu').classList.remove('hidden');
+        }
+    }
+
+    function logout() {
+        safeRemoveItem('qbSavedID');
+        location.reload();
+    }
+
+    async function showAdminPanel() {
+        document.getElementById('dropdown').classList.remove('show');
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+        document.getElementById('admin-screen').classList.remove('hidden');
+        
+        const list = document.getElementById('admin-list');
+        list.innerHTML = "טוען נתוני מערכת... ⏳";
+
+        try {
+            const res = await fetch(`${apiURL}?action=getAdminData&adminId=${currentUser.id}`);
+            const json = await res.json();
+            if(json.success) {
+                let html = "";
+                json.users.forEach(u => {
+                    let isOnline = u.status === "ACTIVE";
+                    let dotClass = isOnline ? "status-on" : "status-off";
+                    let displayIdx = parseInt(u.lastIdx);
+                    let lastQText = isNaN(displayIdx) ? "טרם התחיל" : (displayIdx + 1); 
+                    
+                    html += `
+                    <div class="lb-item" style="display:block; padding:12px; background:var(--bg); border-radius:8px; margin-bottom:10px;">
+                        <div style="font-weight:bold; font-size:1.1rem;">
+                            <span class="status-dot ${dotClass}"></span> ${u.name}
+                        </div>
+                        <div style="font-size:0.85rem; color:#666; margin: 5px 0;">
+                            ת"ז: ${u.id} <br>
+                            שאלה אחרונה: ${lastQText} <br>
+                            פעילות: ${u.lastSeen}
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button class="admin-action-btn btn-edit" onclick="editUserPrompt('${u.id}', '${u.name}')">✏️ ערוך</button>
+                            <button class="admin-action-btn btn-kick" onclick="disconnectUser('${u.id}', '${u.name}')">🔌 נתק</button>
+                        </div>
+                    </div>`;
+                });
+                list.innerHTML = html || "אין נתונים.";
+            }
+        } catch(e) { list.innerHTML = "שגיאה בטעינת פאנל ניהול."; }
+    }
+
+    async function disconnectUser(userId, userName) {
+        if(!confirm(`לנתק את ${userName} מהמערכת? הוא יידרש להתחבר מחדש.`)) return;
+        try {
+            await fetch(`${apiURL}`, {
+                method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId })
+            });
+            alert(`${userName} נותק.`);
+            showAdminPanel(); 
+        } catch(e) { alert("שגיאה."); }
+    }
+
+    function editUserPrompt(oldId, oldName) {
+        document.getElementById('edit-old-id').value = oldId;
+        document.getElementById('edit-name-input').value = oldName;
+        document.getElementById('edit-id-input').value = oldId;
+        document.getElementById('modal-backdrop').classList.remove('hidden');
+        document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+        document.getElementById('modal-backdrop').classList.add('hidden');
+        document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    async function saveEditUser() {
+        let oldId = document.getElementById('edit-old-id').value;
+        let newName = document.getElementById('edit-name-input').value.trim();
+        let newId = document.getElementById('edit-id-input').value.trim();
+        
+        if(!newName || !newId) { alert("השדות לא יכולים להיות ריקים."); return; }
+        if(newName === document.getElementById('edit-name-input').defaultValue && newId === oldId) { 
+            closeEditModal(); return; 
+        }
+
+        let btn = document.getElementById('btn-save-edit');
+        let origText = btn.innerText;
+        btn.innerText = "שומר... ⏳";
+
+        try {
+            await fetch(`${apiURL}`, {
+                method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName })
+            });
+            alert("הנתונים עודכנו בהצלחה!");
+            closeEditModal();
+            showAdminPanel();
+        } catch(e) { alert("שגיאה בעדכון."); }
+        finally { btn.innerText = origText; }
+    }
+
+    async function saveProgress() {
+        if (state.mode === 'practice') {
+            try {
+                const res = await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index }) });
+                const json = await res.json();
+                if(json.forceLogout) { 
+                    alert("נותקת על ידי מנהל המערכת. אנא התחבר מחדש.");
+                    logout();
+                }
+            } catch(e) {}
+        }
+    }
+
+    function startApp(mode) {
+        state.mode = mode; state.index = 0; qTimes = {};
+        if (mode === 'exam') state.questions = [...questionsDB].sort(() => 0.5 - Math.random()).slice(0, 50);
+        else { state.questions = [...questionsDB]; if (cloudLastIdx < state.questions.length) state.index = parseInt(cloudLastIdx); }
+        state.answers = new Array(state.questions.length).fill(null);
+        state.start = new Date();
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        document.getElementById('nav-footer').classList.remove('hidden');
+        if (mode === 'exam') { document.getElementById('exam-timer').classList.remove('hidden'); startTimer(); }
+        renderBubbles(); renderQuestion();
+    }
+
+    function renderBubbles() {
+        const container = document.getElementById('bubbles-container');
+        container.innerHTML = '';
+        state.questions.forEach((q, i) => {
+            const b = document.createElement('div'); b.className = 'bubble'; b.id = `bubble-${i}`; b.innerText = i + 1;
+            
+            if (state.answers[i] !== null) {
+                if (state.mode === 'exam') {
+                    b.classList.add('exam-answered');
+                } else {
+                    if (state.answers[i] === q.c) b.classList.add('answered');
+                    else b.classList.add('empty');
+                }
+            }
+            
+            b.onclick = () => { moveToIndex(i); }; container.appendChild(b);
+        });
+    }
+
+    function moveToIndex(i) {
+        if(currentQStart > 0) qTimes[state.index] = (qTimes[state.index] || 0) + (Date.now() - currentQStart);
+        state.index = i; renderQuestion(); saveProgress();
+    }
+
+    function move(step) { let newIdx = state.index + step; if (newIdx >= 0 && newIdx < state.questions.length) moveToIndex(newIdx); }
+
+    function renderQuestion() {
+        currentQStart = Date.now(); 
+        const q = state.questions[state.index]; const isExam = state.mode === 'exam';
+        
+        document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active'));
+        let currentBubble = document.getElementById(`bubble-${state.index}`);
+        currentBubble.classList.add('active');
+        currentBubble.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        
+        document.getElementById('q-text').innerText = (state.index + 1) + ". " + q.q;
+        const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
+
+        q.a.forEach((text, i) => {
+            if (!text && text !== 0) return;
+            const div = document.createElement('div'); div.className = 'option';
+            if (state.answers[state.index] === i) div.classList.add('selected');
+            if (!isExam && state.answers[state.index] !== null) {
+                if (i === q.c) div.classList.add('practice-correct'); else if (state.answers[state.index] === i) div.classList.add('practice-wrong');
+            }
+            div.innerText = text;
+            div.onclick = () => {
+                if(!isExam && state.answers[state.index] !== null) return; 
+                state.answers[state.index] = i;
+                
+                currentBubble.classList.remove('empty', 'answered', 'exam-answered');
+                if (isExam) {
+                    currentBubble.classList.add('exam-answered');
+                } else {
+                    if (i === q.c) currentBubble.classList.add('answered');
+                    else currentBubble.classList.add('empty');
+                }
+                
+                if (!isExam) {
+                    const fb = document.getElementById('feedback');
+                    if (i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; if(appSettings.autoNext) setTimeout(() => move(1), 800); }
+                    else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; }
+                }
+                renderQuestion(); 
+            };
+            optCont.appendChild(div);
+        });
+
+        let btn = document.getElementById('main-action-btn');
+        if (isExam && state.index === state.questions.length - 1) { btn.innerText = "סיים והגש"; btn.style.background = "var(--correct)"; btn.onclick = submitExam; } 
+        else { btn.innerText = "הבא"; btn.style.background = "var(--p)"; btn.onclick = () => move(1); }
+    }
+
+    function startTimer() {
+        state.time = 90 * 60; clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            state.time--; let m = Math.floor(state.time / 60); let s = state.time % 60;
+            document.getElementById('exam-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+            if (state.time <= 0) { clearInterval(timerInterval); alert('הזמן נגמר!'); submitExam(); }
+        }, 1000);
+    }
+
+    async function submitExam() {
+        if(currentQStart > 0) qTimes[state.index] = (qTimes[state.index] || 0) + (Date.now() - currentQStart);
+        let unanswered = state.answers.filter(a => a === null).length;
+        if (unanswered > 0) {
+            if (!confirm(`שים לב! לא ענית על ${unanswered} שאלות. להגיש בכל זאת?`)) return;
+        }
+
+        document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden');
+        
+        let correct = 0; state.questions.forEach((q, i) => { if (state.answers[i] === q.c) correct++; });
+        let score = Math.round((correct / state.questions.length) * 100);
+        let durationMins = Math.round((new Date() - state.start) / 1000 / 60);
+
+        let timesArr = Object.values(qTimes).map(t => t / 1000);
+        let avgTime = timesArr.length ? (timesArr.reduce((a,b)=>a+b,0) / timesArr.length).toFixed(1) : 0;
+        let maxTime = timesArr.length ? Math.max(...timesArr).toFixed(1) : 0;
+        let minTime = timesArr.length ? Math.min(...timesArr).toFixed(1) : 0;
+        const stats = { avg: avgTime, max: maxTime, min: minTime };
+
+        alert(`המבחן הסתיים!\nציון: ${score}\nמעבד נתונים ושומר לשרת...`);
+        try {
+            await fetch(`${apiURL}`, {
+                method: 'POST', body: JSON.stringify({ action: 'saveExam', examId: Date.now(), id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: durationMins, date: new Date().toLocaleString('he-IL'), stats: stats })
+            });
+        } catch(e) {}
+        location.reload();
+    }
+
+    async function loadLeaderboard() {
+        document.getElementById('dropdown').classList.remove('show');
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+        document.getElementById('history-page').classList.remove('hidden');
+        document.getElementById('lb-filters').style.display = 'flex';
+        document.getElementById('lb-title').innerText = "🏆 טבלת שיאים כיתתית 🏆";
+        
+        const list = document.getElementById('history-list'); list.innerHTML = "טוען נתונים מהענן... ⏳";
+        try {
+            const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json();
+            if(json.success) { globalLB = json.leaderboard; sortLB('score'); }
+        } catch (e) { list.innerHTML = "שגיאה בטעינת הנתונים."; }
+    }
+
+    function showPersonalStats() {
+        document.getElementById('dropdown').classList.remove('show');
+        if(globalLB.length === 0) { alert("אנא כנס קודם לטבלת השיאים כדי לטעון נתונים מהשרת."); return; }
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+        document.getElementById('history-page').classList.remove('hidden');
+        document.getElementById('lb-filters').style.display = 'none';
+        document.getElementById('lb-title').innerText = "📊 הסטטיסטיקות שלי 📊";
+
+        let myExams = globalLB.filter(ex => ex.id === currentUser.id);
+        myExams.sort((a,b) => b.examId - a.examId);
+        renderLB(myExams);
+    }
+
+    function sortLB(type) {
+        document.querySelectorAll('.lb-filter-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        let displayData = [];
+        if (type === 'score' || type === 'time') {
+            displayData = [...globalLB];
+            if (type === 'score') displayData.sort((a,b) => b.score - a.score || a.duration - b.duration);
+            else displayData.sort((a,b) => a.duration - b.duration || b.score - a.score);
+            renderLB(displayData);
+        } else {
+            let userMap = {};
+            globalLB.forEach(ex => {
+                if(!userMap[ex.id]) userMap[ex.id] = { name: ex.name, count: 0, totalScore: 0 };
+                userMap[ex.id].count++; userMap[ex.id].totalScore += ex.score;
+            });
+            displayData = Object.values(userMap).map(u => ({ name: u.name, count: u.count, avgScore: Math.round(u.totalScore / u.count) }));
+            if(type === 'count') displayData.sort((a,b) => b.count - a.count); else displayData.sort((a,b) => b.avgScore - a.avgScore);
+            renderUserLB(displayData);
+        }
+    }
+
+    function renderLB(data) {
+        const list = document.getElementById('history-list');
+        if(data.length === 0) { list.innerHTML = "אין מבחנים במערכת."; return; }
+        let html = '';
+        data.forEach((ex, idx) => {
+            let medal = idx === 0 ? "🏆" : idx === 1 ? "🥇" : idx === 2 ? "🥈" : idx === 3 ? "🥉" : `#${idx+1}`;
+            let isAdmin = currentUser.id === ADMIN_ID;
+            html += `
+            <div class="lb-item">
+                <div style="flex:1;">
+                    <div style="font-weight:bold; font-size:1.1em;">${ex.name} ${medal}</div>
+                    <div style="font-size:0.85em; color:#777;">${ex.date}</div>
+                    <div>ציון: <b style="color:${ex.score>=70?'var(--correct)':'var(--wrong)'}">${ex.score}</b> | זמן: ${ex.duration} דק'</div>
+                    <div class="stats-box">
+                        ⏱️ ממוצע לשאלה: ${ex.stats.avg || 0} שניות<br>
+                        🐢 הכי איטית: ${ex.stats.max || 0} שנ' | 🐇 הכי מהירה: ${ex.stats.min || 0} שנ'
+                    </div>
+                </div>
+                ${isAdmin ? `<button class="del-btn" onclick="deleteExam(${ex.examId})">🗑️ מחיקה</button>` : ''}
+            </div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    function renderUserLB(data) {
+        const list = document.getElementById('history-list'); let html = '';
+        data.forEach((u, idx) => {
+            let medal = idx === 0 ? "🏆" : idx === 1 ? "🥇" : idx === 2 ? "🥈" : idx === 3 ? "🥉" : `#${idx+1}`;
+            html += `
+            <div class="lb-item">
+                <div style="flex:1;">
+                    <div style="font-weight:bold; font-size:1.1em;">${u.name} ${medal}</div>
+                    <div style="margin-top:5px;">מבחנים שעשה: <b>${u.count}</b><br>ממוצע הצלחה כללי: <b>${u.avgScore}%</b></div>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    async function deleteExam(examId) {
+        if(!confirm("למחוק מבחן זה מהענן?")) return;
+        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'deleteExam', examId: examId, adminId: currentUser.id }) }); loadLeaderboard(); } 
+        catch(e) { alert("שגיאה במחיקה"); }
+    }
+</script>
+</body>
+</html>
