@@ -364,8 +364,20 @@
             cloudLastIdx = parseInt(json.lastIdx) || 0; 
             if(remember) safeSetItem('qbSavedID', idNum);
             
-            questionsDB = json.data.map(row => ({ id: row.ID, q: String(row.Question).trim(), a: [row.Opt0, row.Opt1, row.Opt2, row.Opt3], c: parseInt(row.Correct) }));
-            numQuestionsDB = (json.numData || []).map(row => ({ id: row.ID, q: String(row.Question).trim(), a: [row.Opt0, row.Opt1, row.Opt2, row.Opt3], c: parseInt(row.Correct) }));
+            const parseRow = row => ({
+                id: row.ID || row.Id || row.id,
+                q: String(row.Question || row.QUESTION || row.question || "").trim(),
+                a: [
+                    row.Opt0 !== undefined ? row.Opt0 : row.OPT0,
+                    row.Opt1 !== undefined ? row.Opt1 : row.OPT1,
+                    row.Opt2 !== undefined ? row.Opt2 : row.OPT2,
+                    row.Opt3 !== undefined ? row.Opt3 : row.OPT3
+                ],
+                c: parseInt(row.Correct !== undefined ? row.Correct : row.CORRECT)
+            });
+
+            questionsDB = json.data.map(parseRow);
+            numQuestionsDB = (json.numData || []).map(parseRow);
             
             allQuestionsDB = [...questionsDB]; 
             
