@@ -200,7 +200,7 @@
             <button class="lb-filter-btn" id="sort-btn-score" onclick="sortLB('score', this)">ציון גבוה</button>
             <button class="lb-filter-btn" onclick="sortLB('time', this)">הכי מהיר</button>
             <button class="lb-filter-btn" onclick="sortLB('count', this)">מבחנים</button>
-            <button class="lb-filter-btn" onclick="sortLB('avg', this)">ממוצע ציון</button>
+            <button class="lb-filter-btn" onclick="sortLB('practice', this)">💪 אלופי התרגול</button>
         </div>
         <div id="history-list"></div>
         <button class="btn" style="background:#95a5a6; margin-top:15px;" onclick="goHome()">חזור לתפריט</button>
@@ -252,7 +252,7 @@
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
     const ADMIN_ID = "012345678";
 
-    let questionsDB = [], numQuestionsDB = [], allQuestionsDB = [], globalLB = [], globalLogs = [];
+    let questionsDB = [], numQuestionsDB = [], allQuestionsDB = [], globalLB = [], globalPracticeLB = [], globalLogs = [];
     let state = { mode: '', questions: [], index: 0, answers: [], start: null, time: 90 * 60 };
     let timerInterval, qTimes = {}, currentQStart = 0;
     let currentUser = { id: "", name: "", role: 2 };
@@ -261,6 +261,12 @@
     let appSettings = { dark: false, font: 16, autoNext: true };
     let currentShareText = "";
     let saveTimeout = null;
+
+    let myDeviceId = safeGetItem('qbDeviceId');
+    if (!myDeviceId) {
+        myDeviceId = Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        safeSetItem('qbDeviceId', myDeviceId);
+    }
 
     function handleEnter(e) { if (e.key === "Enter") manualLogin(); }
     
@@ -332,16 +338,16 @@
         if(!fname || !lname || !idNum) return alert("מלא את כל השדות."); if(idNum.length < 8) return alert("ת\"ז לא תקינה.");
         showLoader("מתחבר לשרת...");
         try {
-            const res = await fetch(`${apiURL}?action=login&id=${idNum}&fname=${fname}&lname=${lname}&auto=false`);
+            const res = await fetch(`${apiURL}?action=login&id=${idNum}&fname=${fname}&lname=${lname}&auto=false&deviceId=${myDeviceId}`);
             handleLoginResponse(await res.json(), idNum, remember);
         } catch (err) { hideLoader(); alert("שגיאת רשת. ודא חיבור אינטרנט."); }
     }
 
     async function autoLogin(idNum) {
         try {
-            const res = await fetch(`${apiURL}?action=login&id=${idNum}&auto=true`);
+            const res = await fetch(`${apiURL}?action=login&id=${idNum}&auto=true&deviceId=${myDeviceId}`);
             const json = await res.json();
-            if(json.error) { hideLoader(); safeRemoveItem('qbSavedID'); document.getElementById('login-screen').classList.remove('hidden'); alert("נותקת. אנא התחבר מחדש."); } 
+            if(json.error) { hideLoader(); safeRemoveItem('qbSavedID'); document.getElementById('login-screen').classList.remove('hidden'); alert(json.msg || "נותקת. אנא התחבר מחדש."); } 
             else { handleLoginResponse(json, idNum, true); }
         } catch (err) { hideLoader(); document.getElementById('login-screen').classList.remove('hidden'); alert("שגיאה בהתחברות האוטומטית."); }
     }
@@ -398,7 +404,24 @@
                     let roleBadge = u.role === 1 ? `<span class="role-badge role-1">מודרייטור</span>` : ``;
                     let roleBtnTxt = u.role === 1 ? "⬇️ למשתמש" : "⬆️ למודרייטור"; let newRoleCode = u.role === 1 ? 2 : 1;
                     
-                    html += `<div class="lb-item" style="display:block; padding:12px; background:var(--bg); border-radius:8px; margin-bottom:10px;"><div style="font-weight:bold; font-size:1.1rem;"><span class="status-dot ${dotClass}"></span> ${roleBadge}${u.name}</div><div style="font-size:0.85rem; color:#666; margin: 5px 0;">ת"ז: ${u.id} <br>שאלה אחרונה: ${lastQText} <br>פעילות: ${u.lastSeen}</div><div style="display:flex; flex-wrap:wrap; gap:10px;"><button class="admin-action-btn btn-edit" onclick="editUserPrompt('${u.id}', '${u.name}')">✏️ ערוך</button><button class="admin-action-btn" style="background:#8e44ad; color:white;" onclick="changeRole('${u.id}', ${newRoleCode}, '${u.name}')">${roleBtnTxt}</button><button class="admin-action-btn btn-kick" onclick="disconnectUser('${u.id}', '${u.name}')">🔌 נתק</button></div></div>`;
+                    let devicesHtml = "";
+                    if (u.devices && u.devices.length > 0) {
+                        u.devices.forEach((d, i) => {
+                            devicesHtml += `<div style="font-size:0.8rem; background:var(--card); padding:5px; margin:2px 0; border:1px solid #ccc; border-radius:3px;">מכשיר ${i+1} (נוצר: ${d.added}) <button onclick="removeDevice('${u.id}', '${d.id}')" style="float:left; background:var(--wrong); color:white; border:none; border-radius:3px; cursor:pointer; padding:2px 5px;">🗑️</button></div>`;
+                        });
+                    } else { devicesHtml = "<div style='font-size:0.8rem;'>אין מכשירים רשומים</div>"; }
+                    
+                    let tempApprHtml = "";
+                    if (u.tempApproval) {
+                        let tTime = new Date(u.tempApproval).getTime();
+                        if (new Date().getTime() < tTime) {
+                            tempApprHtml = `<div style="font-size:0.8rem; color:var(--p); font-weight:bold; margin-top:5px;">אישור זמני בתוקף עד: ${new Date(u.tempApproval).toLocaleString('he-IL')}</div>`;
+                        }
+                    }
+
+                    html += `<div class="lb-item" style="display:block; padding:12px; background:var(--bg); border-radius:8px; margin-bottom:10px;"><div style="font-weight:bold; font-size:1.1rem;"><span class="status-dot ${dotClass}"></span> ${roleBadge}${u.name}</div><div style="font-size:0.85rem; color:#666; margin: 5px 0;">ת"ז: ${u.id} <br>שאלה אחרונה: ${lastQText} <br>פעילות: ${u.lastSeen}</div>
+                    <div style="background:#e8f4f8; padding:8px; border-radius:5px; margin-bottom:10px;">${devicesHtml}${tempApprHtml}</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:10px;"><button class="admin-action-btn btn-edit" onclick="editUserPrompt('${u.id}', '${u.name}')">✏️ ערוך</button><button class="admin-action-btn" style="background:#8e44ad; color:white;" onclick="changeRole('${u.id}', ${newRoleCode}, '${u.name}')">${roleBtnTxt}</button><button class="admin-action-btn" style="background:#f39c12; color:white;" onclick="tempApprove('${u.id}', '${u.name}')">⏱️ אישור זמני</button><button class="admin-action-btn btn-kick" onclick="disconnectUser('${u.id}', '${u.name}')">🔌 נתק</button></div></div>`;
                 });
                 document.getElementById('admin-list').innerHTML = html || "אין נתונים.";
             }
@@ -407,6 +430,8 @@
 
     async function changeRole(userId, newRoleCode, userName) { if(!confirm(`לשנות הרשאה למשתמש ${userName}?`)) return; showLoader("משנה הרשאה..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'changeRole', adminId: currentUser.id, targetId: userId, newRole: newRoleCode }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
     async function disconnectUser(userId, userName) { if(!confirm(`לנתק את ${userName}?`)) return; showLoader("מנתק..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId }) }); alert(`${userName} נותק.`); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
+    async function tempApprove(userId, userName) { if(!confirm(`לתת אישור התחברות זמני (ל-12 שעות) למשתמש ${userName}?`)) return; showLoader("מאשר..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'tempApprove', adminId: currentUser.id, targetId: userId }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
+    async function removeDevice(userId, devId) { if(!confirm(`למחוק את המכשיר הזה מהמערכת?`)) return; showLoader("מוחק מכשיר..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'removeDevice', adminId: currentUser.id, targetId: userId, deviceId: devId }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
     function editUserPrompt(oldId, oldName) { document.getElementById('edit-old-id').value = oldId; document.getElementById('edit-name-input').value = oldName; document.getElementById('edit-id-input').value = oldId; document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('edit-modal').classList.remove('hidden'); }
     
     async function saveEditUser() {
@@ -551,9 +576,7 @@
     }
 
     function triggerSaveProgress() {
-        // שמירת התקדמות רק לתרגול הכללי כדי לא לשבש את האינדקס
         if (state.mode !== 'practice') return;
-        
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
             try {
@@ -572,7 +595,6 @@
 
     function startApp(mode) {
         state.mode = mode; state.index = 0; qTimes = {};
-        
         let pool = (mode === 'numExam' || mode === 'numPractice') ? numQuestionsDB : questionsDB;
         
         if (mode === 'exam' || mode === 'numExam') { 
@@ -585,9 +607,7 @@
             state.questions = [...pool]; 
             if (mode === 'practice') {
                 if (cloudLastIdx < state.questions.length) state.index = parseInt(cloudLastIdx); 
-                // state.answers כבר נטען מהשרת להתקדמות קודמת
             } else {
-                // לתרגול מספרי מתחילים מ-0 נקי בלי שמירה
                 state.index = 0;
                 state.answers = new Array(state.questions.length).fill(null);
             }
@@ -696,12 +716,12 @@
 
     async function loadLeaderboard() {
         document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('history-page').classList.remove('hidden'); document.getElementById('lb-filters').style.display = 'flex'; document.getElementById('lb-title').innerText = "🏆 טבלת שיאים כיתתית 🏆"; const list = document.getElementById('history-list'); list.innerHTML = ""; showLoader("טוען טבלת שיאים...");
-        try { const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json(); hideLoader(); if(json.success) { globalLB = json.leaderboard; let defaultBtn = document.getElementById('sort-btn-score'); sortLB('score', defaultBtn); } } catch (e) { hideLoader(); list.innerHTML = "שגיאה בטעינת הנתונים."; }
+        try { const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json(); hideLoader(); if(json.success) { globalLB = json.leaderboard; globalPracticeLB = json.practiceLb; let defaultBtn = document.getElementById('sort-btn-score'); sortLB('score', defaultBtn); } } catch (e) { hideLoader(); list.innerHTML = "שגיאה בטעינת הנתונים."; }
     }
 
     async function loadPersonalStats() {
         document.getElementById('dropdown').classList.remove('show'); showLoader("שואב נתונים אישיים מהענן...");
-        try { const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json(); hideLoader(); if(json.success) { globalLB = json.leaderboard; showPersonalStatsView(); } } catch(e) { hideLoader(); alert("שגיאה במשיכת נתונים."); }
+        try { const res = await fetch(`${apiURL}?action=getLeaderboard`); const json = await res.json(); hideLoader(); if(json.success) { globalLB = json.leaderboard; globalPracticeLB = json.practiceLb; showPersonalStatsView(); } } catch(e) { hideLoader(); alert("שגיאה במשיכת נתונים."); }
     }
 
     function showPersonalStatsView() {
@@ -712,8 +732,25 @@
 
     function sortLB(type, btnElement) {
         document.querySelectorAll('.lb-filter-btn').forEach(b => b.classList.remove('active')); if(btnElement) btnElement.classList.add('active'); let displayData = [];
+        
+        if (type === 'practice') {
+            displayData = [...globalPracticeLB];
+            displayData.sort((a,b) => b.count - a.count);
+            renderPracticeLB(displayData);
+            return;
+        }
+
         if (type === 'score' || type === 'time') { displayData = [...globalLB]; if (type === 'score') displayData.sort((a,b) => b.score - a.score || a.duration - b.duration); else displayData.sort((a,b) => a.duration - b.duration || b.score - a.score); renderLB(displayData); } 
         else { let userMap = {}; globalLB.forEach(ex => { if(!userMap[ex.id]) userMap[ex.id] = { name: ex.name, count: 0, totalScore: 0 }; userMap[ex.id].count++; userMap[ex.id].totalScore += ex.score; }); displayData = Object.values(userMap).map(u => ({ name: u.name, count: u.count, avgScore: Math.round(u.totalScore / u.count) })); if(type === 'count') displayData.sort((a,b) => b.count - a.count); else displayData.sort((a,b) => b.avgScore - a.avgScore); renderUserLB(displayData); }
+    }
+
+    function renderPracticeLB(data) {
+        const list = document.getElementById('history-list'); if(data.length === 0) { list.innerHTML = "אין נתוני תרגול."; return; } let html = '';
+        data.forEach((u, idx) => { 
+            let medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx+1}`; 
+            html += `<div class="lb-item"><div style="flex:1;"><div style="font-weight:bold; font-size:1.1em;">${u.name} ${medal}</div><div style="margin-top:5px; color:var(--p); font-weight:bold;">פתר/ה ${u.count} שאלות נטו בתרגול הכללי</div></div></div>`; 
+        }); 
+        list.innerHTML = html;
     }
 
     function renderLB(data) {
