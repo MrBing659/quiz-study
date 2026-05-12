@@ -28,6 +28,7 @@
         .bubble.active { border: 2px solid var(--p); font-weight: bold; background: #e7f1ff; color: #2c3e50;}
         .bubble.answered { background: #dff0d8; border-color: var(--correct); color: #3c763d; }
         .bubble.empty { background: #f2dede; border-color: var(--wrong); color: #a94442; }
+        .bubble.exam-answered { background: var(--exam-ans); border-color: gray; color: #fff; }
 
         .option { background: var(--bg); padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid transparent; cursor: pointer; font-size: 1.05em; transition: 0.2s; line-height: 1.4; }
         .selected { border-color: var(--p); background: #e7f1ff; color: #2c3e50;}
@@ -50,11 +51,19 @@
         .spinner { border: 5px solid #ccc; border-top: 5px solid var(--p); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .device-box { font-size: 0.75rem; background: var(--bg); padding: 8px; margin: 5px 0; border-radius: 6px; position: relative;}
-        .review-btn { background: var(--p); color: white; border: none; border-radius: 5px; padding: 8px; cursor: pointer; font-size: 0.85rem; flex:1; text-align:center; font-weight:bold;}
-        .sugg-label { font-size: 0.85rem; font-weight: bold; color: var(--p); display: block; margin-bottom: 4px; }
+        .lb-item { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; flex-direction: column; gap: 5px; }
+        .stats-box { background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; font-size: 0.85rem; line-height: 1.5; }
+        .lb-filters { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
+        .lb-filter-btn { flex: 1; padding: 8px; border: 1px solid var(--p); background: transparent; color: var(--txt); border-radius: 5px; cursor: pointer; white-space: nowrap; font-size: 0.85rem;}
+        .lb-filter-btn.active { background: var(--p); color: white; font-weight: bold; }
         
-        #sugg-q-display { font-weight: bold; background: rgba(52, 152, 219, 0.08); padding: 12px; border-radius: 8px; border-right: 4px solid var(--p); margin-bottom: 15px; line-height: 1.4; font-size: 1rem; }
+        .diff-del { color: var(--wrong); text-decoration: line-through; padding: 0 2px; }
+        .diff-add { color: #0000ff; font-weight: bold; padding: 0 2px; }
+        
+        .review-btn { background: var(--p); color: white; border: none; border-radius: 5px; padding: 8px; cursor: pointer; font-size: 0.85rem; flex:1; text-align:center; font-weight:bold;}
+        .del-btn { background: var(--wrong); color: white; border: none; border-radius: 5px; padding: 8px; cursor: pointer; }
+        .sugg-label { font-size: 0.85rem; font-weight: bold; color: var(--p); display: block; margin-bottom: 4px; }
+        #sugg-q-display { font-weight: bold; background: rgba(52, 152, 219, 0.08); padding: 12px; border-radius: 8px; border-right: 4px solid var(--p); margin-bottom: 15px; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -81,12 +90,12 @@
 
 <div class="container">
     <div id="login-screen" class="card" style="margin-top: 50px;">
-        <h2>התחברות</h2>
+        <h2>התחברות למערכת</h2>
         <input type="text" id="fname" class="input-pass" placeholder="שם פרטי">
         <input type="text" id="lname" class="input-pass" placeholder="שם משפחה">
         <input type="tel" id="id-num" class="input-pass" placeholder="תעודת זהות">
         <button class="btn" onclick="manualLogin()">היכנס</button>
-        <div id="sys-msg" style="text-align:center; color:var(--wrong); font-size:0.9rem; margin-top:10px;"></div>
+        <div id="sys-msg" style="text-align:center; color:var(--wrong); margin-top:10px;"></div>
     </div>
 
     <div id="menu" class="hidden">
@@ -95,10 +104,10 @@
         <div class="card">
             <button class="btn" onclick="startApp('practice')">📝 תרגול - כולל</button>
             <button class="btn" onclick="startApp('exam')">🎓 מבחן - כולל (50 שאלות)</button>
-            <button class="btn" style="background:#f39c12;" onclick="startApp('numPractice')">🔢 תרגול - מספריות</button>
-            <button class="btn" style="background:#e67e22;" onclick="startApp('numExam')">🏆 מבחן - מספריות (50)</button>
+            <button class="btn" style="background:#f39c12;" onclick="startApp('numPractice')">🔢 תרגול - שאלות מספריות</button>
+            <button class="btn" style="background:#e67e22;" onclick="startApp('numExam')">🏆 מבחן - שאלות מספריות (50)</button>
             <button class="btn btn-weak" id="weakness-btn" onclick="startWeaknesses()">🛠️ מקצה שיפורים (<span id="weak-count">0</span>)</button>
-            <button class="btn" style="background:#95a5a6;" onclick="loadLeaderboard()">📊 טבלת שיאים</button>
+            <button class="btn" style="background:#95a5a6;" onclick="loadLeaderboard()">📊 טבלת שיאים כיתתית</button>
         </div>
     </div>
 
@@ -110,55 +119,54 @@
             <div id="options"></div>
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:10px;"></div>
             <div style="display:flex; justify-content:space-between; margin-top: 15px; font-size: 0.85rem;">
-                <span style="color:var(--wrong); text-decoration:underline; cursor:pointer;" onclick="openSuggestionModal()">💡 המלץ לשינוי / דווח טעות</span>
+                <span style="color:var(--wrong); text-decoration:underline; cursor:pointer;" onclick="openSuggestionModal()">💡 המלץ לשינוי</span>
                 <span style="color:var(--p); text-decoration:underline; cursor:pointer;" onclick="shareQuestion()">📤 שתף שאלה</span>
             </div>
         </div>
     </div>
 
-    <div id="sugg-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:95%; max-width:500px; max-height:90vh; overflow-y:auto; box-shadow:0 0 25px rgba(0,0,0,0.5);">
-        <h3 style="margin-top:0;">💡 המלצה לשינוי בשאלה</h3>
-        <div id="sugg-q-display"></div>
-        <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">ניתן לערוך את נוסח התשובות או לבחור את התשובה הנכונה.</p>
-        
-        <div id="sugg-inputs"></div>
-        
-        <span class="sugg-label">התשובה הנכונה לדעתך:</span>
-        <select id="sugg-correct" class="input-pass" style="text-align:right;">
-            <option value="1">תשובה 1</option><option value="2">תשובה 2</option><option value="3">תשובה 3</option><option value="4">תשובה 4</option><option value="5">תשובה אחרת (רשום למטה)</option>
-        </select>
-        
-        <span class="sugg-label">הערה נוספת (אופציונלי):</span>
-        <textarea id="sugg-comment" class="input-pass" style="text-align:right; height:70px; resize:vertical;" placeholder="למשל: 'המרחק הנכון הוא 12 מטר ולא 10'"></textarea>
-        
-        <div style="display:flex; gap:10px;">
-            <button class="btn" style="background:var(--correct); flex:2;" id="btn-submit-sugg" onclick="submitSuggestion()">שלח המלצה</button>
-            <button class="btn" style="background:#bdc3c7; flex:1;" onclick="closeModals()">ביטול</button>
-        </div>
-    </div>
-
-    <div id="admin-sugg-screen" class="hidden card">
-        <h2>🔔 הצעות לשינוי מהמשתמשים</h2>
-        <div id="admin-sugg-list" style="margin-top:15px;"></div>
-        <button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור</button>
-    </div>
-
     <div id="history-page" class="hidden card">
-        <h2 id="lb-title">📊 טבלת שיאים 📊</h2>
+        <h2 id="lb-title">🏆 טבלת שיאים כיתתית 🏆</h2>
         <div class="lb-filters">
-            <button class="lb-filter-btn active" onclick="sortLB('score', this)">🏆 ציונים</button>
+            <button class="lb-filter-btn active" id="sort-score" onclick="sortLB('score', this)">🏆 ציונים</button>
             <button class="lb-filter-btn" onclick="sortLB('practice', this)">💪 תרגול</button>
             <button class="lb-filter-btn" onclick="sortLB('contrib', this)">🎖️ תורמים</button>
         </div>
         <div id="history-list"></div>
+        <button class="btn" style="background:#95a5a6; margin-top:15px;" onclick="goHome()">חזור לתפריט</button>
+    </div>
+
+    <div id="review-screen" class="hidden card">
+        <h2>📋 תחקיר מבחן</h2>
+        <h3 id="review-score" style="text-align:center; font-size:2.2rem; margin:10px 0;"></h3>
+        <div id="review-list"></div>
+        <button class="btn" style="background:#95a5a6; margin-top:15px;" onclick="document.getElementById('review-screen').classList.add('hidden'); document.getElementById('history-page').classList.remove('hidden'); window.scrollTo(0,0);">חזור לטבלה</button>
+    </div>
+
+    <div id="admin-sugg-screen" class="hidden card">
+        <h2>🔔 הצעות לשינוי מהמשתמשים</h2>
+        <p style="font-size:0.8rem; color:#666;">ניתן לערוך את הטקסט בתיבות לפני הלחיצה על "אשר והחל".</p>
+        <div id="admin-sugg-list" style="margin-top:15px;"></div>
         <button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור</button>
     </div>
 
+    <div id="sugg-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:95%; max-width:500px; max-height:90vh; overflow-y:auto; box-shadow:0 0 25px rgba(0,0,0,0.5);">
+        <h3>💡 המלצה לשינוי בשאלה</h3>
+        <div id="sugg-q-display"></div>
+        <div id="sugg-inputs"></div>
+        <span class="sugg-label">התשובה הנכונה לדעתך:</span>
+        <select id="sugg-correct" class="input-pass">
+            <option value="1">תשובה 1</option><option value="2">תשובה 2</option><option value="3">תשובה 3</option><option value="4">תשובה 4</option><option value="5">תשובה אחרת (רשום למטה)</option>
+        </select>
+        <textarea id="sugg-comment" class="input-pass" style="height:70px; text-align:right;" placeholder="הערה או תשובה חדשה..."></textarea>
+        <div style="display:flex; gap:10px;"><button class="btn" style="background:var(--correct); flex:2;" onclick="submitSuggestion()">שלח המלצה</button><button class="btn" style="background:#ccc; flex:1;" onclick="closeModals()">ביטול</button></div>
+    </div>
+
     <div id="exam-summary-screen" class="hidden card" style="text-align: center;">
-        <h2 id="summary-title">🎉 המבחן הסתיים! 🎉</h2>
-        <div style="font-size:5rem; font-weight:bold;" id="summary-score-display">0</div>
-        <div style="font-size:1.1rem; margin-bottom:20px;" id="summary-stats-display"></div>
-        <button class="btn" style="background:#25D366;" onclick="shareToWhatsApp()">📲 שתף תוצאה</button>
+        <h2>🎉 המבחן הסתיים! 🎉</h2>
+        <div style="font-size:5.5rem; font-weight:bold;" id="summary-score-display">0</div>
+        <div style="font-size:1.1rem; margin-bottom:20px; line-height:1.6;" id="summary-stats-display"></div>
+        <button class="btn" style="background:#25D366;" onclick="shareToWhatsApp()">📲 שתף תוצאה בוואטסאפ</button>
         <button class="btn" style="background:#95a5a6;" onclick="goHomeFull()">חזור לראשי</button>
     </div>
 </div>
@@ -217,10 +225,7 @@
         document.getElementById('weak-count').innerText = (j.weaknesses || []).length;
         
         if (j.role === 0) {
-            document.getElementById('admin-panel-btn').classList.remove('hidden');
-            document.getElementById('admin-logs-btn').classList.remove('hidden');
-            document.getElementById('mod-qdb-btn').classList.remove('hidden');
-            document.getElementById('admin-sugg-btn').classList.remove('hidden');
+            document.querySelectorAll('.hidden[id*="admin"], .hidden[id*="mod"]').forEach(el => el.classList.remove('hidden'));
             if (j.suggestionsCount > 0) {
                 document.getElementById('notif-badge').classList.remove('hidden');
                 document.getElementById('notif-badge').innerText = j.suggestionsCount;
@@ -230,16 +235,16 @@
     }
 
     function startApp(mode) {
-        state.mode = mode; state.index = 0;
+        state.mode = mode; state.index = 0; state.start = new Date();
         let pool = (mode.includes('num')) ? numQuestionsDB : questionsDB;
         if(mode.includes('Exam')) {
             state.questions = [...pool].sort(()=>0.5-Math.random()).slice(0,50);
             state.answers = new Array(50).fill(null);
             document.getElementById('exam-timer').classList.remove('hidden');
-            startTimer();
         } else {
             state.questions = [...pool];
             state.answers = (mode==='practice') ? state.answers : new Array(pool.length).fill(null);
+            document.getElementById('exam-timer').classList.add('hidden');
         }
         document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
         document.getElementById('quiz-screen').classList.remove('hidden');
@@ -274,52 +279,90 @@
             d.innerText = t; d.onclick = () => {
                 if(state.answers[state.index] !== null && !state.mode.includes('Exam')) return;
                 state.answers[state.index] = i; renderBubbles(); renderQuestion();
-                if(state.mode==='practice') saveProgress();
             };
             optCont.appendChild(d);
         });
+        
+        let btn = document.getElementById('main-action-btn');
+        if(state.index === state.questions.length - 1 && state.mode.includes('Exam')) {
+            btn.innerText = "סיים והגש"; btn.style.background = "var(--correct)";
+            btn.onclick = submitExam;
+        } else {
+            btn.innerText = "הבא"; btn.style.background = "var(--p)";
+            btn.onclick = () => move(1);
+        }
     }
 
     function move(s) { state.index += s; if(state.index < 0) state.index=0; if(state.index >= state.questions.length) state.index = state.questions.length-1; renderQuestion(); }
 
-    function openSuggestionModal() {
-        const q = state.questions[state.index];
-        document.getElementById('sugg-q-display').innerText = q.q;
-        let h = '';
-        q.a.forEach((t, i) => {
-            h += `<span class="sugg-label">תשובה ${i+1}:</span>
-                  <textarea id="s-opt${i}" class="input-pass" style="height:auto; min-height:45px; text-align:right; font-size:0.9rem;" 
-                  oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">${t}</textarea>`;
-        });
-        document.getElementById('sugg-inputs').innerHTML = h;
-        document.getElementById('sugg-correct').value = q.c + 1;
-        document.getElementById('modal-backdrop').classList.remove('hidden');
-        document.getElementById('sugg-modal').classList.remove('hidden');
-        
-        // כיוון גובה תיבות הטקסט לאחר פתיחה
-        setTimeout(() => {
-            for(let i=0; i<4; i++){
-                let el = document.getElementById('s-opt'+i);
-                if(el) el.style.height = el.scrollHeight + 'px';
-            }
-        }, 100);
+    async function submitExam() {
+        let unanswered = state.answers.filter(a => a === null).length;
+        if (unanswered > 0 && !confirm(`לא ענית על ${unanswered} שאלות. להגיש?`)) return;
+        showLoader("שומר תוצאות...");
+        let correct = 0; state.questions.forEach((q, i) => { if(state.answers[i] === q.c) correct++; });
+        let score = Math.round((correct / state.questions.length) * 100);
+        let dur = Math.round((new Date() - state.start) / 1000 / 60);
+        let eType = state.mode === 'numExam' ? 'מבחן - שאלות מספריות' : 'מבחן - כולל';
+        const data = { action: 'saveExam', examId: Date.now(), id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: dur, date: new Date().toLocaleString('he-IL'), stats: { type: eType }, examData: { questions: state.questions, answers: state.answers } };
+        try { await fetch(apiURL, { method: 'POST', body: JSON.stringify(data) }); hideLoader(); document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('summary-score-display').innerText = score; document.getElementById('summary-score-display').style.color = score >= 70 ? 'var(--correct)' : 'var(--wrong)'; document.getElementById('exam-summary-screen').classList.remove('hidden'); } catch(e) { hideLoader(); alert("שגיאה בשמירה."); }
     }
 
-    async function submitSuggestion() {
-        const q = state.questions[state.index];
-        const btn = document.getElementById('btn-submit-sugg'); btn.innerText = "שולח...";
-        const data = {
-            action: 'submitSuggestion', qId: q.id, userId: currentUser.id, userName: currentUser.name,
-            qText: q.q, opts: [document.getElementById('s-opt0').value, document.getElementById('s-opt1').value, document.getElementById('s-opt2').value, document.getElementById('s-opt3').value],
-            correct: parseInt(document.getElementById('sugg-correct').value) - 1,
-            comment: document.getElementById('sugg-comment').value
-        };
+    async function loadLeaderboard() {
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+        document.getElementById('history-page').classList.remove('hidden');
+        showLoader("טוען...");
         try {
-            const res = await fetch(apiURL, { method: 'POST', body: JSON.stringify(data) });
-            const j = await res.json();
-            if(j.error) alert(j.msg); else alert("הצעתך נשלחה למנהל. תודה!");
-            closeModals();
-        } catch(e) { alert("שגיאה בשליחה."); } finally { btn.innerText = "שלח המלצה למנהל"; }
+            const res = await fetch(`${apiURL}?action=getLeaderboard`);
+            const j = await res.json(); hideLoader();
+            globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
+            sortLB('score', document.getElementById('sort-score'));
+        } catch(e) { hideLoader(); }
+    }
+
+    function sortLB(t, btn) {
+        document.querySelectorAll('.lb-filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+        const list = document.getElementById('history-list'); list.innerHTML = '';
+        if (t === 'score') {
+            let sorted = [...globalLB].sort((a,b) => b.score - a.score || a.duration - b.duration);
+            sorted.forEach((ex, i) => {
+                let medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`;
+                list.innerHTML += `<div class="lb-item">
+                    <div style="display:flex; justify-content:space-between;"><b>${medal} ${ex.name}</b> <span style="font-size:0.75rem; color:#777;">${ex.date}</span></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                        <span>ציון: <b style="color:${ex.score>=70?'var(--correct)':'var(--wrong)'}">${ex.score}</b> | ${ex.duration} דק'</span>
+                        <div style="display:flex; gap:5px;"><button class="review-btn" onclick="reviewExam(${ex.examId})">📋 תחקיר</button>${currentUser.role === 0 ? `<button class="del-btn" onclick="deleteExam(${ex.examId})">🗑️</button>` : ''}</div>
+                    </div>
+                    <div class="stats-box">📍 ${ex.stats.type || 'מבחן כולל'}</div>
+                </div>`;
+            });
+        } else if (t === 'practice') {
+            globalPracticeLB.sort((a,b)=>b.count-a.count).forEach((u, i) => { list.innerHTML += `<div class="lb-item"><b>${i+1}. ${u.name}</b> <span>פתר: <b>${u.count}</b> שאלות נטו</span></div>`; });
+        } else if (t === 'contrib') {
+            globalContribLB.sort((a,b)=>b.count-a.count).forEach((u, i) => { list.innerHTML += `<div class="lb-item"><b>${i+1}. ${u.name} 🎖️</b> <span>הצעות שאושרו: <b>${u.count}</b></span></div>`; });
+        }
+    }
+
+    function reviewExam(examId) {
+        const ex = globalLB.find(e => e.examId === examId);
+        if(!ex || !ex.examData) return alert("נתונים לא זמינים.");
+        document.getElementById('history-page').classList.add('hidden');
+        document.getElementById('review-screen').classList.remove('hidden');
+        document.getElementById('review-score').innerText = `ציון: ${ex.score}`;
+        document.getElementById('review-score').style.color = ex.score >= 70 ? 'var(--correct)' : 'var(--wrong)';
+        let h = '';
+        ex.examData.questions.forEach((q, i) => {
+            let uAns = ex.examData.answers[i];
+            h += `<div class="card" style="border: 2px solid ${uAns === q.c ? 'var(--correct)' : 'var(--wrong)'}">
+                <div style="font-weight:bold; margin-bottom:10px;">${i+1}. ${q.q}</div>
+                ${q.a.map((t, idx) => {
+                    if(!t && t!==0) return '';
+                    let cls = "option";
+                    if(idx === q.c) cls += " practice-correct"; else if(idx === uAns) cls += " practice-wrong";
+                    return `<div class="${cls}" style="padding:10px; cursor:default;">${t}</div>`;
+                }).join('')}
+            </div>`;
+        });
+        document.getElementById('review-list').innerHTML = h; window.scrollTo(0,0);
     }
 
     async function showSuggestionsPanel() {
@@ -334,16 +377,23 @@
             j.suggestions.forEach(s => {
                 const orig = allQuestionsDB.find(x => String(x.id) === String(s.qId));
                 if (!orig) return;
-                h += `<div class="card" style="font-size:0.9rem;">
-                    <div style="color:var(--p); font-weight:bold; margin-bottom:10px;">הצעה מ: ${s.userName} (ID: ${s.qId})</div>
-                    <div style="background:#f9f9f9; padding:10px; border-radius:8px; border:1px dashed #ccc;">
-                        <b>שאלה:</b> ${s.qText}<br><br>
-                        <b>תשובות (מול המקור):</b><br>
-                        ${s.opts.map((opt, i) => `<div>${i+1}. ${diffSimple(orig.a[i], opt)}</div>`).join('')}
-                        <br><b>נכונה:</b> ${orig.c+1} ➡️ <span style="color:var(--correct); font-weight:bold;">${s.correct+1}</span>
-                        ${s.comment ? `<br><br><b>הערה:</b> ${s.comment}` : ''}
+                h += `<div class="card" id="sugg-card-${s.row}">
+                    <div style="color:var(--p); font-weight:bold; margin-bottom:10px;">הצעה מ: ${s.userName} (שאלה ID: ${s.qId})</div>
+                    <div style="background:#f9f9f9; padding:12px; border-radius:8px; border:1px solid #ddd; margin-bottom:15px;">
+                        <b>שאלה:</b> ${orig.q}<br><br>
+                        <b>תשובות (ערוך אם צריך):</b><br>
+                        ${s.opts.map((opt, i) => `
+                            <div style="margin-top:8px;">
+                                <div style="font-size:0.75rem; color:#888;">תשובה ${i+1} (היה: <span class="diff-del">${orig.a[i]}</span>)</div>
+                                <textarea id="h-opt${i}-${s.row}" class="input-pass" style="height:auto; min-height:35px; font-size:0.85rem; text-align:right; border-color:var(--p);">${opt}</textarea>
+                            </div>
+                        `).join('')}
+                        <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                            <b>נכונה:</b> <span class="diff-del">${orig.c+1}</span> ➡️ <input type="number" id="h-correct-${s.row}" value="${s.correct+1}" min="1" max="5" style="width:40px; text-align:center;">
+                        </div>
+                        ${s.comment ? `<div style="margin-top:10px; font-style:italic; color:#555;">💬 הערת משתמש: ${s.comment}</div>` : ''}
                     </div>
-                    <div style="display:flex; gap:10px; margin-top:15px;">
+                    <div style="display:flex; gap:10px;">
                         <button class="review-btn" style="background:var(--correct);" onclick="handleSugg(${s.row}, 'approved', '${s.qId}', '${s.userName}')">✅ אשר והחל</button>
                         <button class="review-btn" style="background:var(--wrong);" onclick="handleSugg(${s.row}, 'denied', '${s.qId}', '${s.userName}')">❌ דחה</button>
                     </div>
@@ -353,75 +403,37 @@
         } catch(e) { hideLoader(); }
     }
 
-    function diffSimple(oldT, newT) {
-        if (oldT === newT) return oldT;
-        return `<span class="diff-del">${oldT}</span> ➡️ <span class="diff-add">${newT}</span>`;
-    }
-
     async function handleSugg(row, status, qId, uName) {
-        if(!confirm(`בטוח שברצונך ${status==='approved'?'לאשר':'לדחות'}?`)) return;
+        if(!confirm(`בטוח שברצונך ${status==='approved'?'לאשר ולעדכן':'לדחות'}?`)) return;
         showLoader("מעבד...");
-        const resList = await fetch(`${apiURL}?action=getSuggestions&adminId=${currentUser.id}`);
-        const listJson = await resList.json();
-        const sugg = listJson.suggestions.find(x => x.row === row);
+        let finalOpts = [], finalCorrect = 0;
+        if(status === 'approved') {
+            for(let i=0; i<4; i++) finalOpts.push(document.getElementById(`h-opt${i}-${row}`).value);
+            finalCorrect = parseInt(document.getElementById(`h-correct-${row}`).value) - 1;
+        }
         try {
-            await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'handleSuggestion', adminId: currentUser.id, adminName: currentUser.name, row: row, status: status, qId: qId, suggUserName: uName, qText: sugg.qText, opts: sugg.opts, correct: sugg.correct }) });
+            await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'handleSuggestion', adminId: currentUser.id, adminName: currentUser.name, row: row, status: status, qId: qId, suggUserName: uName, qText: allQuestionsDB.find(x=>String(x.id)===String(qId)).q, opts: finalOpts, correct: finalCorrect }) });
             showSuggestionsPanel();
-        } catch(e) { hideLoader(); }
+        } catch(e) { hideLoader(); alert("שגיאה."); }
     }
 
-    function sortLB(t, btn) {
-        document.querySelectorAll('.lb-filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        if (t === 'score') renderLB(globalLB.sort((a,b)=>b.score-a.score));
-        if (t === 'practice') renderPracticeLB(globalPracticeLB.sort((a,b)=>b.count-a.count));
-        if (t === 'contrib') renderContribLB(globalContribLB);
+    function openSuggestionModal() {
+        const q = state.questions[state.index]; document.getElementById('sugg-q-display').innerText = q.q;
+        let h = ''; q.a.forEach((t, i) => { h += `<span class="sugg-label">תשובה ${i+1}:</span><textarea id="s-opt${i}" class="input-pass" style="text-align:right; height:auto; min-height:45px;">${t}</textarea>`; });
+        document.getElementById('sugg-inputs').innerHTML = h; document.getElementById('sugg-correct').value = q.c + 1;
+        document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('sugg-modal').classList.remove('hidden');
     }
 
-    async function loadLeaderboard() {
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-        document.getElementById('history-page').classList.remove('hidden');
-        showLoader("טוען...");
-        const res = await fetch(`${apiURL}?action=getLeaderboard`);
-        const j = await res.json(); hideLoader();
-        globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
-        sortLB('score', document.querySelector('.lb-filter-btn'));
+    async function submitSuggestion() {
+        const q = state.questions[state.index];
+        const data = { action: 'submitSuggestion', qId: q.id, userId: currentUser.id, userName: currentUser.name, qText: q.q, opts: [document.getElementById('s-opt0').value, document.getElementById('s-opt1').value, document.getElementById('s-opt2').value, document.getElementById('s-opt3').value], correct: parseInt(document.getElementById('sugg-correct').value)-1, comment: document.getElementById('sugg-comment').value };
+        showLoader("שולח..."); try { const res = await fetch(apiURL, { method: 'POST', body: JSON.stringify(data) }); const j = await res.json(); if(j.error) alert(j.msg); else alert("נשלח בהצלחה!"); closeModals(); } catch(e) { alert("שגיאה."); } finally { hideLoader(); }
     }
 
-    function renderLB(data) {
-        let h = ''; data.slice(0,50).forEach((ex, i) => {
-            h += `<div class="lb-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
-                <span><b>${i+1}. ${ex.name}</b></span>
-                <span>ציון: <b style="color:${ex.score>=70?'var(--correct)':'var(--wrong)'}">${ex.score}</b></span>
-            </div>`;
-        });
-        document.getElementById('history-list').innerHTML = h;
-    }
-
-    function renderPracticeLB(data) {
-        let h = ''; data.forEach((u, i) => {
-            h += `<div class="lb-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
-                <span><b>${i+1}. ${u.name}</b></span>
-                <span>פתר: <b>${u.count}</b> שאלות</span>
-            </div>`;
-        });
-        document.getElementById('history-list').innerHTML = h;
-    }
-
-    function renderContribLB(data) {
-        let h = ''; data.forEach((u, i) => {
-            h += `<div class="lb-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
-                <span><b>${i+1}. ${u.name}</b> 🎖️</span>
-                <span>הצעות שאושרו: <b>${u.count}</b></span>
-            </div>`;
-        });
-        document.getElementById('history-list').innerHTML = h || "טרם אושרו הצעות שינוי.";
-    }
-
-    function closeModals() { document.querySelectorAll('.card[style*="fixed"]').forEach(m => m.classList.add('hidden')); document.getElementById('modal-backdrop').classList.add('hidden'); }
-    function goHome() { document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('menu').classList.remove('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden'); }
+    function closeModals() { document.querySelectorAll('.card[style*="fixed"], #modal-backdrop').forEach(m => m.classList.add('hidden')); }
     function goHomeFull() { location.reload(); }
     function logout() { localStorage.removeItem('qbSavedID'); location.reload(); }
+    async function deleteExam(id) { if(!confirm("למחוק מבחן זה?")) return; showLoader("מוחק..."); await fetch(apiURL, { method:'POST', body: JSON.stringify({action:'deleteExam', examId:id, adminId:currentUser.id}) }); loadLeaderboard(); }
 </script>
 </body>
 </html>
