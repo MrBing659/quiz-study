@@ -287,14 +287,15 @@
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
     
     const ANIM_MAP = {
-        login: { t: ["פותח את השערים...", "מחפש את המפתחות...", "מכין את המערכת..."], i: "🚪", a: "anim-shine" },
-        exam: { t: ["מחדד עפרונות למבחן...", "מדפיס את הטפסים...", "בודק מי זוכר מתי עושים טסט..."], i: "📝", a: "anim-write" },
-        numExam: { t: ["מחשב מרחקים...", "מרים משקולות...", "טוען שאלות שיגרמו לך להזיע..."], i: "🏋️‍♂️", a: "anim-lift" },
-        practice: { t: ["מארגן לך דפים...", "שולף שאלות מהארכיון...", "מתחילים אימון..."], i: "📚", a: "anim-lift" },
-        lb: { t: ["המשאית של המדליות בדרך...", "מבריק את הגביעים...", "מחשב מיקומים בטבלה..."], i: "🏆", a: "anim-shine" },
-        stats: { t: ["מצייר את ההצלחות שלך...", "מחשב ממוצעים...", "פותח מחברות ישנות..."], i: "📈", a: "anim-write" },
-        sugg: { t: ["קורא את התלונות שלך...", "מחפש פאדיחות של המנהל...", "פותח מגירת הצעות..."], i: "🕵️", a: "anim-shine" },
-        default: { t: ["מערבב את הנתונים...", "שניה אחת...", "מחשב מסלול מחדש..."], i: "⏳", a: "anim-spin" }
+        login: { t: ["בודק שאתה לא בוט...", "מכין את הקפה לשרת...", "פותח שערים, נא לא לדחוף...", "מחפש את התיק האישי שלך..."], i: "🚪", a: "anim-shine" },
+        exam: { t: ["מכין את הטישו לבכי...", "מדפיס שאלות קשות במיוחד...", "מוודא שאין לך שליפים...", "מכוון שעון עצר מלחיץ..."], i: "📝", a: "anim-write" },
+        numExam: { t: ["מחמם את המחשבון...", "מעמיס שאלות עם מספרים מוגזמים...", "מחפש את נוסחת הקסם...", "שאלות שיגרמו לך להזיע..."], i: "🏋️‍♂️", a: "anim-lift" },
+        practice: { t: ["שולף שאלות מהבוידעם...", "מארגן לך אימון קליל...", "בוא נראה מה אתה באמת זוכר...", "מכין את השטח לטעויות שלך..."], i: "📚", a: "anim-lift" },
+        weak: { t: ["מגרד קצת בפצעים...", "מרכז את כל הפאדיחות שלך...", "בוא נתקן את מה שהרסת...", "אוסף את הטעויות לפח אחד..."], i: "🛠️", a: "anim-lift" },
+        lb: { t: ["בודק מי חרשן השבוע...", "מבריק את הפדיחות של כולם...", "מחשב מי עוקף את מי...", "מכין את הפודיום..."], i: "🏆", a: "anim-shine" },
+        stats: { t: ["מחשב כמה פעמים טעית...", "מנתח את התירוצים שלך...", "מצייר גרף של תקווה...", "פותח את הקופסה השחורה..."], i: "📈", a: "anim-write" },
+        sugg: { t: ["קורא את התלונות שלך על המערכת...", "מחפש מי עשה פאדיחה בשאלה...", "פותח את מגירת הבכיינות..."], i: "🕵️", a: "anim-shine" },
+        default: { t: ["מערבב נתונים ואנשים...", "רק שניה, השרת שותה מים...", "מחשב מסלול מחדש..."], i: "⏳", a: "anim-spin" }
     };
 
     let questionsDB = [], numQuestionsDB = [], allQuestionsDB = [], globalLB = [], globalPracticeLB = [], globalContribLB = [], globalLogs = [];
@@ -440,8 +441,12 @@
     function startWeaknesses() {
         let wq = allQuestionsDB.filter(q => userWeaknesses.includes(String(q.id)));
         if(wq.length === 0) return alert("אין לך חולשות במאגר!");
-        state.mode = 'weak'; state.questions = wq; state.answers = new Array(wq.length).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); renderBubbles(); renderQuestion();
+        showLoader('weak');
+        setTimeout(() => {
+            hideLoader();
+            state.mode = 'weak'; state.questions = wq; state.answers = new Array(wq.length).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
+            document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); renderBubbles(); renderQuestion();
+        }, 400);
     }
 
     function startApp(m) {
@@ -492,7 +497,8 @@
             const d = document.createElement('div'); d.className = 'option';
             if(state.answers[state.index] === i) d.classList.add('selected');
             if(!state.mode.includes('Exam') && state.answers[state.index] !== null) {
-                d.classList.add(i === q.c ? 'practice-correct' : (state.answers[state.index] === i ? 'practice-wrong' : ''));
+                let cls = i === q.c ? 'practice-correct' : (state.answers[state.index] === i ? 'practice-wrong' : '');
+                if (cls !== '') { d.classList.add(cls); }
             }
             d.innerText = t; d.onclick = () => {
                 if(state.answers[state.index] !== null && !state.mode.includes('Exam')) return;
