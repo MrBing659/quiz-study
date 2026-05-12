@@ -29,7 +29,7 @@
         .bubble.answered { background: #dff0d8; border-color: var(--correct); color: #3c763d; }
         .bubble.empty { background: #f2dede; border-color: var(--wrong); color: #a94442; }
 
-        .option { background: var(--bg); padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid transparent; cursor: pointer; font-size: 1.05em; transition: 0.2s;}
+        .option { background: var(--bg); padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid transparent; cursor: pointer; font-size: 1.05em; transition: 0.2s; line-height: 1.4; }
         .selected { border-color: var(--p); background: #e7f1ff; color: #2c3e50;}
         .practice-correct { background: #dff0d8 !important; border-color: var(--correct) !important; color: #3c763d; }
         .practice-wrong { background: #f2dede !important; border-color: var(--wrong) !important; color: #a94442; text-decoration: line-through; }
@@ -43,23 +43,18 @@
         
         .hidden { display: none !important; }
         .input-pass { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box; text-align: center; font-family: inherit; }
-        
+        textarea.input-pass { resize: none; overflow: hidden; text-align: right; }
+
         #loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .dark #loader-overlay { background: rgba(0,0,0,0.9); }
         .spinner { border: 5px solid #ccc; border-top: 5px solid var(--p); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .diff-del { background: #ffeef0; color: #b31d28; text-decoration: line-through; padding: 0 2px; }
-        .diff-add { background: #e6ffed; color: #22863a; font-weight: bold; padding: 0 2px; }
-        
-        .lb-filters { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
-        .lb-filter-btn { flex: 1; padding: 8px; border: 1px solid var(--p); background: transparent; color: var(--txt); border-radius: 5px; cursor: pointer; white-space: nowrap; font-size: 0.85rem;}
-        .lb-filter-btn.active { background: var(--p); color: white; font-weight: bold; }
-        
         .device-box { font-size: 0.75rem; background: var(--bg); padding: 8px; margin: 5px 0; border-radius: 6px; position: relative;}
         .review-btn { background: var(--p); color: white; border: none; border-radius: 5px; padding: 8px; cursor: pointer; font-size: 0.85rem; flex:1; text-align:center; font-weight:bold;}
-        
         .sugg-label { font-size: 0.85rem; font-weight: bold; color: var(--p); display: block; margin-bottom: 4px; }
+        
+        #sugg-q-display { font-weight: bold; background: rgba(52, 152, 219, 0.08); padding: 12px; border-radius: 8px; border-right: 4px solid var(--p); margin-bottom: 15px; line-height: 1.4; font-size: 1rem; }
     </style>
 </head>
 <body>
@@ -121,18 +116,25 @@
         </div>
     </div>
 
-    <div id="sugg-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:450px; max-height:90vh; overflow-y:auto; box-shadow:0 0 20px rgba(0,0,0,0.5);">
-        <h3>💡 המלצה לשינוי בשאלה</h3>
-        <p style="font-size:0.8rem; color:#666;">ערוך את התשובה הבעייתית או הצע תשובה חדשה במידה והכל לא נכון.</p>
+    <div id="sugg-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:95%; max-width:500px; max-height:90vh; overflow-y:auto; box-shadow:0 0 25px rgba(0,0,0,0.5);">
+        <h3 style="margin-top:0;">💡 המלצה לשינוי בשאלה</h3>
+        <div id="sugg-q-display"></div>
+        <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">ניתן לערוך את נוסח התשובות או לבחור את התשובה הנכונה.</p>
+        
         <div id="sugg-inputs"></div>
-        <span class="sugg-label">התשובה הנכונה היא:</span>
-        <select id="sugg-correct" class="input-pass">
+        
+        <span class="sugg-label">התשובה הנכונה לדעתך:</span>
+        <select id="sugg-correct" class="input-pass" style="text-align:right;">
             <option value="1">תשובה 1</option><option value="2">תשובה 2</option><option value="3">תשובה 3</option><option value="4">תשובה 4</option><option value="5">תשובה אחרת (רשום למטה)</option>
         </select>
-        <span class="sugg-label">הצעה לתשובה חדשה / הערה:</span>
-        <textarea id="sugg-comment" class="input-pass" style="text-align:right; height:60px;" placeholder="למשל: 'כל התשובות לא נכונות, התשובה האמיתית היא 20 מטר'"></textarea>
-        <button class="btn" style="background:var(--correct);" id="btn-submit-sugg" onclick="submitSuggestion()">שלח המלצה למנהל</button>
-        <button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button>
+        
+        <span class="sugg-label">הערה נוספת (אופציונלי):</span>
+        <textarea id="sugg-comment" class="input-pass" style="text-align:right; height:70px; resize:vertical;" placeholder="למשל: 'המרחק הנכון הוא 12 מטר ולא 10'"></textarea>
+        
+        <div style="display:flex; gap:10px;">
+            <button class="btn" style="background:var(--correct); flex:2;" id="btn-submit-sugg" onclick="submitSuggestion()">שלח המלצה</button>
+            <button class="btn" style="background:#bdc3c7; flex:1;" onclick="closeModals()">ביטול</button>
+        </div>
     </div>
 
     <div id="admin-sugg-screen" class="hidden card">
@@ -172,7 +174,7 @@
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
     let questionsDB = [], numQuestionsDB = [], allQuestionsDB = [], globalLB = [], globalPracticeLB = [], globalContribLB = [];
     let state = { mode: '', questions: [], index: 0, answers: [], start: null, time: 5400 };
-    let currentUser = { id: "", name: "", role: 2, suggCount: 0 };
+    let currentUser = { id: "", name: "", role: 2 };
     let myDeviceId = localStorage.getItem('qbDeviceId') || (Math.random().toString(36).substr(2,9)+Date.now().toString(36));
     localStorage.setItem('qbDeviceId', myDeviceId);
 
@@ -282,14 +284,25 @@
 
     function openSuggestionModal() {
         const q = state.questions[state.index];
+        document.getElementById('sugg-q-display').innerText = q.q;
         let h = '';
         q.a.forEach((t, i) => {
-            h += `<span class="sugg-label">תשובה ${i+1}:</span><input type="text" id="s-opt${i}" class="input-pass" value="${t}">`;
+            h += `<span class="sugg-label">תשובה ${i+1}:</span>
+                  <textarea id="s-opt${i}" class="input-pass" style="height:auto; min-height:45px; text-align:right; font-size:0.9rem;" 
+                  oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">${t}</textarea>`;
         });
         document.getElementById('sugg-inputs').innerHTML = h;
         document.getElementById('sugg-correct').value = q.c + 1;
         document.getElementById('modal-backdrop').classList.remove('hidden');
         document.getElementById('sugg-modal').classList.remove('hidden');
+        
+        // כיוון גובה תיבות הטקסט לאחר פתיחה
+        setTimeout(() => {
+            for(let i=0; i<4; i++){
+                let el = document.getElementById('s-opt'+i);
+                if(el) el.style.height = el.scrollHeight + 'px';
+            }
+        }, 100);
     }
 
     async function submitSuggestion() {
@@ -348,9 +361,9 @@
     async function handleSugg(row, status, qId, uName) {
         if(!confirm(`בטוח שברצונך ${status==='approved'?'לאשר':'לדחות'}?`)) return;
         showLoader("מעבד...");
-        // אם אושר, אנחנו צריכים את הטקסט העדכני מהמסך (או מהאובייקט)
-        // לצורך הפשטות נניח שהאדמין אישר את מה שהוצע
-        const sugg = (await (await fetch(`${apiURL}?action=getSuggestions&adminId=${currentUser.id}`)).json()).suggestions.find(x => x.row === row);
+        const resList = await fetch(`${apiURL}?action=getSuggestions&adminId=${currentUser.id}`);
+        const listJson = await resList.json();
+        const sugg = listJson.suggestions.find(x => x.row === row);
         try {
             await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'handleSuggestion', adminId: currentUser.id, adminName: currentUser.name, row: row, status: status, qId: qId, suggUserName: uName, qText: sugg.qText, opts: sugg.opts, correct: sugg.correct }) });
             showSuggestionsPanel();
