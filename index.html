@@ -86,6 +86,12 @@
         
         .diff-old { color: var(--wrong); text-decoration: line-through; margin-left: 5px;}
         .diff-new { color: var(--p); font-weight: bold;}
+
+        .device-box { font-size: 0.75rem; background: var(--card); padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 6px; line-height: 1.4; position: relative;}
+        .device-del { position: absolute; top: 5px; left: 5px; background: var(--wrong); color: white; border: none; border-radius: 4px; cursor: pointer; padding: 2px 6px; }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-left: 5px; }
+        .status-on { background-color: var(--correct); }
+        .status-off { background-color: #bbb; }
     </style>
 </head>
 <body>
@@ -378,7 +384,6 @@
 
             questionsDB = json.data.map(parseRow);
             numQuestionsDB = (json.numData || []).map(parseRow);
-            
             allQuestionsDB = [...questionsDB]; 
             
             state.answers = json.practiceAnswers && json.practiceAnswers.length === questionsDB.length ? json.practiceAnswers : new Array(questionsDB.length).fill(null);
@@ -419,21 +424,26 @@
                     let devicesHtml = "";
                     if (u.devices && u.devices.length > 0) {
                         u.devices.forEach((d, i) => {
-                            devicesHtml += `<div style="font-size:0.8rem; background:var(--card); padding:5px; margin:2px 0; border:1px solid #ccc; border-radius:3px;">מכשיר ${i+1} (נוצר: ${d.added}) <button onclick="removeDevice('${u.id}', '${d.id}')" style="float:left; background:var(--wrong); color:white; border:none; border-radius:3px; cursor:pointer; padding:2px 5px;">🗑️</button></div>`;
+                            devicesHtml += `<div class="device-box">
+                                <button class="device-del" onclick="removeDevice('${u.id}', '${d.id}')">🗑️</button>
+                                📱 <b>מכשיר ${i+1}</b><br>
+                                ✨ נוצר: ${d.added}<br>
+                                🕒 נראה לאחרונה: ${d.lastSeen}
+                            </div>`;
                         });
-                    } else { devicesHtml = "<div style='font-size:0.8rem;'>אין מכשירים רשומים</div>"; }
+                    } else { devicesHtml = "<div style='font-size:0.8rem; margin:10px 0;'>אין מכשירים רשומים</div>"; }
                     
                     let tempApprHtml = "";
                     if (u.tempApproval) {
                         let tTime = new Date(u.tempApproval).getTime();
                         if (new Date().getTime() < tTime) {
-                            tempApprHtml = `<div style="font-size:0.8rem; color:var(--p); font-weight:bold; margin-top:5px;">אישור זמני בתוקף עד: ${new Date(u.tempApproval).toLocaleString('he-IL')}</div>`;
+                            tempApprHtml = `<div style="font-size:0.85rem; color:var(--p); font-weight:bold; margin-top:5px; padding:5px; background:rgba(52,152,219,0.1); border-radius:5px; border:1px solid var(--p);">⚡ אישור זמני בתוקף עד: ${new Date(u.tempApproval).toLocaleString('he-IL')}</div>`;
                         }
                     }
 
-                    html += `<div class="lb-item" style="display:block; padding:12px; background:var(--bg); border-radius:8px; margin-bottom:10px;"><div style="font-weight:bold; font-size:1.1rem;"><span class="status-dot ${dotClass}"></span> ${roleBadge}${u.name}</div><div style="font-size:0.85rem; color:#666; margin: 5px 0;">ת"ז: ${u.id} <br>שאלה אחרונה: ${lastQText} <br>פעילות: ${u.lastSeen}</div>
-                    <div style="background:#e8f4f8; padding:8px; border-radius:5px; margin-bottom:10px;">${devicesHtml}${tempApprHtml}</div>
-                    <div style="display:flex; flex-wrap:wrap; gap:10px;"><button class="admin-action-btn btn-edit" onclick="editUserPrompt('${u.id}', '${u.name}')">✏️ ערוך</button><button class="admin-action-btn" style="background:#8e44ad; color:white;" onclick="changeRole('${u.id}', ${newRoleCode}, '${u.name}')">${roleBtnTxt}</button><button class="admin-action-btn" style="background:#f39c12; color:white;" onclick="tempApprove('${u.id}', '${u.name}')">⏱️ אישור זמני</button><button class="admin-action-btn btn-kick" onclick="disconnectUser('${u.id}', '${u.name}')">🔌 נתק</button></div></div>`;
+                    html += `<div class="lb-item" style="display:block; padding:12px; background:var(--bg); border-radius:8px; margin-bottom:15px;"><div style="font-weight:bold; font-size:1.1rem;"><span class="status-dot ${dotClass}"></span> ${roleBadge}${u.name}</div><div style="font-size:0.85rem; color:#666; margin: 5px 0;">ת"ז: ${u.id} | שאלה אחרונה: ${lastQText}</div>
+                    <div style="margin:10px 0;">${devicesHtml}${tempApprHtml}</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px;"><button class="review-btn" onclick="editUserPrompt('${u.id}', '${u.name}')">✏️ ערוך</button><button class="review-btn" style="background:#8e44ad; color:white;" onclick="changeRole('${u.id}', ${newRoleCode}, '${u.name}')">${roleBtnTxt}</button><button class="review-btn" style="background:#f39c12; color:white;" onclick="tempApprove('${u.id}', '${u.name}')">⏱️ אישור זמני</button><button class="review-btn" style="background:var(--wrong); color:white;" onclick="disconnectUser('${u.id}', '${u.name}')">🔌 נתק</button></div></div>`;
                 });
                 document.getElementById('admin-list').innerHTML = html || "אין נתונים.";
             }
@@ -443,7 +453,7 @@
     async function changeRole(userId, newRoleCode, userName) { if(!confirm(`לשנות הרשאה למשתמש ${userName}?`)) return; showLoader("משנה הרשאה..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'changeRole', adminId: currentUser.id, targetId: userId, newRole: newRoleCode }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
     async function disconnectUser(userId, userName) { if(!confirm(`לנתק את ${userName}?`)) return; showLoader("מנתק..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId }) }); alert(`${userName} נותק.`); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
     async function tempApprove(userId, userName) { if(!confirm(`לתת אישור התחברות זמני (ל-12 שעות) למשתמש ${userName}?`)) return; showLoader("מאשר..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'tempApprove', adminId: currentUser.id, targetId: userId }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
-    async function removeDevice(userId, devId) { if(!confirm(`למחוק את המכשיר הזה מהמערכת?`)) return; showLoader("מוחק מכשיר..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'removeDevice', adminId: currentUser.id, targetId: userId, deviceId: devId }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
+    async function removeDevice(userId, devId) { if(!confirm(`למחוק את המכשיר הזה מהמערכת? המשתמש יצטרך להתחבר מחדש.`)) return; showLoader("מוחק מכשיר..."); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'removeDevice', adminId: currentUser.id, targetId: userId, deviceId: devId }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
     function editUserPrompt(oldId, oldName) { document.getElementById('edit-old-id').value = oldId; document.getElementById('edit-name-input').value = oldName; document.getElementById('edit-id-input').value = oldId; document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('edit-modal').classList.remove('hidden'); }
     
     async function saveEditUser() {
@@ -492,8 +502,8 @@
                             <div style="margin-top:5px; border-top: 1px dashed #eee; padding-top: 5px;"><b>אינדקס תשובה נכונה:</b> ${cDiff}</div>
                         </div>
                         <div style="margin-top:10px; display:flex; gap:10px;">
-                            <button class="btn" style="padding:6px; font-size:0.85rem; flex:1;" onclick="openEditQModalFromDB('${l.qId}')">✏️ ערוך שוב</button>
-                            <button class="btn" style="background:var(--wrong); padding:6px; font-size:0.85rem; flex:1;" onclick="restoreQuestion(${idx})">↩️ שחזר לגרסה זו</button>
+                            <button class="review-btn" style="padding:6px; font-size:0.85rem; flex:1;" onclick="openEditQModalFromDB('${l.qId}')">✏️ ערוך שוב</button>
+                            <button class="review-btn" style="background:var(--wrong); padding:6px; font-size:0.85rem; flex:1;" onclick="restoreQuestion(${idx})">↩️ שחזר לגרסה זו</button>
                         </div>
                     </div>`;
                 });
