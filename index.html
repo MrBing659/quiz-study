@@ -21,7 +21,6 @@
         .dropdown.show { display: flex; }
         .drop-item { padding: 14px 15px; border-bottom: 1px solid #eee; color: var(--txt); font-size: 0.95rem; cursor: pointer; transition: 0.2s;}
         .drop-item:hover { background: #e7f1ff; color: var(--p); padding-right: 20px; }
-        .drop-item:last-child { border-bottom: none; }
 
         .container { max-width: 550px; margin: auto; position: relative;}
         .card { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 6px 15px rgba(0,0,0,0.06); margin-bottom: 20px; position: relative; border: 1px solid rgba(0,0,0,0.02);}
@@ -52,11 +51,20 @@
         .input-pass:focus { outline: none; border-color: var(--p); box-shadow: 0 0 0 3px rgba(52,152,219,0.2); background: var(--card);}
         textarea.input-pass { resize: vertical; min-height: 45px; text-align: right; }
 
+        /* Animation System */
         #loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .dark #loader-overlay { background: rgba(0,0,0,0.95); }
-        .spinner { border: 5px solid #eee; border-top: 5px solid var(--p); border-radius: 50%; width: 55px; height: 55px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        .loader-icon { font-size: 4rem; margin-bottom: 15px; display: inline-block; }
+        .anim-write { animation: write 1.5s infinite; }
+        .anim-lift { animation: lift 1.5s infinite; }
+        .anim-shine { animation: shine 1.5s infinite; }
+        .anim-spin { animation: spin 1s infinite; }
+        
+        @keyframes write { 0%, 100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(10px, -10px) rotate(-15deg); } }
+        @keyframes lift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px) scale(1.1); } }
+        @keyframes shine { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px gold); } 50% { transform: scale(1.2); filter: drop-shadow(0 0 15px gold); } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #loader-text { font-size: 1.2rem; font-weight: bold; color: var(--p); text-align: center;}
+        #loader-text { font-size: 1.3rem; font-weight: bold; color: var(--p); text-align: center;}
 
         .lb-item { border-bottom: 1px solid #f0f0f0; padding: 18px 0; display: flex; flex-direction: column; gap: 8px; }
         .stats-box { background: rgba(0,0,0,0.03); padding: 12px; border-radius: 10px; font-size: 0.85rem; line-height: 1.5; border: 1px solid rgba(0,0,0,0.05);}
@@ -70,15 +78,17 @@
         .review-btn { background: var(--p-grad); color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 0.9rem; flex:1; text-align:center; font-weight:bold; transition:0.2s;}
         .review-btn:active { transform: scale(0.95); }
         .del-btn { background: var(--wrong); color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; }
-        .sugg-label { font-size: 0.85rem; font-weight: bold; color: var(--p); display: block; margin-bottom: 6px; }
         
-        .time-tag { float: left; font-size: 0.75rem; color: #666; background: #e1e8ed; padding: 3px 8px; border-radius: 6px; font-weight:bold;}
-        .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle;}
+        .time-tag { font-size: 0.75rem; color: #666; background: #e1e8ed; padding: 3px 8px; border-radius: 6px; font-weight:bold;}
+        .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 3px 6px; border-radius: 4px; margin-right: 5px; vertical-align: middle;}
     </style>
 </head>
 <body>
 
-<div id="loader-overlay" class="hidden"><div class="spinner"></div><div id="loader-text">טוען נתונים...</div></div>
+<div id="loader-overlay" class="hidden">
+    <div id="loader-icon" class="loader-icon anim-spin">⏳</div>
+    <div id="loader-text">טוען נתונים...</div>
+</div>
 
 <div class="top-bar">
     <button class="top-btn" onclick="goHomeFull()">🏠 ראשי</button>
@@ -87,12 +97,10 @@
         <div id="notif-badge" class="badge hidden"></div>
         שלום <span id="top-name"></span> ▼
         <div class="dropdown" id="dropdown">
-            <div class="drop-item" onclick="loadLeaderboard(true)">📊 הסטטיסטיקות שלי</div>
+            <div class="drop-item" onclick="showSettings()">⚙️ הגדרות</div>
             <div class="drop-item hidden" id="admin-sugg-btn" onclick="showSuggestionsPanel()">🔔 הצעות לשינוי <span id="sugg-inner-count"></span></div>
             <div class="drop-item hidden" id="mod-qdb-btn" onclick="showQDBPanel()">📚 מאגר שאלות</div>
-            <div class="drop-item" onclick="showSettings()">⚙️ הגדרות</div>
             <div class="drop-item hidden" id="admin-panel-btn" onclick="showAdminPanel()">👑 פאנל ניהול</div>
-            <div class="drop-item hidden" id="admin-logs-btn" onclick="showChangelogPanel()">📝 היסטוריית עריכות</div>
             <div class="drop-item" onclick="logout()" style="color:var(--wrong);">🚪 התנתק</div>
         </div>
     </div>
@@ -100,7 +108,7 @@
 
 <div class="container" id="main-container">
     
-    <div id="login-screen" class="card" style="margin-top: 30px;">
+    <div id="login-screen" class="card" style="margin-top: 5vh;">
         <h2 style="color:var(--p); font-size:1.8rem; margin-bottom:25px;">ברוכים הבאים 👋</h2>
         <div id="login-inputs" onkeypress="if(event.key === 'Enter') manualLogin()">
             <input type="text" id="fname" class="input-pass" placeholder="שם פרטי">
@@ -122,7 +130,7 @@
             <button class="btn btn-num" onclick="startApp('numPractice')">🔢 תרגול - מספריות</button>
             <button class="btn btn-num" onclick="startApp('numExam')">🏆 מבחן - מספריות (50)</button>
             <button class="btn btn-weak" id="weakness-btn" onclick="startWeaknesses()">🛠️ מקצה שיפורים (<span id="weak-count">0</span>)</button>
-            <button class="btn" style="background: linear-gradient(135deg, #7f8c8d, #95a5a6);" onclick="loadLeaderboard()">📊 טבלת שיאים כיתתית</button>
+            <button class="btn" style="background: linear-gradient(135deg, #7f8c8d, #95a5a6);" onclick="loadLeaderboard()">📊 טבלת שיאים וסטטיסטיקה</button>
         </div>
     </div>
 
@@ -134,21 +142,23 @@
             <div id="options" style="margin-top: 20px;"></div>
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:15px; font-size:1.1rem;"></div>
             <div style="display:flex; justify-content:space-between; margin-top: 20px; font-size: 0.9rem; padding-top:15px; border-top:1px solid #eee;">
-                <span style="color:var(--wrong); cursor:pointer; font-weight:bold;" onclick="openSuggestionModal()">💡 דווח על טעות</span>
-                <span style="color:var(--p); cursor:pointer; font-weight:bold;" onclick="shareQuestion()">📤 שתף לדיון</span>
+                <span style="color:var(--wrong); cursor:pointer; font-weight:bold;" onclick="openSuggestionModal()">💡 דווח על טעות בשאלה</span>
+                <span style="color:var(--p); cursor:pointer; font-weight:bold;" onclick="shareQuestion()">📤 שתף לדיון בוואטסאפ</span>
             </div>
         </div>
     </div>
 
     <div id="history-page" class="hidden card" style="padding-top:25px;">
-        <h2 id="lb-title" style="font-size:1.8rem; color:var(--p); margin-bottom:20px;">🏆 טבלת שיאים 🏆</h2>
+        <h2 id="lb-title" style="font-size:1.8rem; color:var(--p); margin-bottom:20px; text-align:center;">📊 סטטיסטיקה אישית ושיאים</h2>
         
         <div id="stats-container" class="hidden" style="margin-bottom:30px; border-bottom:2px dashed #eee; padding-bottom:20px;">
-            <canvas id="statsChart" style="width:100%; height:220px;"></canvas>
-            <button class="btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71); padding:10px; margin-top:15px;" onclick="shareMyStats()">🔗 שתף גרף התקדמות אישי</button>
+            <div style="position:relative; height:220px; width:100%;">
+                <canvas id="statsChart"></canvas>
+            </div>
+            <button class="btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71); padding:12px; margin-top:15px;" onclick="shareMyStats()">🔗 שתף את התקדמות הציונים שלי</button>
         </div>
 
-        <h3 id="lb-subtitle" class="hidden" style="color:#7f8c8d;">הטבלה הכיתתית:</h3>
+        <h3 id="lb-subtitle" style="color:#7f8c8d; text-align:center; margin-bottom:15px;">הטבלה הכיתתית:</h3>
         <div class="lb-filters">
             <button class="lb-filter-btn active" id="sort-score" onclick="sortLB('score', this)">🏆 ציונים</button>
             <button class="lb-filter-btn" onclick="sortLB('practice', this)">💪 אלופי התרגול</button>
@@ -159,25 +169,26 @@
     </div>
 
     <div id="review-screen" class="hidden card">
-        <h2 style="color:var(--p);">📋 תחקיר מבחן</h2>
-        <div id="review-shared-name" class="hidden" style="text-align:center; font-size:1.2rem; margin-bottom:10px; color:#666;"></div>
-        <h3 id="review-score" style="text-align:center; font-size:3rem; margin:10px 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.1);"></h3>
-        <div id="review-duration" style="text-align:center; margin-bottom:20px; color:#777; font-weight:bold;"></div>
-        <div style="display:flex; gap:10px; margin-bottom:25px;">
-            <button id="btn-share-review" class="review-btn" style="background:#25D366; padding:12px;">🔗 שתף תחקיר מבחן זה</button>
+        <h2 style="color:var(--p); text-align:center;">📋 תחקיר מבחן</h2>
+        <div id="review-shared-name" class="hidden" style="text-align:center; font-size:1.2rem; margin-bottom:10px; color:#666; font-weight:bold;"></div>
+        <h3 id="review-score" style="text-align:center; font-size:3.5rem; margin:10px 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.1);"></h3>
+        <div id="review-duration" style="text-align:center; margin-bottom:20px; color:#777; font-weight:bold; font-size:1.1rem;"></div>
+        
+        <div style="display:flex; gap:10px; margin-bottom:25px; justify-content:center;">
+            <button id="btn-share-review" class="review-btn" style="background:#25D366; max-width:250px;" onclick="shareReviewLink()">🔗 שתף תחקיר זה</button>
         </div>
+        
         <div id="review-list"></div>
         
         <div id="shared-review-footer" class="hidden" style="text-align:center; margin-top:30px; padding-top:20px; border-top:2px dashed #ccc;">
-            <h3>רוצה לבדוק את עצמך?</h3>
+            <h3 style="color:var(--p);">רוצה לבדוק את עצמך?</h3>
             <button class="btn" onclick="goHomeFull()">היכנס למערכת 🚀</button>
         </div>
-        
         <button id="btn-back-review" class="btn" style="background: linear-gradient(135deg, #7f8c8d, #95a5a6); margin-top:25px;" onclick="document.getElementById('review-screen').classList.add('hidden'); document.getElementById('history-page').classList.remove('hidden'); window.scrollTo(0,0);">חזור לטבלה</button>
     </div>
 
     <div id="settings-screen" class="hidden card">
-        <h2>⚙️ הגדרות מערכת</h2>
+        <h2 style="text-align:center;">⚙️ הגדרות מערכת</h2>
         <div style="display:flex; justify-content:space-between; align-items:center; margin:20px 0; font-weight:bold;"><span>מצב לילה (Dark Mode)</span><input type="checkbox" id="set-dark" onchange="toggleDark(this.checked)" style="transform: scale(1.5);"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin:20px 0; font-weight:bold;"><span>מעבר אוטומטי (תרגול)</span><input type="checkbox" id="set-auto" onchange="appSettings.autoNext = this.checked; saveSettings();" style="transform: scale(1.5);"></div>
         <div style="margin:20px 0; font-weight:bold;">
@@ -188,14 +199,14 @@
     </div>
 
     <div id="admin-sugg-screen" class="hidden card">
-        <h2 style="color:var(--p);">🔔 הצעות לשינוי מהשטח</h2>
-        <p style="font-size:0.85rem; color:#666; line-height:1.4;">הטקסט המקורי מסומן באדום. ערוך את הטקסט בתיבות הכחולות (אם צריך) ולחץ <b>אשר והחל</b>.</p>
+        <h2 style="color:var(--p); text-align:center;">🔔 הצעות לשינוי מהשטח</h2>
+        <p style="font-size:0.85rem; color:#666; line-height:1.4;">הטקסט המקורי מסומן באדום. ערוך את הטקסט בתיבות הכחולות ולחץ <b>אשר והחל</b>.</p>
         <div id="admin-sugg-list" style="margin-top:20px;"></div>
         <button class="btn" style="background: linear-gradient(135deg, #7f8c8d, #95a5a6); margin-top:20px;" onclick="goHome()">חזור לראשי</button>
     </div>
 
     <div id="sugg-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:95%; max-width:500px; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-        <h3 style="color:var(--wrong); margin-top:0;">💡 דיווח על טעות</h3>
+        <h3 style="color:var(--wrong); margin-top:0; text-align:center;">💡 דיווח על טעות</h3>
         <div id="sugg-q-display" style="background: rgba(52, 152, 219, 0.08); padding: 15px; border-radius: 10px; border-right: 5px solid var(--p); margin-bottom: 20px; font-weight:bold; line-height: 1.4;"></div>
         <div id="sugg-inputs"></div>
         <span class="sugg-label" style="margin-top:15px;">התשובה הנכונה לדעתך:</span>
@@ -227,15 +238,17 @@
 
 <script>
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
-    const LOAD_TEXTS = {
-        login: "פותח את השערים... 🚪",
-        exam: "מחדד עפרונות למבחן קשוח... ✍️",
-        numExam: "מחשב גבהים ומשקלים למבחן... 🔢",
-        practice: "מארגן לך את הדפים... 📚",
-        lb: "מבריק את המדליות... 🏆",
-        stats: "מצייר את ההצלחות שלך... 📈",
-        sugg: "קורא את התלונות שלך... 🧐",
-        default: "מערבב את הנתונים... ⏳"
+    
+    // מאגר אנימציות דינמיות
+    const ANIM_MAP = {
+        login: { t: "פותח את השערים...", i: "🚪", a: "anim-shine" },
+        exam: { t: "מחדד עפרונות למבחן...", i: "📝", a: "anim-write" },
+        numExam: { t: "מרים משקולות ומחשב מרחקים...", i: "🏋️‍♂️", a: "anim-lift" },
+        practice: { t: "מארגן לך את הדפים...", i: "📚", a: "anim-lift" },
+        lb: { t: "המשאית של המדליות בדרך...", i: "🏆", a: "anim-shine" },
+        stats: { t: "מצייר את ההצלחות שלך...", i: "📈", a: "anim-write" },
+        sugg: { t: "קורא את התלונות שלך...", i: "🕵️", a: "anim-shine" },
+        default: { t: "מערבב את הנתונים...", i: "⏳", a: "anim-spin" }
     };
 
     let questionsDB = [], numQuestionsDB = [], allQuestionsDB = [], globalLB = [], globalPracticeLB = [], globalContribLB = [];
@@ -243,7 +256,7 @@
     let currentUser = { id: "", name: "", role: 2 };
     let currentQStart = 0;
     let myChart = null;
-    let isSharedView = false;
+    let currentReviewExamId = null;
     let myDeviceId = localStorage.getItem('qbDeviceId') || (Math.random().toString(36).substr(2,9)+Date.now().toString(36));
     localStorage.setItem('qbDeviceId', myDeviceId);
     let appSettings = { dark: false, font: 16, autoNext: true };
@@ -255,26 +268,24 @@
         const urlParams = new URLSearchParams(window.location.search);
         
         if (urlParams.has('review')) {
-            isSharedView = true;
             document.getElementById('login-screen').classList.add('hidden');
             document.querySelector('.top-bar').style.display = 'none';
             document.getElementById('main-container').style.marginTop = '20px';
-            showLoader("שואף תחקיר מבחן...");
+            showLoader("stats");
             try {
                 const res = await fetch(`${apiURL}?action=getSharedReview&examId=${urlParams.get('review')}`);
                 const j = await res.json(); hideLoader();
                 if(j.error) { alert("מבחן לא נמצא."); goHomeFull(); return; }
-                renderSharedReview(j);
+                window.sharedExamData = j; reviewExam(j.examId, true);
             } catch(e) { hideLoader(); alert("שגיאה בטעינת המבחן."); }
             return;
         }
 
         if (urlParams.has('stats')) {
-            isSharedView = true;
             document.getElementById('login-screen').classList.add('hidden');
             document.querySelector('.top-bar').style.display = 'none';
             document.getElementById('main-container').style.marginTop = '20px';
-            showLoader("שואף נתונים אישיים...");
+            showLoader("stats");
             try {
                 const res = await fetch(`${apiURL}?action=getSharedStats&targetId=${urlParams.get('stats')}`);
                 const j = await res.json(); hideLoader();
@@ -289,7 +300,14 @@
     };
 
     function showLoader(type = "default") {
-        document.getElementById('loader-text').innerText = LOAD_TEXTS[type] || LOAD_TEXTS.default;
+        const iconEl = document.getElementById('loader-icon');
+        const textEl = document.getElementById('loader-text');
+        const conf = ANIM_MAP[type] || ANIM_MAP.default;
+        
+        iconEl.innerText = conf.i;
+        iconEl.className = "loader-icon " + conf.a;
+        textEl.innerText = conf.t;
+        
         document.getElementById('loader-overlay').classList.remove('hidden');
     }
     function hideLoader() { document.getElementById('loader-overlay').classList.add('hidden'); }
@@ -327,7 +345,7 @@
         if(j.error) { document.getElementById('sys-msg').innerText = j.msg; localStorage.removeItem('qbSavedID'); document.getElementById('login-screen').classList.remove('hidden'); return; }
         currentUser = { id: id, name: j.name, role: j.role };
         localStorage.setItem('qbSavedID', id);
-        questionsDB = j.data; numQuestionsDB = j.numData; allQuestionsDB = [...questionsDB];
+        questionsDB = j.data; numQuestionsDB = j.numData; allQuestionsDB = [...questionsDB, ...numQuestionsDB];
         state.answers = j.practiceAnswers || [];
         document.getElementById('top-name').innerText = j.name.split(" ")[0];
         document.getElementById('user-menu-btn').style.display = 'flex';
@@ -349,7 +367,7 @@
 
     function updateWeaknessBtn() {
         const btn = document.getElementById('weakness-btn'); document.getElementById('weak-count').innerText = userWeaknesses.length;
-        if(userWeaknesses.length > 0) { btn.classList.add('btn-weak'); btn.disabled = false; btn.style.background = "linear-gradient(135deg, #e67e22, #d35400)"; } 
+        if(userWeaknesses.length > 0) { btn.classList.add('btn-weak'); btn.disabled = false; } 
         else { btn.classList.remove('btn-weak'); btn.style.background = "#bdc3c7"; btn.disabled = true; }
     }
 
@@ -380,7 +398,7 @@
             document.getElementById('quiz-screen').classList.remove('hidden');
             document.getElementById('nav-footer').classList.remove('hidden');
             renderBubbles(); renderQuestion();
-        }, 500);
+        }, 300);
     }
 
     function renderBubbles() {
@@ -397,9 +415,9 @@
         const q = state.questions[state.index];
         document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active'));
         document.getElementById(`bubble-${state.index}`).classList.add('active');
-        document.getElementById(`bubble-${state.index}`).scrollIntoView({behavior:'smooth',inline:'center'});
+        document.getElementById(`bubble-${state.index}`).scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
         
-        document.getElementById('q-text').innerHTML = `${state.index+1}. <span class="id-tag">[ID: ${q.id}]</span> ${q.q}`;
+        document.getElementById('q-text').innerHTML = `${state.index+1}. <span class="id-tag">ID: ${q.id}</span> ${q.q}`;
         
         const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
         q.a.forEach((t, i) => {
@@ -447,7 +465,7 @@
     async function submitExam() {
         saveQTime();
         let unanswered = state.answers.filter(a => a === null).length;
-        if (unanswered > 0 && !confirm(`לא ענית על ${unanswered} שאלות. להגיש?`)) return;
+        if (unanswered > 0 && !confirm(`לא ענית על ${unanswered} שאלות. להגיש בכל זאת?`)) return;
         showLoader("default");
         clearInterval(timerInterval);
         let correct = 0; state.questions.forEach((q, i) => { 
@@ -471,32 +489,27 @@
             document.getElementById('summary-stats-display').innerHTML = `זמן כולל: <b>${dur}</b> דק'<br>ממוצע לשאלה: <b>${avg}</b> שניות<br><br>נכון: ${correct} | טעויות: ${state.questions.length - correct}`;
             document.getElementById('exam-summary-screen').classList.remove('hidden');
             saveProgress(); 
-        } catch(e) { hideLoader(); alert("שגיאה בשמירה."); }
+        } catch(e) { hideLoader(); alert("שגיאה בשמירת התוצאה."); }
     }
 
-    async function loadLeaderboard(isPersonal = false) {
+    async function loadLeaderboard() {
         document.getElementById('dropdown').classList.remove('show');
         document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
         document.getElementById('history-page').classList.remove('hidden');
-        showLoader(isPersonal ? "stats" : "lb");
+        showLoader("lb");
         try {
             const res = await fetch(`${apiURL}?action=getLeaderboard`);
             const j = await res.json(); hideLoader();
             globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
             
-            if (isPersonal) {
-                document.getElementById('lb-title').innerText = "📈 הגרף האישי שלי";
-                document.getElementById('lb-subtitle').classList.remove('hidden');
+            const myExams = globalLB.filter(ex => String(ex.id).replace(/^0+/, '') === String(currentUser.id).replace(/^0+/, '')).sort((a,b) => a.examId - b.examId);
+            if (myExams.length > 0) {
                 document.getElementById('stats-container').classList.remove('hidden');
-                const myExams = globalLB.filter(ex => String(ex.id).replace(/^0+/, '') === String(currentUser.id).replace(/^0+/, '')).sort((a,b) => a.examId - b.examId);
                 renderChart(myExams);
-            } else {
-                document.getElementById('lb-title').innerText = "🏆 טבלת שיאים כיתתית 🏆";
-                document.getElementById('lb-subtitle').classList.add('hidden');
-                document.getElementById('stats-container').classList.add('hidden');
-            }
+            } else { document.getElementById('stats-container').classList.add('hidden'); }
+            
             sortLB('score', document.getElementById('sort-score'));
-        } catch(e) { hideLoader(); alert("שגיאה בטעינה."); }
+        } catch(e) { hideLoader(); alert("שגיאה בטעינת טבלת שיאים."); }
     }
 
     function renderChart(data) {
@@ -511,9 +524,25 @@
         });
     }
 
+    function renderSharedStats(data) {
+        document.getElementById('history-page').classList.remove('hidden');
+        document.getElementById('lb-title').innerText = `ההתקדמות של ${data.name.split(" ")[0]} 📈`;
+        document.getElementById('stats-container').classList.remove('hidden');
+        document.querySelector('.lb-filters').classList.add('hidden');
+        document.getElementById('history-list').innerHTML = `<div style="text-align:center; margin-top:30px;"><button class="btn" style="background:var(--correct);" onclick="goHomeFull()">בא לי גם לתרגל 🚀</button></div>`;
+        renderChart(data.exams);
+    }
+
     function shareMyStats() {
         let txt = `תראו את ההתקדמות שלי במבחני קציני בטיחות! 📈💪\nכנסו לראות את הגרף שלי בלייב:\n${window.location.origin}${window.location.pathname}?stats=${currentUser.id}`;
         if (navigator.share) { navigator.share({ title: 'הגרף שלי', text: txt }).catch(console.error); } else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
+    }
+
+    function shareReviewLink() {
+        if(!currentReviewExamId) return;
+        let url = window.location.origin + window.location.pathname + '?review=' + currentReviewExamId;
+        let txt = `כנסו לראות את המבחן המלא שלי בקציני בטיחות (תחקיר פתוח לכולם): 🧐\n${url}`;
+        if (navigator.share) { navigator.share({ title: 'תחקיר מבחן', text: txt }).catch(console.error); } else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
     }
 
     function sortLB(t, btn) {
@@ -527,15 +556,15 @@
                 list.innerHTML += `<div class="lb-item">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <b style="font-size:1.1rem;">${medal} ${ex.name}</b> 
-                        <span style="font-size:0.75rem; color:#777; background:#eee; padding:3px 6px; border-radius:5px;">${ex.date.split(',')[0]}</span>
+                        <span style="font-size:0.75rem; color:#777; background:#eee; padding:3px 6px; border-radius:5px; font-weight:bold;">${ex.date.split(',')[0]}</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
                         <span style="font-size:1.1rem;">ציון: <b style="color:${ex.score>=70?'var(--correct)':'var(--wrong)'}">${ex.score}</b></span>
-                        <span style="font-size:0.9rem; color:#555;">זמן: <b>${ex.duration}</b> דק'</span>
+                        <span style="font-size:0.9rem; color:#555;">זמן כולל: <b>${ex.duration}</b> דק'</span>
                     </div>
                     <div class="stats-box" style="margin-top:10px; display:flex; justify-content:space-between;">
                         <span>📍 ${ex.stats.type || 'מבחן כולל'}</span>
-                        <span>⏱️ ${ex.stats.avg || 0} שניות לשאלה</span>
+                        <span>⏱️ <b>${ex.stats.avg || 0}</b> שניות לשאלה</span>
                     </div>
                     <div style="display:flex; gap:8px; margin-top:10px;">
                         ${(isMine || currentUser.role === 0) ? `<button class="review-btn" onclick="reviewExam(${ex.examId})">📋 תחקיר אישי</button>` : ''}
@@ -553,23 +582,23 @@
     function reviewExam(examId, isShared = false) {
         const ex = globalLB.find(e => e.examId === examId) || (isShared ? window.sharedExamData : null);
         if(!ex || !ex.examData) return alert("נתונים לא זמינים.");
+        currentReviewExamId = examId;
         document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
         document.getElementById('review-screen').classList.remove('hidden');
         document.getElementById('review-score').innerText = `${ex.score}%`;
         document.getElementById('review-score').style.color = ex.score >= 70 ? 'var(--correct)' : 'var(--wrong)';
-        document.getElementById('review-duration').innerHTML = `זמן כולל: <b>${ex.duration} דק'</b> | ממוצע: <b>${ex.stats.avg || 0} שניות</b>`;
+        document.getElementById('review-duration').innerHTML = `זמן כולל: <b>${ex.duration} דק'</b> | ממוצע: <b>${ex.stats.avg || 0} שניות</b> לשאלה`;
         
-        const btnShare = document.getElementById('btn-share-review');
-        if (isShared) { btnShare.classList.add('hidden'); document.getElementById('shared-review-footer').classList.remove('hidden'); document.getElementById('btn-back-review').classList.add('hidden'); document.getElementById('review-shared-name').innerText = `המבחן של ${ex.name}`; document.getElementById('review-shared-name').classList.remove('hidden'); } 
-        else { btnShare.classList.remove('hidden'); btnShare.onclick = () => shareReviewLink(ex.examId); }
+        if (isShared) { document.getElementById('btn-share-review').classList.add('hidden'); document.getElementById('shared-review-footer').classList.remove('hidden'); document.getElementById('btn-back-review').classList.add('hidden'); document.getElementById('review-shared-name').innerText = `המבחן של ${ex.name}`; document.getElementById('review-shared-name').classList.remove('hidden'); } 
+        else { document.getElementById('btn-share-review').classList.remove('hidden'); }
 
         let h = '';
         ex.examData.questions.forEach((q, i) => {
             let uAns = ex.examData.answers[i];
             let qTime = (ex.examData.qTimes && ex.examData.qTimes[i]) ? ex.examData.qTimes[i] : '?';
             h += `<div class="card" style="border: 2px solid ${uAns === q.c ? 'var(--correct)' : 'var(--wrong)'}; padding-top:35px;">
-                <div style="position:absolute; top:10px; left:10px; font-size:0.75rem; color:#888; background:#f0f0f0; padding:2px 6px; border-radius:5px; font-weight:bold;">⏱️ ${qTime} שנ'</div>
-                <div style="position:absolute; top:10px; right:10px; font-size:0.75rem; color:white; background:var(--p); padding:2px 6px; border-radius:5px; font-weight:bold;">[ID: ${q.id}]</div>
+                <div style="position:absolute; top:10px; left:10px; font-size:0.75rem; color:#888; background:#f0f0f0; padding:3px 8px; border-radius:5px; font-weight:bold;">⏱️ ${qTime} שנ'</div>
+                <div style="position:absolute; top:10px; right:10px; font-size:0.75rem; color:white; background:var(--p); padding:3px 8px; border-radius:5px; font-weight:bold;">ID: ${q.id}</div>
                 <div style="font-weight:bold; margin-bottom:15px; font-size:1.1rem; line-height:1.4;">${i+1}. ${q.q}</div>
                 ${q.a.map((t, idx) => {
                     if(!t && t!==0) return '';
@@ -577,26 +606,10 @@
                     if(idx === q.c) cls += " practice-correct"; else if(idx === uAns) cls += " practice-wrong";
                     return `<div class="${cls}" style="padding:12px; cursor:default; margin:5px 0;">${t}</div>`;
                 }).join('')}
-                ${(!isShared && currentUser.id) ? `<div style="text-align:left; margin-top:10px;"><button style="background:none; border:none; color:var(--wrong); font-size:0.8rem; text-decoration:underline; cursor:pointer;" onclick="openSuggestionModalById('${q.id}')">💡 מצאת טעות? המלץ על שינוי</button></div>` : ''}
+                ${(!isShared && currentUser.id) ? `<div style="text-align:left; margin-top:15px; padding-top:10px; border-top:1px dashed #eee;"><button style="background:none; border:none; color:var(--wrong); font-size:0.85rem; font-weight:bold; text-decoration:underline; cursor:pointer;" onclick="openSuggestionModalById('${q.id}')">💡 מצאת טעות בשאלה זו? המלץ על שינוי</button></div>` : ''}
             </div>`;
         });
         document.getElementById('review-list').innerHTML = h; window.scrollTo(0,0);
-    }
-
-    function renderSharedReview(data) { window.sharedExamData = data; reviewExam(data.examId, true); }
-    function renderSharedStats(data) {
-        document.getElementById('history-page').classList.remove('hidden');
-        document.getElementById('lb-title').innerText = `ההתקדמות של ${data.name.split(" ")[0]} 📈`;
-        document.getElementById('stats-container').classList.remove('hidden');
-        document.querySelector('.lb-filters').classList.add('hidden');
-        document.getElementById('history-list').innerHTML = `<div style="text-align:center; margin-top:30px;"><button class="btn" style="background:var(--correct);" onclick="goHomeFull()">בא לי גם לתרגל 🚀</button></div>`;
-        renderChart(data.exams);
-    }
-
-    function shareReviewLink(examId) {
-        let url = window.location.origin + window.location.pathname + '?review=' + examId;
-        let txt = `כנסו לראות את המבחן המלא שלי בקציני בטיחות (תחקיר פתוח לכולם): 🧐\n${url}`;
-        if (navigator.share) { navigator.share({ title: 'תחקיר מבחן', text: txt }).catch(console.error); } else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
     }
 
     async function showSuggestionsPanel() {
@@ -610,13 +623,13 @@
                 const orig = allQuestionsDB.find(x => String(x.id) === String(s.qId));
                 if (!orig) return;
                 h += `<div class="card" style="border:1px solid var(--p);">
-                    <div style="color:var(--p); font-weight:bold; margin-bottom:10px; font-size:1.1rem;">💡 הצעה מ: ${s.userName} <span class="id-tag">[ID: ${s.qId}]</span></div>
+                    <div style="color:var(--p); font-weight:bold; margin-bottom:10px; font-size:1.1rem;">💡 הצעה מ: ${s.userName} <span class="id-tag">ID: ${s.qId}</span></div>
                     <div style="background:#fafafa; padding:15px; border-radius:8px;">
                         <b style="color:#555;">שאלה:</b>
                         <div class="diff-del">${orig.q}</div>
                         <textarea id="h-q-${s.row}" class="input-pass diff-add">${orig.q}</textarea>
                         
-                        <b style="color:#555; display:block; margin-top:10px;">תשובות (ערוך טקסט כחול אם צריך):</b>
+                        <b style="color:#555; display:block; margin-top:10px;">תשובות:</b>
                         ${s.opts.map((opt, i) => `
                             <div style="margin-top:10px;">
                                 <div style="font-size:0.75rem; color:#888;">תשובה ${i+1}:</div>
@@ -642,7 +655,7 @@
     }
 
     async function handleSugg(row, status, qId, uName) {
-        if(!confirm(status==='approved' ? "לאשר ולדרוס את המאגר הראשי?" : "למחוק את ההצעה?")) return;
+        if(!confirm(status==='approved' ? "לאשר ולדרוס את המאגר הראשי?" : "לדחות את ההצעה?")) return;
         showLoader("default");
         let finalOpts = [], finalCorrect = 0, finalQ = "";
         if(status === 'approved') {
@@ -657,8 +670,7 @@
     function openSuggestionModal() { openSuggestionModalById(state.questions[state.index].id); }
     function openSuggestionModalById(id) {
         const q = allQuestionsDB.find(x => String(x.id) === String(id)); if(!q) return;
-        document.getElementById('sugg-q-display').innerText = q.q;
-        document.getElementById('sugg-q-display').setAttribute('data-qid', q.id);
+        document.getElementById('sugg-q-display').innerText = q.q; document.getElementById('sugg-q-display').setAttribute('data-qid', q.id);
         let h = ''; q.a.forEach((t, i) => { h += `<span class="sugg-label">תשובה ${i+1}:</span><textarea id="s-opt${i}" class="input-pass" style="text-align:right; height:auto; min-height:45px;" oninput="this.style.height='';this.style.height=this.scrollHeight+'px'">${t}</textarea>`; });
         document.getElementById('sugg-inputs').innerHTML = h; document.getElementById('sugg-correct').value = q.c + 1;
         document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('sugg-modal').classList.remove('hidden');
@@ -666,16 +678,14 @@
     }
 
     async function submitSuggestion() {
-        const qId = document.getElementById('sugg-q-display').getAttribute('data-qid');
-        const qText = document.getElementById('sugg-q-display').innerText;
+        const qId = document.getElementById('sugg-q-display').getAttribute('data-qid'), qText = document.getElementById('sugg-q-display').innerText;
         const data = { action: 'submitSuggestion', qId: qId, userId: currentUser.id, userName: currentUser.name, qText: qText, opts: [document.getElementById('s-opt0').value, document.getElementById('s-opt1').value, document.getElementById('s-opt2').value, document.getElementById('s-opt3').value], correct: parseInt(document.getElementById('sugg-correct').value)-1, comment: document.getElementById('sugg-comment').value };
-        showLoader("default"); 
-        try { const res = await fetch(apiURL, { method: 'POST', body: JSON.stringify(data) }); const j = await res.json(); if(j.error) alert(j.msg); else alert("נשלח בהצלחה! מנהל המערכת יעבור על ההצעה."); closeModals(); } catch(e) { alert("שגיאה."); } finally { hideLoader(); }
+        showLoader("default"); try { const res = await fetch(apiURL, { method: 'POST', body: JSON.stringify(data) }); const j = await res.json(); if(j.error) alert(j.msg); else alert("נשלח למנהל בהצלחה!"); closeModals(); } catch(e) { alert("שגיאה."); } finally { hideLoader(); }
     }
 
     async function saveProgress() { await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index, practiceAnswers: state.answers, weaknesses: userWeaknesses }) }); }
     function closeModals() { document.querySelectorAll('.card[style*="fixed"], #modal-backdrop').forEach(m => m.classList.add('hidden')); }
-    function goHomeFull() { location.reload(); }
+    function goHomeFull() { location.href = window.location.pathname; }
     function goHome() { document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('menu').classList.remove('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden');}
     function logout() { localStorage.removeItem('qbSavedID'); location.reload(); }
     async function deleteExam(id) { if(!confirm("למחוק?")) return; showLoader("default"); await fetch(apiURL, { method:'POST', body: JSON.stringify({action:'deleteExam', examId:id, adminId:currentUser.id}) }); loadLeaderboard(); }
