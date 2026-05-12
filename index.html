@@ -300,13 +300,14 @@
 
     let questionsDB = [], numQuestionsDB = [], allQuestionsDB = [], globalLB = [], globalPracticeLB = [], globalContribLB = [], globalLogs = [];
     let state = { mode: '', questions: [], index: 0, answers: [], start: null, qTimes: {} };
-    let currentUser = { id: "", name: "", role: 2 };
+    let currentUser = { id: "", name: "", role: 2, lastIdx: 0 };
     let currentQStart = 0, myChart = null, currentReviewExamId = null;
     let myDeviceId = localStorage.getItem('qbDeviceId') || (Math.random().toString(36).substr(2,9)+Date.now().toString(36));
     localStorage.setItem('qbDeviceId', myDeviceId);
     let appSettings = { dark: false, font: 16, autoNext: true };
     let userWeaknesses = [];
     let timerInterval = null;
+    let globalPracticeAnswers = []; // סנכרון התשובות הגלובליות מול התרגול ומקצה השיפורים
 
     document.addEventListener('click', function(event) {
         var dropdown = document.getElementById('dropdown');
@@ -401,10 +402,13 @@
     function handleLoginResponse(j, id) {
         hideLoader();
         if(j.error) { document.getElementById('sys-msg').innerText = j.msg; localStorage.removeItem('qbSavedID'); document.getElementById('login-screen').classList.remove('hidden'); return; }
-        currentUser = { id: id, name: j.name, role: j.role };
+        currentUser = { id: id, name: j.name, role: j.role, lastIdx: j.lastIdx || 0 };
         localStorage.setItem('qbSavedID', id);
         questionsDB = j.data || []; numQuestionsDB = j.numData || []; allQuestionsDB = [...questionsDB, ...numQuestionsDB];
-        state.answers = j.practiceAnswers || [];
+        
+        globalPracticeAnswers = j.practiceAnswers || [];
+        state.answers = [...globalPracticeAnswers];
+        
         document.getElementById('top-name').innerText = j.name.split(" ")[0];
         document.getElementById('user-menu-btn').style.display = 'flex';
         document.getElementById('menu').classList.remove('hidden');
@@ -463,7 +467,12 @@
                 startTimer();
             } else {
                 state.questions = [...pool];
-                state.answers = (m==='practice' && state.answers.length === pool.length) ? state.answers : new Array(pool.length).fill(null);
+                if (m === 'practice') {
+                    state.answers = (globalPracticeAnswers.length === pool.length) ? [...globalPracticeAnswers] : new Array(pool.length).fill(null);
+                    globalPracticeAnswers = state.answers;
+                } else {
+                    state.answers = new Array(pool.length).fill(null);
+                }
                 document.getElementById('exam-timer').classList.add('hidden');
             }
             document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
@@ -492,6 +501,7 @@
         if ((currentUser.role === 0 || currentUser.role === 1) && !state.mode.includes('Exam')) document.getElementById('admin-edit-q-btn').classList.remove('hidden');
         else document.getElementById('admin-edit-q-btn').classList.add('hidden');
         const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
+        
         q.a.forEach((t, i) => {
             if(!t && t!==0) return;
             const d = document.createElement('div'); d.className = 'option';
@@ -500,21 +510,63 @@
                 let cls = i === q.c ? 'practice-correct' : (state.answers[state.index] === i ? 'practice-wrong' : '');
                 if (cls !== '') { d.classList.add(cls); }
             }
-            d.innerText = t; d.onclick = () => {
-                if(state.answers[state.index] !== null && !state.mode.includes('Exam')) return;
+            d.innerText = t; 
+            d.onclick = () => {
+                // רק במקצה שיפורים אנחנו נאפשר ללחוץ שוב כדי לתקן את התשובה
+                if(state.answers[state.index] !== null && state.mode !== 'weak' && !state.mode.includes('Exam')) return;
+                
                 state.answers[state.index] = i; 
+                
                 if(!state.mode.includes('Exam')) {
-                    if (i !== q.c && !userWeaknesses.includes(String(q.id))) { userWeaknesses.push(String(q.id)); updateWeaknessBtn(); }
-                    else if (i === q.c && userWeaknesses.includes(String(q.id))) { userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); updateWeaknessBtn(); }
+                    if (i !== q.c && !userWeaknesses.includes(String(q.id))) { 
+                        userWeaknesses.push(String(q.id)); updateWeaknessBtn(); 
+                    }
+                    else if (i === q.c && userWeaknesses.includes(String(q.id))) { 
+                        userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); updateWeaknessBtn(); 
+                    }
+
+                    // סנכרון התשובה למערכת התרגול הראשית כדי ששם זה יהפוך לירוק
+                    let origIndex = questionsDB.findIndex(x => String(x.id) === String(q.id));
+                    if (origIndex > -1) {
+                        if (globalPracticeAnswers.length !== questionsDB.length) {
+                            globalPracticeAnswers = new Array(questionsDB.length).fill(null);
+                        }
+                        globalPracticeAnswers[origIndex] = i;
+                    }
+
                     const fb = document.getElementById('feedback');
-                    if(i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; if(appSettings.autoNext) setTimeout(() => move(1), 600); }
-                    else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; }
-                    if(state.mode==='practice') saveProgress();
+                    if(i === q.c) { 
+                        fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; 
+                        
+                        // במקצה שיפורים - נראה לירוק, נחכה שניה ואז נעלים מהמסך
+                        if (state.mode === 'weak') {
+                            setTimeout(() => {
+                                if (state.mode === 'weak' && state.questions[state.index] && String(state.questions[state.index].id) === String(q.id)) {
+                                    state.questions.splice(state.index, 1);
+                                    state.answers.splice(state.index, 1);
+                                    if (state.questions.length === 0) {
+                                        alert("🎉 סיימת את מקצה השיפורים בהצלחה!");
+                                        goHome();
+                                    } else {
+                                        if (state.index >= state.questions.length) state.index = Math.max(0, state.questions.length - 1);
+                                        renderBubbles(); renderQuestion();
+                                    }
+                                }
+                            }, 1200); 
+                        } else if(appSettings.autoNext) {
+                            setTimeout(() => move(1), 600); 
+                        }
+                    }
+                    else { 
+                        fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; 
+                    }
+                    if(state.mode === 'practice' || state.mode === 'weak') saveProgress();
                 }
                 renderBubbles(); renderQuestion();
             };
             optCont.appendChild(d);
         });
+        
         let btn = document.getElementById('main-action-btn');
         if(state.index === state.questions.length - 1 && state.mode.includes('Exam')) { btn.innerText = "סיים והגש 🚀"; btn.style.background = "linear-gradient(135deg, #27ae60, #2ecc71)"; btn.onclick = submitExam; } 
         else { btn.innerText = "הבא ⬅️"; btn.style.background = "var(--p-grad)"; btn.onclick = () => move(1); }
@@ -852,7 +904,11 @@
         if (navigator.share) { navigator.share({ title: 'שאלה לדיון', text: txt }).catch(console.error); } else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
     }
 
-    async function saveProgress() { await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index, practiceAnswers: state.answers, weaknesses: userWeaknesses }) }); }
+    async function saveProgress() { 
+        if (state.mode === 'practice') currentUser.lastIdx = state.index;
+        await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: currentUser.lastIdx || 0, practiceAnswers: globalPracticeAnswers, weaknesses: userWeaknesses }) }); 
+    }
+    
     function closeModals() { document.querySelectorAll('.card[style*="fixed"], #modal-backdrop').forEach(m => m.classList.add('hidden')); }
     function goHomeFull() { location.href = window.location.pathname; }
     function goHome() { document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('menu').classList.remove('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden');}
