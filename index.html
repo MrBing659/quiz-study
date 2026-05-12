@@ -51,7 +51,6 @@
         .input-pass:focus { outline: none; border-color: var(--p); box-shadow: 0 0 0 3px rgba(52,152,219,0.2); background: var(--card);}
         textarea.input-pass { resize: vertical; min-height: 45px; text-align: right; }
 
-        /* אנימציות דינמיות בלי העיגול הרגיל! */
         #loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .dark #loader-overlay { background: rgba(0,0,0,0.95); }
         .loader-icon { font-size: 5rem; margin-bottom: 15px; display: inline-block; }
@@ -287,7 +286,6 @@
 <script>
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
     
-    // אנימציות דינמיות רנדומליות
     const ANIM_MAP = {
         login: { t: ["פותח את השערים...", "מחפש את המפתחות...", "מכין את המערכת..."], i: "🚪", a: "anim-shine" },
         exam: { t: ["מחדד עפרונות למבחן...", "מדפיס את הטפסים...", "בודק מי זוכר מתי עושים טסט..."], i: "📝", a: "anim-write" },
@@ -307,8 +305,8 @@
     localStorage.setItem('qbDeviceId', myDeviceId);
     let appSettings = { dark: false, font: 16, autoNext: true };
     let userWeaknesses = [];
+    let timerInterval = null;
 
-    // סגירת תפריט בלחיצה בחוץ
     document.addEventListener('click', function(event) {
         var dropdown = document.getElementById('dropdown');
         var btn = document.getElementById('user-menu-btn');
@@ -358,11 +356,9 @@
         const iconEl = document.getElementById('loader-icon');
         const textEl = document.getElementById('loader-text');
         const conf = ANIM_MAP[type] || ANIM_MAP.default;
-        
         iconEl.innerText = conf.i;
         iconEl.className = "loader-icon " + conf.a;
         textEl.innerText = conf.t[Math.floor(Math.random() * conf.t.length)];
-        
         document.getElementById('loader-overlay').classList.remove('hidden');
     }
     function hideLoader() { document.getElementById('loader-overlay').classList.add('hidden'); }
@@ -390,9 +386,15 @@
         if(!id || !fn || !ln) { document.getElementById('sys-msg').innerText = "אנא מלא את כל השדות."; return; }
         showLoader("login");
         try {
-            const res = await fetch(`${apiURL}?action=login&id=${id}&fname=${fn}&lname=${ln}&auto=false&deviceId=${myDeviceId}`);
-            handleLoginResponse(await res.json(), id);
-        } catch(e) { hideLoader(); document.getElementById('sys-msg').innerText = "שגיאת רשת. נסה שוב."; }
+            const url = `${apiURL}?action=login&id=${id}&fname=${encodeURIComponent(fn)}&lname=${encodeURIComponent(ln)}&auto=false&deviceId=${myDeviceId}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            handleLoginResponse(data, id);
+        } catch(e) { 
+            hideLoader(); 
+            document.getElementById('sys-msg').innerText = "שגיאת רשת או קריסת שרת. פתח Console (F12) לבדיקה."; 
+            console.error("Login Error:", e);
+        }
     }
 
     function handleLoginResponse(j, id) {
@@ -406,10 +408,8 @@
         document.getElementById('user-menu-btn').style.display = 'flex';
         document.getElementById('menu').classList.remove('hidden');
         document.getElementById('login-screen').classList.add('hidden');
-        
         userWeaknesses = (j.weaknesses || []).map(String);
         updateWeaknessBtn();
-        
         if (j.role === 0) {
             document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
             if (j.suggestionsCount > 0) {
@@ -428,7 +428,6 @@
         else { btn.classList.remove('btn-weak'); btn.style.background = "#bdc3c7"; btn.disabled = true; }
     }
 
-    // פונקציית ערבוב מתקדמת למבחנים (Fisher-Yates)
     function shuffleArray(arr) {
         let array = [...arr];
         for (let i = array.length - 1; i > 0; i--) {
@@ -452,9 +451,8 @@
             state.mode = m; state.index = 0; state.start = new Date(); state.qTimes = {};
             let pool = m.includes('num') ? numQuestionsDB : questionsDB;
             if(pool.length === 0) return alert("אין שאלות במאגר זה כרגע.");
-            
             if(m.includes('Exam')) {
-                state.questions = shuffleArray(pool).slice(0,50); // שימוש בערבוב החדש
+                state.questions = shuffleArray(pool).slice(0,50);
                 state.answers = new Array(state.questions.length).fill(null);
                 document.getElementById('exam-timer').classList.remove('hidden');
                 startTimer();
@@ -485,12 +483,9 @@
         document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active'));
         document.getElementById(`bubble-${state.index}`).classList.add('active');
         document.getElementById(`bubble-${state.index}`).scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
-        
         document.getElementById('q-text').innerHTML = `${state.index+1}. <span class="id-tag">ID: ${q.id}</span> ${q.q}`;
-        
         if ((currentUser.role === 0 || currentUser.role === 1) && !state.mode.includes('Exam')) document.getElementById('admin-edit-q-btn').classList.remove('hidden');
         else document.getElementById('admin-edit-q-btn').classList.add('hidden');
-
         const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
         q.a.forEach((t, i) => {
             if(!t && t!==0) return;
@@ -502,11 +497,9 @@
             d.innerText = t; d.onclick = () => {
                 if(state.answers[state.index] !== null && !state.mode.includes('Exam')) return;
                 state.answers[state.index] = i; 
-                
                 if(!state.mode.includes('Exam')) {
                     if (i !== q.c && !userWeaknesses.includes(String(q.id))) { userWeaknesses.push(String(q.id)); updateWeaknessBtn(); }
                     else if (i === q.c && userWeaknesses.includes(String(q.id))) { userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); updateWeaknessBtn(); }
-                    
                     const fb = document.getElementById('feedback');
                     if(i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; if(appSettings.autoNext) setTimeout(() => move(1), 600); }
                     else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; }
@@ -516,7 +509,6 @@
             };
             optCont.appendChild(d);
         });
-        
         let btn = document.getElementById('main-action-btn');
         if(state.index === state.questions.length - 1 && state.mode.includes('Exam')) { btn.innerText = "סיים והגש 🚀"; btn.style.background = "linear-gradient(135deg, #27ae60, #2ecc71)"; btn.onclick = submitExam; } 
         else { btn.innerText = "הבא ⬅️"; btn.style.background = "var(--p-grad)"; btn.onclick = () => move(1); }
@@ -526,7 +518,7 @@
     function move(s) { saveQTime(); state.index += s; if(state.index < 0) state.index=0; if(state.index >= state.questions.length) state.index = state.questions.length-1; renderQuestion(); }
 
     function startTimer() {
-        state.time = 90 * 60; clearInterval(timerInterval);
+        state.time = 90 * 60; if(timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             state.time--; let m = Math.floor(state.time / 60); let s = state.time % 60;
             document.getElementById('exam-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
@@ -539,20 +531,17 @@
         let unanswered = state.answers.filter(a => a === null).length;
         if (unanswered > 0 && !confirm(`לא ענית על ${unanswered} שאלות. להגיש בכל זאת?`)) return;
         showLoader("default");
-        clearInterval(timerInterval);
+        if(timerInterval) clearInterval(timerInterval);
         let correct = 0; state.questions.forEach((q, i) => { 
             if(state.answers[i] === q.c) { correct++; userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); }
             else { if(!userWeaknesses.includes(String(q.id))) userWeaknesses.push(String(q.id)); }
         });
         updateWeaknessBtn();
-
         let score = Math.round((correct / state.questions.length) * 100);
         let dur = Math.round((new Date() - state.start) / 1000 / 60);
         let timesArr = Object.values(state.qTimes), avg = timesArr.length ? (timesArr.reduce((a,b)=>a+b,0)/state.questions.length).toFixed(1) : 0;
         let eType = state.mode === 'numExam' ? 'מבחן מספריות' : 'מבחן כולל';
-        
         const data = { action: 'saveExam', examId: Date.now(), id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: dur, date: new Date().toLocaleString('he-IL'), stats: { type: eType, avg: avg }, examData: { questions: state.questions, answers: state.answers, qTimes: state.qTimes } };
-        
         try {
             await fetch(apiURL, { method: 'POST', body: JSON.stringify(data) });
             hideLoader(); document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden');
@@ -573,13 +562,11 @@
             const res = await fetch(`${apiURL}?action=getLeaderboard`);
             const j = await res.json(); hideLoader();
             globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
-            
             const myExams = globalLB.filter(ex => String(ex.id).replace(/^0+/, '') === String(currentUser.id).replace(/^0+/, '')).sort((a,b) => a.examId - b.examId);
             if (myExams.length > 0) {
                 document.getElementById('stats-container').classList.remove('hidden');
                 renderChart(myExams);
             } else { document.getElementById('stats-container').classList.add('hidden'); }
-            
             sortLB('score', document.getElementById('sort-score'));
         } catch(e) { hideLoader(); alert("שגיאה בטעינת טבלת שיאים."); }
     }
@@ -660,11 +647,211 @@
         document.getElementById('review-score').innerText = `${ex.score}%`;
         document.getElementById('review-score').style.color = ex.score >= 70 ? 'var(--correct)' : 'var(--wrong)';
         document.getElementById('review-duration').innerHTML = `זמן כולל: <b>${ex.duration} דק'</b> | ממוצע: <b>${ex.stats.avg || 0} שניות</b> לשאלה`;
-        
         if (isShared) { document.getElementById('btn-share-review').classList.add('hidden'); document.getElementById('shared-review-footer').classList.remove('hidden'); document.getElementById('btn-back-review').classList.add('hidden'); document.getElementById('review-shared-name').innerText = `המבחן של ${ex.name}`; document.getElementById('review-shared-name').classList.remove('hidden'); } 
         else { document.getElementById('btn-share-review').classList.remove('hidden'); document.getElementById('btn-back-review').classList.remove('hidden'); document.getElementById('shared-review-footer').classList.add('hidden'); document.getElementById('review-shared-name').classList.add('hidden'); }
-
         let h = '';
         ex.examData.questions.forEach((q, i) => {
             let uAns = ex.examData.answers[i];
-            let qTime = (ex.examData.qTimes && ex.exam
+            let qTime = (ex.examData.qTimes && ex.examData.qTimes[i]) ? ex.examData.qTimes[i] : '?';
+            h += `<div class="card" style="border: 2px solid ${uAns === q.c ? 'var(--correct)' : 'var(--wrong)'}; padding-top:35px;">
+                <div style="position:absolute; top:10px; left:10px; font-size:0.75rem; color:#888; background:#f0f0f0; padding:3px 8px; border-radius:5px; font-weight:bold;">⏱️ ${qTime} שנ'</div>
+                <div style="position:absolute; top:10px; right:10px; font-size:0.75rem; color:white; background:var(--p); padding:3px 8px; border-radius:5px; font-weight:bold;">ID: ${q.id}</div>
+                <div style="font-weight:bold; margin-bottom:15px; font-size:1.1rem; line-height:1.4;">${i+1}. ${q.q}</div>
+                ${q.a.map((t, idx) => {
+                    if(!t && t!==0) return '';
+                    let cls = "option";
+                    if(idx === q.c) cls += " practice-correct"; else if(idx === uAns) cls += " practice-wrong";
+                    return `<div class="${cls}" style="padding:12px; cursor:default; margin:5px 0;">${t}</div>`;
+                }).join('')}
+                ${(!isShared && currentUser.id) ? `<div style="text-align:left; margin-top:15px; padding-top:10px; border-top:1px dashed #eee;"><button style="background:none; border:none; color:var(--wrong); font-size:0.85rem; font-weight:bold; text-decoration:underline; cursor:pointer;" onclick="openSuggestionModalById('${q.id}')">💡 מצאת טעות בשאלה זו? המלץ על שינוי</button></div>` : ''}
+            </div>`;
+        });
+        document.getElementById('review-list').innerHTML = h; window.scrollTo(0,0);
+    }
+
+    async function showAdminPanel() {
+        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('admin-screen').classList.remove('hidden'); document.getElementById('admin-list').innerHTML = ""; showLoader("default");
+        try {
+            const res = await fetch(`${apiURL}?action=getAdminData&adminId=${currentUser.id}`); const json = await res.json(); hideLoader();
+            if(json.success) {
+                let html = "";
+                json.users.forEach(u => {
+                    if (String(u.id).trim().replace(/^0+/, '') === "12345678") return; 
+                    let isOnline = u.status === "ACTIVE", dotClass = isOnline ? "var(--correct)" : "#bbb";
+                    let displayIdx = parseInt(u.lastIdx), lastQText = isNaN(displayIdx) ? "טרם התחיל" : (displayIdx + 1); 
+                    let roleBadge = u.role === 1 ? `<span style="background:#e67e22; color:white; padding:2px 5px; border-radius:3px; font-size:0.7rem; margin-right:5px;">מודרייטור</span>` : ``;
+                    let roleBtnTxt = u.role === 1 ? "⬇️ למשתמש" : "⬆️ למודרייטור"; let newRoleCode = u.role === 1 ? 2 : 1;
+                    let devicesHtml = "";
+                    if (u.devices && u.devices.length > 0) {
+                        u.devices.forEach((d, i) => { devicesHtml += `<div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #ccc; padding:8px; border-radius:5px; margin-bottom:5px;"><div>📱 מכשיר ${i+1} <br><span style="font-size:0.75rem; color:#777;">נוצר: ${d.added}</span></div><button class="review-btn" style="background:var(--wrong); flex:none; padding:5px 10px;" onclick="removeDevice('${u.id}', '${d.id}')">🗑️ נתק</button></div>`; });
+                    } else { devicesHtml = "<div style='font-size:0.8rem; margin:10px 0;'>אין מכשירים רשומים</div>"; }
+                    let tempApprHtml = "";
+                    if (u.tempApproval) {
+                        if (new Date().getTime() < new Date(u.tempApproval).getTime()) {
+                            tempApprHtml = `<div style="font-size:0.85rem; color:var(--p); font-weight:bold; margin-top:5px; padding:5px; background:rgba(52,152,219,0.1); border-radius:5px; border:1px solid var(--p);">⚡ אישור זמני בתוקף עד: ${new Date(u.tempApproval).toLocaleString('he-IL')}</div>`;
+                        }
+                    }
+                    html += `<div class="lb-item" style="display:block; padding:12px; background:var(--bg); border-radius:8px; margin-bottom:15px;"><div style="font-weight:bold; font-size:1.1rem;"><span style="height:10px;width:10px;border-radius:50%;display:inline-block;background:${dotClass}; margin-left:5px;"></span>${roleBadge}${u.name}</div><div style="font-size:0.85rem; color:#666; margin: 5px 0;">ת"ז: ${u.id} | שאלה אחרונה: ${lastQText}</div>
+                    <div style="margin:10px 0;">${devicesHtml}${tempApprHtml}</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px;"><button class="review-btn" onclick="editUserPrompt('${u.id}', '${u.name}')">✏️ ערוך</button><button class="review-btn" style="background:#8e44ad;" onclick="changeRole('${u.id}', ${newRoleCode}, '${u.name}')">${roleBtnTxt}</button><button class="review-btn" style="background:#f39c12;" onclick="tempApprove('${u.id}', '${u.name}')">⏱️ אישור</button><button class="review-btn" style="background:var(--wrong);" onclick="disconnectUser('${u.id}', '${u.name}')">🔌 נתק</button></div></div>`;
+                });
+                document.getElementById('admin-list').innerHTML = html || "אין נתונים.";
+            }
+        } catch(e) { hideLoader(); document.getElementById('admin-list').innerHTML = "שגיאה בטעינת פאנל ניהול."; }
+    }
+
+    async function changeRole(userId, newRoleCode, userName) { if(!confirm(`לשנות הרשאה למשתמש ${userName}?`)) return; showLoader("default"); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'changeRole', adminId: currentUser.id, targetId: userId, newRole: newRoleCode }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
+    async function disconnectUser(userId, userName) { if(!confirm(`לנתק את ${userName}?`)) return; showLoader("default"); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId }) }); alert(`${userName} נותק.`); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
+    async function tempApprove(userId, userName) { if(!confirm(`לתת אישור התחברות זמני (12 שעות)?`)) return; showLoader("default"); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'tempApprove', adminId: currentUser.id, targetId: userId }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
+    async function removeDevice(userId, devId) { if(!confirm(`למחוק את המכשיר?`)) return; showLoader("default"); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'removeDevice', adminId: currentUser.id, targetId: userId, deviceId: devId }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
+    function editUserPrompt(oldId, oldName) { document.getElementById('edit-old-id').value = oldId; document.getElementById('edit-name-input').value = oldName; document.getElementById('edit-id-input').value = oldId; document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('edit-modal').classList.remove('hidden'); }
+    async function saveEditUser() { let oldId = document.getElementById('edit-old-id').value, newName = document.getElementById('edit-name-input').value.trim(), newId = document.getElementById('edit-id-input').value.trim(); if(!newName || !newId) return alert("מלא שדות."); if(newName === document.getElementById('edit-name-input').defaultValue && newId === oldId) return closeModals(); document.getElementById('btn-save-edit').innerText = "שומר..."; try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'editUser', adminId: currentUser.id, oldId: oldId, newId: newId, newName: newName }) }); alert("עודכן בהצלחה!"); closeModals(); showAdminPanel(); } catch(e) { alert("שגיאה."); } finally { document.getElementById('btn-save-edit').innerText = "שמור שינויים"; } }
+
+    function showQDBPanel() { document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('qdb-screen').classList.remove('hidden'); document.getElementById('qdb-search').value = ""; filterQDB(); }
+    function filterQDB() {
+        let val = document.getElementById('qdb-search').value.toLowerCase(); let html = ""; let count = 0;
+        for (let i = 0; i < allQuestionsDB.length; i++) {
+            let q = allQuestionsDB[i];
+            if (String(q.id).includes(val) || q.q.toLowerCase().includes(val)) {
+                if(count > 50) break; 
+                html += `<div style="padding:10px; background:var(--bg); border-radius:8px; margin-bottom:10px;"><div style="font-size:0.8rem; color:#777;">ID: ${q.id}</div><div style="font-weight:bold; margin-bottom:5px;">${q.q}</div><button class="review-btn" onclick="openEditQModalFromDB('${q.id}')">✏️ ערוך</button></div>`;
+                count++;
+            }
+        }
+        document.getElementById('qdb-list').innerHTML = html || "לא נמצאו תוצאות.";
+    }
+
+    async function showChangelogPanel() {
+        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('changelog-screen').classList.remove('hidden');
+        document.getElementById('changelog-list').innerHTML = ""; showLoader("default");
+        try {
+            const res = await fetch(`${apiURL}?action=getChangelog&adminId=${currentUser.id}`); const json = await res.json(); hideLoader();
+            if(json.success) {
+                globalLogs = json.logs; let html = "";
+                globalLogs.forEach((l, idx) => {
+                    let o = l.oldState, n = l.newState;
+                    html += `<div style="padding:15px; border-bottom:1px solid #ddd; background:var(--bg); margin-bottom:10px; border-radius:8px;">
+                        <b style="color:var(--p)">${l.editor}</b> <span style="color:#777; font-size:0.8rem;">(${l.date})</span><br>ID: <b>${l.qId}</b><br>
+                        <div style="font-size:0.9rem; margin-top:10px; background:var(--card); padding:10px; border-radius:5px; border:1px solid #ccc; line-height: 1.6;">
+                            <div><b>שאלה:</b> ${String(o.q).trim()!==String(n.q).trim()?`<span class="diff-del">${o.q}</span> <span class="diff-add">${n.q}</span>`:o.q}</div>
+                            ${[0,1,2,3].map(i => `<div><b>תשובה ${i+1}:</b> ${String(o.a[i])!==String(n.a[i])?`<span class="diff-del">${o.a[i]}</span> <span class="diff-add">${n.a[i]}</span>`:o.a[i]}</div>`).join('')}
+                            <div style="margin-top:5px;"><b>נכונה:</b> ${o.c!==n.c?`<span class="diff-del">${o.c+1}</span> <span class="diff-add">${n.c+1}</span>`:o.c+1}</div>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('changelog-list').innerHTML = html || "אין היסטוריית שינויים.";
+            }
+        } catch(e) { hideLoader(); }
+    }
+
+    async function showSuggestionsPanel() {
+        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+        document.getElementById('admin-sugg-screen').classList.remove('hidden'); showLoader("sugg");
+        try {
+            const res = await fetch(`${apiURL}?action=getSuggestions&adminId=${currentUser.id}`);
+            const j = await res.json(); hideLoader();
+            let h = '';
+            j.suggestions.forEach(s => {
+                const orig = allQuestionsDB.find(x => String(x.id) === String(s.qId));
+                if (!orig) return;
+                let qDiffHtml = (String(orig.q).trim() !== String(s.qText).trim()) ? 
+                    `<div class="diff-del">${orig.q}</div><textarea id="h-q-${s.row}" class="input-pass diff-add" style="height:auto; min-height:40px;">${s.qText}</textarea>` : 
+                    `<textarea id="h-q-${s.row}" class="input-pass" style="height:auto; min-height:40px;">${orig.q}</textarea>`;
+                let correctDiffHtml = (orig.c !== s.correct) ? `<span class="diff-del">${orig.c+1}</span> ➡️ ` : ``;
+                h += `<div class="card" style="border:1px solid var(--p);">
+                    <div style="color:var(--p); font-weight:bold; margin-bottom:10px; font-size:1.1rem;">💡 הצעה מ: ${s.userName} <span class="id-tag">ID: ${s.qId}</span></div>
+                    <div style="background:#fafafa; padding:15px; border-radius:8px;">
+                        <b style="color:#555;">שאלה:</b>
+                        ${qDiffHtml}
+                        <b style="color:#555; display:block; margin-top:10px;">תשובות (ערוך טקסט כחול אם צריך):</b>
+                        ${s.opts.map((opt, i) => {
+                            let optDiffHtml = (String(orig.a[i]) !== String(opt)) ? 
+                                `<div class="diff-del">${orig.a[i]}</div><textarea id="h-opt${i}-${s.row}" class="input-pass diff-add" style="height:auto; min-height:40px; text-align:right;">${opt}</textarea>` : 
+                                `<textarea id="h-opt${i}-${s.row}" class="input-pass" style="height:auto; min-height:40px; text-align:right;">${orig.a[i]}</textarea>`;
+                            return `<div style="margin-top:10px;"><div style="font-size:0.75rem; color:#888;">תשובה ${i+1}:</div>${optDiffHtml}</div>`;
+                        }).join('')}
+                        <div style="margin-top:15px; padding-top:15px; border-top:2px dashed #eee;">
+                            <b style="color:#555;">תשובה נכונה:</b> ${correctDiffHtml} <input type="number" id="h-correct-${s.row}" value="${s.correct+1}" min="1" max="5" style="width:50px; text-align:center; font-weight:bold; color:var(--correct); border:2px solid var(--correct); border-radius:5px;">
+                        </div>
+                        ${s.comment ? `<div style="margin-top:15px; background:#fff3cd; padding:10px; border-radius:8px; color:#856404; font-weight:bold;">💬 הערה מהמשתמש: ${s.comment}</div>` : ''}
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button class="review-btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71);" onclick="handleSugg(${s.row}, 'approved', '${s.qId}', '${s.userName}')">✅ אשר והחל</button>
+                        <button class="review-btn" style="background: linear-gradient(135deg, #c0392b, #e74c3c);" onclick="handleSugg(${s.row}, 'denied', '${s.qId}', '${s.userName}')">❌ דחה</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('admin-sugg-list').innerHTML = h || `<div style="text-align:center; margin-top:30px; font-size:1.2rem; color:#777;">אין הצעות ממתינות. הכל נקי! ✨</div>`;
+            setTimeout(() => { document.querySelectorAll('textarea').forEach(t => {t.style.height=''; t.style.height=t.scrollHeight+'px';}); }, 100);
+        } catch(e) { hideLoader(); }
+    }
+
+    async function handleSugg(row, status, qId, uName) {
+        if(!confirm(status==='approved' ? "לאשר ולדרוס את המאגר הראשי?" : "למחוק את ההצעה?")) return;
+        showLoader("default");
+        let finalOpts = [], finalCorrect = 0, finalQ = "";
+        if(status === 'approved') {
+            for(let i=0; i<4; i++) finalOpts.push(document.getElementById(`h-opt${i}-${row}`).value);
+            finalCorrect = parseInt(document.getElementById(`h-correct-${row}`).value) - 1;
+            finalQ = document.getElementById(`h-q-${row}`).value;
+        }
+        await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'handleSuggestion', adminId: currentUser.id, adminName: currentUser.name, row: row, status: status, qId: qId, suggUserName: uName, qText: finalQ, opts: finalOpts, correct: finalCorrect }) });
+        showSuggestionsPanel();
+    }
+
+    function openEditQModalFromQuiz() { fillAndShowQModal(state.questions[state.index]); }
+    function openEditQModalFromDB(qId) { const q = allQuestionsDB.find(x => String(x.id) === String(qId)); if(q) fillAndShowQModal(q); }
+    function fillAndShowQModal(q) {
+        document.getElementById('edit-q-id').value = q.id; document.getElementById('edit-q-text').value = q.q;
+        document.getElementById('edit-q-opt0').value = q.a[0] || ''; document.getElementById('edit-q-opt1').value = q.a[1] || '';
+        document.getElementById('edit-q-opt2').value = q.a[2] || ''; document.getElementById('edit-q-opt3').value = q.a[3] || '';
+        document.getElementById('edit-q-correct').value = q.c;
+        document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('edit-q-modal').classList.remove('hidden');
+    }
+    async function saveEditQuestion() {
+        let qId = document.getElementById('edit-q-id').value, qText = document.getElementById('edit-q-text').value.trim();
+        let opts = [document.getElementById('edit-q-opt0').value.trim(), document.getElementById('edit-q-opt1').value.trim(), document.getElementById('edit-q-opt2').value.trim(), document.getElementById('edit-q-opt3').value.trim()];
+        let correct = document.getElementById('edit-q-correct').value;
+        if(!qText || correct === "") return alert("מלא חובה.");
+        document.getElementById('btn-save-q').innerText = "שומר...";
+        try {
+            await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'editQuestion', editorId: currentUser.id, editorRole: currentUser.role, editorName: currentUser.name, qId: qId, qText: qText, opt0: opts[0], opt1: opts[1], opt2: opts[2], opt3: opts[3], correct: correct }) });
+            let i = allQuestionsDB.findIndex(x => String(x.id) === String(qId));
+            if(i > -1) { allQuestionsDB[i].q = qText; allQuestionsDB[i].a = opts; allQuestionsDB[i].c = parseInt(correct); }
+            alert("השאלה עודכנה!"); closeModals();
+        } catch(e) { alert("שגיאה."); } finally { document.getElementById('btn-save-q').innerText = "שמור בענן"; }
+    }
+
+    function openSuggestionModal() { openSuggestionModalById(state.questions[state.index].id); }
+    function openSuggestionModalById(id) {
+        const q = allQuestionsDB.find(x => String(x.id) === String(id)); if(!q) return;
+        document.getElementById('sugg-q-display').innerText = q.q; document.getElementById('sugg-q-display').setAttribute('data-qid', q.id);
+        let h = ''; q.a.forEach((t, i) => { h += `<span class="sugg-label">תשובה ${i+1}:</span><textarea id="s-opt${i}" class="input-pass" style="text-align:right; height:auto; min-height:45px;" oninput="this.style.height='';this.style.height=this.scrollHeight+'px'">${t}</textarea>`; });
+        document.getElementById('sugg-inputs').innerHTML = h; document.getElementById('sugg-correct').value = q.c + 1;
+        document.getElementById('modal-backdrop').classList.remove('hidden'); document.getElementById('sugg-modal').classList.remove('hidden');
+        setTimeout(() => { document.querySelectorAll('#sugg-modal textarea').forEach(t => {t.style.height=''; t.style.height=t.scrollHeight+'px';}); }, 50);
+    }
+
+    async function submitSuggestion() {
+        const qId = document.getElementById('sugg-q-display').getAttribute('data-qid'), qText = document.getElementById('sugg-q-display').innerText;
+        const data = { action: 'submitSuggestion', qId: qId, userId: currentUser.id, userName: currentUser.name, qText: qText, opts: [document.getElementById('s-opt0').value, document.getElementById('s-opt1').value, document.getElementById('s-opt2').value, document.getElementById('s-opt3').value], correct: parseInt(document.getElementById('sugg-correct').value)-1, comment: document.getElementById('sugg-comment').value };
+        showLoader("sugg"); try { const res = await fetch(apiURL, { method: 'POST', body: JSON.stringify(data) }); const j = await res.json(); if(j.error) alert(j.msg); else alert("נשלח למנהל בהצלחה!"); closeModals(); } catch(e) { alert("שגיאה."); } finally { hideLoader(); }
+    }
+
+    function shareQuestion() {
+        const q = state.questions[state.index];
+        let txt = `🤔 שאלה לדיון (ID: ${q.id}):\n\n*${q.q}*\n\n`;
+        q.a.forEach((opt, idx) => { if(opt && opt !== '') txt += `${idx+1}. ${opt}\n`; });
+        txt += `\nמה התשובה לדעתכם?`;
+        if (navigator.share) { navigator.share({ title: 'שאלה לדיון', text: txt }).catch(console.error); } else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
+    }
+
+    async function saveProgress() { await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: state.index, practiceAnswers: state.answers, weaknesses: userWeaknesses }) }); }
+    function closeModals() { document.querySelectorAll('.card[style*="fixed"], #modal-backdrop').forEach(m => m.classList.add('hidden')); }
+    function goHomeFull() { location.href = window.location.pathname; }
+    function goHome() { document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('menu').classList.remove('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden');}
+    function logout() { localStorage.removeItem('qbSavedID'); location.reload(); }
+    async function deleteExam(id) { if(!confirm("למחוק?")) return; showLoader("default"); await fetch(apiURL, { method:'POST', body: JSON.stringify({action:'deleteExam', examId:id, adminId:currentUser.id}) }); loadLeaderboard(); }
+</script>
+</body>
+</html>
