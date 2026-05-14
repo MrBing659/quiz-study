@@ -14,7 +14,7 @@
         .top-btn { background: none; border: 1px solid #ccc; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; color: var(--txt); transition: 0.2s; }
         .top-btn:active { transform: scale(0.95); }
         
-        .user-nav { position: relative; cursor: pointer; font-weight: bold; color: var(--p); display: none; align-items: center; gap: 8px;}
+        .user-nav { position: relative; cursor: pointer; font-weight: bold; color: var(--p); display: flex; align-items: center; gap: 8px;}
         .badge { background: var(--wrong); color: white; border-radius: 50%; padding: 2px 7px; font-size: 0.75rem; position: absolute; top: -8px; right: -12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1002; }
         
         .dropdown { position: absolute; top: 35px; left: 0; background: var(--card); border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); display: none; flex-direction: column; width: 220px; overflow: hidden; z-index: 1001; }
@@ -98,17 +98,20 @@
 <div class="top-bar">
     <button class="top-btn" onclick="goHomeFull()">🏠 ראשי</button>
     <div id="exam-timer" class="timer hidden" style="font-weight:bold; color:var(--wrong);">90:00</div>
-    <div class="user-nav" id="user-menu-btn" onclick="document.getElementById('dropdown').classList.toggle('show'); event.stopPropagation();">
-        <div id="notif-badge" class="badge hidden"></div>
-        <span onclick="toggleDark(!appSettings.dark); event.stopPropagation();" id="dark-toggle-icon" style="margin-left:8px; cursor:pointer; font-size:1.2rem;">🌞</span>
-        שלום <span id="top-name"></span> ▼
-        <div class="dropdown" id="dropdown">
-            <div class="drop-item" onclick="showSettings()">⚙️ הגדרות מערכת</div>
-            <div class="drop-item hidden admin-only" id="admin-sugg-btn" onclick="showSuggestionsPanel()">🔔 הצעות לשינוי <span id="sugg-inner-count"></span></div>
-            <div class="drop-item hidden admin-only" id="mod-qdb-btn" onclick="showQDBPanel()">📚 עריכת שאלות</div>
-            <div class="drop-item hidden admin-only" id="admin-panel-btn" onclick="showAdminPanel()">👑 פאנל ניהול</div>
-            <div class="drop-item hidden admin-only" id="admin-logs-btn" onclick="showChangelogPanel()">📝 היסטוריית עריכות</div>
-            <div class="drop-item" onclick="logout()" style="color:var(--wrong); font-weight:bold;">🚪 התנתק</div>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span onclick="toggleDark(!appSettings.dark); event.stopPropagation();" id="dark-toggle-icon" style="cursor:pointer; font-size:1.2rem;">🌞</span>
+        <div class="user-nav" id="user-menu-btn" onclick="document.getElementById('dropdown').classList.toggle('show'); event.stopPropagation();">
+            <span style="position:relative; padding-right:5px;">שלום <span id="top-name"></span> ▼
+                <div id="notif-badge" class="badge hidden"></div>
+            </span>
+            <div class="dropdown" id="dropdown">
+                <div class="drop-item" onclick="showSettings()">⚙️ הגדרות מערכת</div>
+                <div class="drop-item hidden admin-only" id="admin-sugg-btn" onclick="showSuggestionsPanel()">🔔 הצעות לשינוי <span id="sugg-inner-count"></span></div>
+                <div class="drop-item hidden admin-only" id="mod-qdb-btn" onclick="showQDBPanel()">📚 עריכת שאלות</div>
+                <div class="drop-item hidden admin-only" id="admin-panel-btn" onclick="showAdminPanel()">👑 פאנל ניהול</div>
+                <div class="drop-item hidden admin-only" id="admin-logs-btn" onclick="showChangelogPanel()">📝 היסטוריית עריכות</div>
+                <div class="drop-item" onclick="logout()" style="color:var(--wrong); font-weight:bold;">🚪 התנתק</div>
+            </div>
         </div>
     </div>
 </div>
@@ -137,8 +140,18 @@
             <div id="menu-practice" class="sub-menu hidden">
                  <button class="btn" onclick="startApp('practice')">📝 תרגול כללי</button>
                  <button class="btn btn-num" onclick="startApp('numPractice')">🔢 תרגול מספריות</button>
-                 <button class="btn btn-weak" id="weakness-btn" onclick="startWeaknesses()">🛠️ מקצה שיפורים (<span id="weak-count">0</span>)</button>
-                 <button class="btn" style="background:linear-gradient(135deg, #c0392b, #8e44ad);" onclick="startHardQuestions()">☠️ המוציא להורג (<span id="hard-count">0</span>)</button>
+                 <button class="btn btn-weak" id="weakness-btn" onclick="startWeaknesses()">
+                     <div style="display:flex; flex-direction:column; align-items:center; line-height:1.2;">
+                         <span>🛠️ מקצה שיפורים (<span id="weak-count">0</span>)</span>
+                         <span style="font-size:0.8rem; font-weight:normal; color:#eee; margin-top:3px;">תרגול שאלות שטעית בהן</span>
+                     </div>
+                 </button>
+                 <button class="btn" style="background:linear-gradient(135deg, #c0392b, #8e44ad);" onclick="startHardQuestions()">
+                     <div style="display:flex; flex-direction:column; align-items:center; line-height:1.2;">
+                         <span>☠️ המוציא להורג (<span id="hard-count">0</span>)</span>
+                         <span style="font-size:0.8rem; font-weight:normal; color:#eee; margin-top:3px;">שאלות שכולם נופלים בהן</span>
+                     </div>
+                 </button>
             </div>
             
             <button class="btn" style="background:#2c3e50;" onclick="toggleMenu('menu-exams')">🎓 מבחנים וסימולציות</button>
@@ -147,7 +160,7 @@
                  <button class="btn btn-num" onclick="startApp('numExam')">🏆 מבחן מספריות (50)</button>
             </div>
 
-            <button class="btn btn-duel" onclick="createDuel()">⚔️ דו-קרב ראש בראש</button>
+            <button class="btn btn-duel" onclick="showDuelExplainer()">⚔️ דו-קרב ראש בראש</button>
             <button class="btn" style="background: linear-gradient(135deg, #7f8c8d, #95a5a6);" onclick="loadLeaderboard()">📊 טבלת שיאים וסטטיסטיקה</button>
             
         </div>
@@ -175,6 +188,19 @@
         <label>תשובה נכונה (0-3):</label><input type="number" id="edit-q-correct" class="input-pass" min="0" max="3">
         <button class="btn" style="background:var(--correct);" id="btn-save-q" onclick="saveEditQuestion()">שמור בענן</button>
         <button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button>
+    </div>
+
+    <div id="duel-explainer" class="hidden card" style="text-align:center; margin-top:5vh;">
+        <h2 style="color:var(--p); font-size:2.2rem;">⚔️ זירת הדו-קרב ⚔️</h2>
+        <p style="line-height:1.8; font-size:1.1rem; color:var(--txt);">
+            ברוכים הבאים לזירה. החוקים פשוטים:<br><br>
+            ⏱️ <b>15 דקות</b> לשניכם.<br>
+            📝 <b>50 שאלות</b> אקראיות.<br>
+            ⚡ מי שעונה נכון ומהר יותר - <b>מנצח בשאלה</b>.<br><br>
+            הניקוד יישמר בטבלת אלופי הדו-קרב.
+        </p>
+        <button class="btn btn-duel" style="margin-top:25px;" onclick="createDuelRequest()">צור זירה וקבל קישור</button>
+        <button class="btn" style="background:#bdc3c7;" onclick="goHome()">חזור לתפריט</button>
     </div>
 
     <div id="quiz-screen" class="hidden">
@@ -206,7 +232,8 @@
         <h3 id="lb-subtitle" style="color:#7f8c8d; text-align:center; margin-bottom:15px;">הטבלה הכיתתית:</h3>
         <div class="lb-filters">
             <button class="lb-filter-btn active" id="sort-score" onclick="sortLB('score', this)">🏆 ציונים</button>
-            <button class="lb-filter-btn" onclick="sortLB('practice', this)">💪 אלופי התרגול</button>
+            <button class="lb-filter-btn" onclick="sortLB('practice', this)">💪 התרגול</button>
+            <button class="lb-filter-btn" onclick="sortLB('duel', this)">⚔️ דו-קרב</button>
             <button class="lb-filter-btn" onclick="sortLB('contrib', this)">🎖️ תורמים</button>
         </div>
         <div id="history-list"></div>
@@ -236,12 +263,23 @@
         <h2 style="text-align:center;">⚙️ הגדרות מערכת</h2>
         <div style="display:flex; justify-content:space-between; align-items:center; margin:20px 0; font-weight:bold;"><span>מצב לילה (Dark Mode)</span><input type="checkbox" id="set-dark" onchange="toggleDark(this.checked)" style="transform: scale(1.5);"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin:20px 0; font-weight:bold;"><span>מעבר אוטומטי (תרגול)</span><input type="checkbox" id="set-auto" onchange="appSettings.autoNext = this.checked; saveSettings();" style="transform: scale(1.5);"></div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin:20px 0; font-weight:bold; color:#777;"><span>שתף תחקירים ציבורית</span><input type="checkbox" id="set-share" checked onchange="appSettings.shareReview = this.checked; saveSettings();" style="transform: scale(1.5);"></div>
-        <div style="margin:20px 0; font-weight:bold;">
-            <div style="margin-bottom:10px;">גודל טקסט:</div>
-            <input type="range" id="set-font" min="14" max="24" value="16" style="width:100%" oninput="updateFont(this.value)">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin:20px 0; font-weight:bold;">
+            <span>שתף תחקירי מבחן באופן ציבורי</span>
+            <input type="checkbox" id="set-share" onchange="appSettings.shareReview = this.checked; saveSettings();" style="transform: scale(1.5);">
         </div>
-        <button class="btn" style="background: linear-gradient(135deg, #7f8c8d, #95a5a6);" onclick="goHome()">חזור</button>
+        
+        <div style="margin:25px 0; font-weight:bold;">
+            <div style="margin-bottom:15px;">גודל טקסט:</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:15px;">
+                <span style="font-size:0.85rem; color:#777; width:60px; text-align:right;">קטן מאד</span>
+                <input type="range" id="set-font" min="0" max="3" value="1" style="flex:1;" oninput="updateFontStep(this.value)">
+                <span style="font-size:1.15rem; color:#777; width:60px; text-align:left;">גדול מאד</span>
+            </div>
+            <div style="text-align:center; font-size:1rem; color:var(--p); margin-top:8px; font-weight:bold;" id="font-label-display">רגיל</div>
+        </div>
+
+        <button class="btn" style="background: linear-gradient(135deg, #7f8c8d, #95a5a6); margin-top:30px;" onclick="goHome()">חזור</button>
     </div>
 
     <div id="admin-screen" class="hidden card">
@@ -323,16 +361,15 @@
         default: { t: ["מערבב נתונים ואנשים...", "רק שניה, השרת שותה מים...", "מחשב מסלול מחדש..."], i: "⏳", a: "anim-spin" }
     };
 
-    let questionsDB = [], numQuestionsDB = [], allQuestionsDB = [], globalLB = [], globalPracticeLB = [], globalContribLB = [], globalLogs = [];
+    let questionsDB = [], numQuestionsDB = [], allQuestionsDB = [], globalLB = [], globalPracticeLB = [], globalContribLB = [], globalDuelLB = [], globalLogs = [];
     let state = { mode: '', questions: [], index: 0, answers: [], start: null, qTimes: {} };
     let currentUser = { id: "", name: "", role: 2, lastIdx: 0 };
     let currentQStart = 0, myChart = null, currentReviewExamId = null;
     let myDeviceId = localStorage.getItem('qbDeviceId') || (Math.random().toString(36).substr(2,9)+Date.now().toString(36));
     localStorage.setItem('qbDeviceId', myDeviceId);
-    let appSettings = { dark: false, font: 16, autoNext: true, shareReview: true };
+    let appSettings = { dark: false, fontStep: 1, font: 16, autoNext: true, shareReview: true };
     let userWeaknesses = [], globalPracticeAnswers = [], globalHardQuestions = [];
     let timerInterval = null;
-    
     let weeklyHarshan = null, weeklyTzalaf = null, weeklyKambek = null;
 
     document.addEventListener('click', function(event) {
@@ -357,7 +394,7 @@
             try {
                 const res = await fetch(`${apiURL}?action=getSharedReview&examId=${urlParams.get('review')}`);
                 const j = await res.json(); hideLoader();
-                if(j.error) { alert("מבחן לא נמצא."); goHomeFull(); return; }
+                if(j.error) { alert(j.msg); goHomeFull(); return; }
                 window.sharedExamData = j; reviewExam(j.examId, true);
             } catch(e) { hideLoader(); alert("שגיאה בטעינת המבחן."); }
             return;
@@ -402,12 +439,35 @@
     function applySettings() {
         if(appSettings.dark) document.body.classList.add('dark'); else document.body.classList.remove('dark');
         document.documentElement.style.setProperty('--base-font', appSettings.font + 'px');
-        document.getElementById('set-dark').checked = appSettings.dark; document.getElementById('set-auto').checked = appSettings.autoNext; document.getElementById('set-font').value = appSettings.font;
+        document.getElementById('set-dark').checked = appSettings.dark; 
+        document.getElementById('set-auto').checked = appSettings.autoNext; 
+        document.getElementById('set-share').checked = appSettings.shareReview !== false; 
+        
+        let step = appSettings.fontStep !== undefined ? appSettings.fontStep : 1;
+        document.getElementById('set-font').value = step;
+        const labels = ["קטן מאד", "רגיל", "גדול", "גדול מאד"];
+        let labelDisplay = document.getElementById('font-label-display');
+        if(labelDisplay) labelDisplay.innerText = labels[step];
+
         let dt = document.getElementById('dark-toggle-icon'); if(dt) dt.innerText = appSettings.dark ? "☀️" : "🌙";
     }
-    function saveSettings() { localStorage.setItem('qbSettings', JSON.stringify(appSettings)); }
+
+    async function saveSettings() { 
+        localStorage.setItem('qbSettings', JSON.stringify(appSettings)); 
+        if (currentUser.id) {
+            try { await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'saveSettings', id: currentUser.id, settings: appSettings }) }); } catch(e){}
+        }
+    }
+
     function toggleDark(isDark) { appSettings.dark = isDark; applySettings(); saveSettings(); }
-    function updateFont(v) { appSettings.font = v; applySettings(); saveSettings(); }
+    
+    function updateFontStep(val) {
+        const sizes = [14, 16, 20, 24];
+        appSettings.font = sizes[val];
+        appSettings.fontStep = val;
+        applySettings(); saveSettings();
+    }
+
     function showSettings() { document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('settings-screen').classList.remove('hidden'); }
 
     function toggleMenu(id) {
@@ -447,6 +507,8 @@
         globalPracticeAnswers = j.practiceAnswers || [];
         state.answers = [...globalPracticeAnswers];
         
+        if (j.settings) { appSettings = {...appSettings, ...j.settings}; applySettings(); }
+
         document.getElementById('top-name').innerText = j.name.split(" ")[0];
         document.getElementById('user-menu-btn').style.display = 'flex';
         document.getElementById('login-screen').classList.add('hidden');
@@ -472,7 +534,7 @@
        try {
            const res = await fetch(`${apiURL}?action=getLeaderboard`);
            const j = await res.json();
-           globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
+           globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors; globalDuelLB = j.duelLb;
            let fails = {};
            globalLB.forEach(ex => {
                if(ex.examData && ex.examData.questions && ex.examData.answers) {
@@ -531,7 +593,12 @@
         }, 400);
     }
 
-    async function createDuel() {
+    function showDuelExplainer() {
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); 
+        document.getElementById('duel-explainer').classList.remove('hidden');
+    }
+
+    async function createDuelRequest() {
         showLoader("duel");
         let dQuestions = shuffleArray(allQuestionsDB).slice(0, 50);
         let dId = Date.now().toString();
@@ -553,18 +620,30 @@
            if(j.error) { alert(j.msg); goHomeFull(); return; }
            window.currentDuel = j;
            let isP1 = isSameId(j.p1.id, currentUser.id), isP2 = isSameId(j.p2.id, currentUser.id);
+           
            if (!isP1 && !isP2 && j.p2.id && j.p2.id !== "") { alert("הדו-קרב הזה כבר שוחק ומלא."); renderDuelReview(j); return; }
-           let myData = isP1 ? j.p1 : (isP2 ? j.p2 : null);
-           if (!myData || myData.score === "") {
-               let c = confirm(`⚔️ זירת הדו-קרב של ${j.p1.name} ⚔️\n\n50 שאלות. התשובה המהירה והנכונה מנצחת.\nמוכן להילחם?`);
+           
+           if (!isP1 && !isP2) {
+               let c = confirm(`⚔️ זירת הדו-קרב של ${j.p1.name} ⚔️\n\n15 דקות. 50 שאלות. התשובה המהירה והנכונה מנצחת.\nמוכן להילחם?`);
                if(c) {
                    showLoader("duel");
-                   setTimeout(() => { hideLoader(); state.mode = 'duel'; state.questions = j.questions; state.answers = new Array(50).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
+                   try {
+                       const resJ = await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'joinDuel', duelId: j.duelId, id: currentUser.id, name: currentUser.name }) });
+                       const r = await resJ.json(); if(r.error) { alert(r.msg); goHomeFull(); return; }
+                       hideLoader();
+                       state.mode = 'duel'; state.questions = j.questions; state.answers = new Array(50).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
                        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); document.getElementById('exam-timer').classList.remove('hidden');
                        startTimer(); renderBubbles(); renderQuestion();
-                   }, 400);
+                   } catch(e) { hideLoader(); alert("שגיאה בהצטרפות."); goHomeFull(); }
                } else goHomeFull();
-           } else { renderDuelReview(j); }
+           } else {
+               let myData = isP1 ? j.p1 : j.p2;
+               if (!myData || myData.score === "") {
+                   state.mode = 'duel'; state.questions = j.questions; state.answers = new Array(50).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
+                   document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); document.getElementById('exam-timer').classList.remove('hidden');
+                   startTimer(); renderBubbles(); renderQuestion();
+               } else { renderDuelReview(j); }
+           }
        } catch(e) { hideLoader(); alert("שגיאה."); }
     }
 
@@ -583,7 +662,7 @@
                 if (m === 'practice' || m === 'numPractice') {
                     state.answers = (globalPracticeAnswers.length === pool.length) ? [...globalPracticeAnswers] : new Array(pool.length).fill(null);
                     globalPracticeAnswers = state.answers;
-                    state.index = m === 'practice' ? (currentUser.lastIdx || 0) : 0; // Smart Resume
+                    state.index = m === 'practice' ? (currentUser.lastIdx || 0) : 0; 
                 } else { state.answers = new Array(pool.length).fill(null); }
                 document.getElementById('exam-timer').classList.add('hidden');
             }
@@ -665,7 +744,9 @@
         if (unanswered > 0 && !confirm(`לא ענית על ${unanswered} שאלות. להגיש בכל זאת?`)) return;
         showLoader("default");
         clearInterval(timerInterval);
-        let correct = 0; state.questions.forEach((q, i) => { 
+        
+        let correct = 0; 
+        state.questions.forEach((q, i) => { 
             if(state.answers[i] === q.c) { correct++; userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); }
             else { if(!userWeaknesses.includes(String(q.id))) userWeaknesses.push(String(q.id)); }
         });
@@ -678,7 +759,7 @@
         
         let newExamId = Date.now();
         if(state.mode === 'duel') {
-            const data = { action: 'submitDuel', duelId: window.currentDuel.duelId, id: currentUser.id, name: currentUser.name, score: score, answers: state.answers, qTimes: state.qTimes };
+            const data = { action: 'submitDuel', duelId: window.currentDuel.duelId, id: currentUser.id, name: currentUser.name, score: score, answers: state.answers, qTimes: state.qTimes, weaknesses: userWeaknesses };
             await fetch(apiURL, { method: 'POST', body: JSON.stringify(data) });
             window.location.reload(); return;
         }
@@ -704,7 +785,7 @@
         try {
             const res = await fetch(`${apiURL}?action=getLeaderboard`);
             const j = await res.json(); hideLoader();
-            globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
+            globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors; globalDuelLB = j.duelLb;
             calculateWeeklyTitles();
 
             let titlesHtml = `<div style="display:flex; justify-content:space-around; background:var(--card); padding:10px; border-radius:10px; margin-bottom:20px; font-size:0.85rem; text-align:center; border:1px solid #eee; box-shadow:0 2px 10px rgba(0,0,0,0.05);">`;
@@ -778,6 +859,8 @@
             });
         } else if (t === 'practice') {
             globalPracticeLB.sort((a,b)=>b.count-a.count).forEach((u, i) => { let m = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`; list.innerHTML += `<div class="lb-item" style="flex-direction:row; justify-content:space-between; align-items:center;"><b style="font-size:1.1rem;">${m} ${u.name} ${getTitleIcon(u.name)}</b><span style="background:var(--p-grad); color:white; padding:5px 10px; border-radius:15px; font-weight:bold;">${u.count} שאלות</span></div>`; });
+        } else if (t === 'duel') {
+            globalDuelLB.sort((a,b)=>b.count-a.count).forEach((u, i) => { let m = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`; list.innerHTML += `<div class="lb-item" style="flex-direction:row; justify-content:space-between; align-items:center;"><b style="font-size:1.1rem;">${m} ${u.name} ${getTitleIcon(u.name)}</b><span style="background:linear-gradient(135deg, #8e44ad, #9b59b6); color:white; padding:5px 10px; border-radius:15px; font-weight:bold;">${u.count} ניצחונות ⚔️</span></div>`; });
         } else if (t === 'contrib') {
             globalContribLB.sort((a,b)=>b.count-a.count).forEach((u, i) => { let m = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`; list.innerHTML += `<div class="lb-item" style="flex-direction:row; justify-content:space-between; align-items:center;"><b style="font-size:1.1rem;">${m} ${u.name} 🎖️</b><span style="background:#27ae60; color:white; padding:5px 10px; border-radius:15px; font-weight:bold;">${u.count} אישורים</span></div>`; });
         }
@@ -798,14 +881,16 @@
 
         let h = '';
         ex.examData.questions.forEach((q, i) => {
-            let uAns = ex.examData.answers[i], qTime = (ex.examData.qTimes && ex.examData.qTimes[i]) ? ex.examData.qTimes[i] : '?';
+            let uAns = ex.examData.answers[i];
+            let qTime = (ex.examData.qTimes && ex.examData.qTimes[i]) ? ex.examData.qTimes[i] : '?';
             h += `<div class="card" style="border: 2px solid ${uAns === q.c ? 'var(--correct)' : 'var(--wrong)'}; padding-top:35px;">
                 <div style="position:absolute; top:10px; left:10px; font-size:0.75rem; color:#888; background:#f0f0f0; padding:3px 8px; border-radius:5px; font-weight:bold;">⏱️ ${qTime} שנ'</div>
                 <div style="position:absolute; top:10px; right:10px; font-size:0.75rem; color:white; background:var(--p); padding:3px 8px; border-radius:5px; font-weight:bold;">ID: ${q.id}</div>
                 <div style="font-weight:bold; margin-bottom:15px; font-size:1.1rem; line-height:1.4;">${i+1}. ${q.q}</div>
                 ${q.a.map((t, idx) => {
                     if(!t && t!==0) return '';
-                    let cls = "option"; if(idx === q.c) cls += " practice-correct"; else if(idx === uAns) cls += " practice-wrong";
+                    let cls = "option";
+                    if(idx === q.c) cls += " practice-correct"; else if(idx === uAns) cls += " practice-wrong";
                     return `<div class="${cls}" style="padding:12px; cursor:default; margin:5px 0;">${t}</div>`;
                 }).join('')}
                 ${(!isShared && currentUser.id) ? `<div style="text-align:left; margin-top:15px; padding-top:10px; border-top:1px dashed #eee;"><button style="background:none; border:none; color:var(--wrong); font-size:0.85rem; font-weight:bold; text-decoration:underline; cursor:pointer;" onclick="openSuggestionModalById('${q.id}')">💡 מצאת טעות בשאלה זו? המלץ על שינוי</button></div>` : ''}
@@ -819,7 +904,11 @@
        document.querySelector('.top-bar').style.display = 'flex';
        document.getElementById('duel-screen').classList.remove('hidden');
        let p1 = d.p1, p2 = d.p2, p1WinCount=0, p2WinCount=0, p1S=p1.score, p2S=p2.score;
+       let isOld = (Date.now() - parseInt(d.duelId)) > 30*60*1000;
+
        if(p1S!=="" && p2S!=="") { if(p1S>p2S) p1WinCount=1; else if(p2S>p1S) p2WinCount=1; else{ p1WinCount=1; p2WinCount=1; } }
+       else if(p1S!=="" && p2S==="" && p2.id && isOld) { p1WinCount=1; p2S="DNF"; }
+       else if(p2S!=="" && p1S==="" && isOld) { p2WinCount=1; p1S="DNF"; }
        
        let html = `<div class="card" style="text-align:center; padding-top:10px; border:2px solid var(--p);">
            <h2 style="color:var(--p); font-size:2rem; margin-bottom:5px;">⚔️ תוצאות דו-קרב ⚔️</h2>
@@ -838,28 +927,24 @@
                </div>
            </div>`;
        
-       if(p1S!=="" && p2S!=="") {
+       if(p1S!=="" && p2S!=="" && p1S!=="DNF" && p2S!=="DNF") {
            html += `<h3 style="margin-top:30px; border-bottom:2px dashed #eee; padding-bottom:10px;">פירוט שאלות (ראש בראש)</h3>`;
            d.questions.forEach((q, i) => {
-               let ans1 = p1.answers[i], ans2 = p2.answers[i];
-               let t1 = p1.times[i]||0, t2 = p2.times[i]||0;
+               let ans1 = p1.answers[i], ans2 = p2.answers[i], t1 = p1.times[i]||0, t2 = p2.times[i]||0;
                let p1Correct = ans1===q.c, p2Correct = ans2===q.c;
-               let p1Wins = p1Correct && (!p2Correct || t1 < t2);
-               let p2Wins = p2Correct && (!p1Correct || t2 < t1);
+               let p1Wins = p1Correct && (!p2Correct || t1 < t2); let p2Wins = p2Correct && (!p1Correct || t2 < t1);
                let isTie = p1Correct === p2Correct && (p1Correct === false || t1 === t2);
 
-               html += `<div class="card" style="border: 2px solid ${p1Wins||p2Wins?'#3498db':'#ccc'}; margin-bottom:15px; padding:15px;">
+               html += `<div class="card" style="border: 2px solid ${p1Wins||p2Wins?'#3498db':'var(--wrong)'}; margin-bottom:15px; padding:15px;">
                    <div style="font-weight:bold; margin-bottom:10px; line-height:1.4;">${i+1}. ${q.q}</div>
                    <div style="display:flex; gap:10px; font-size:0.9rem;">
-                       <div style="flex:1; padding:10px; border-radius:8px; border:2px solid ${p1Wins?'var(--correct)':(p1Correct?'#2ecc71':(isTie?'var(--wrong)':'var(--wrong)'))}; background:${p1Wins?'#e8f8f5':'var(--bg)'}; position:relative;">
+                       <div style="flex:1; padding:10px; border-radius:8px; border:2px solid ${p1Wins?'var(--correct)':(p1Correct?'#2ecc71':(isTie&&p1Correct?'var(--correct)':'var(--wrong)'))}; background:${p1Wins?'#e8f8f5':'var(--bg)'}; position:relative;">
                            ${p1Wins ? '<span style="position:absolute; top:-10px; right:-5px; font-size:1.2rem;">🏆</span>' : ''}
-                           <b style="color:var(--p);">${p1.name.split(" ")[0]}</b><br> ${ans1!==null && q.a[ans1] ? q.a[ans1] : 'לא ענה'}<br>
-                           <span style="font-size:0.8rem; color:#777; font-weight:bold;">⏱️ ${t1} שניות</span>
+                           <b style="color:var(--p);">${p1.name.split(" ")[0]}</b><br> ${ans1!==null && q.a[ans1] ? q.a[ans1] : 'לא ענה'}<br><span style="font-size:0.8rem; color:#777; font-weight:bold;">⏱️ ${t1} שניות</span>
                        </div>
-                       <div style="flex:1; padding:10px; border-radius:8px; border:2px solid ${p2Wins?'var(--correct)':(p2Correct?'#2ecc71':(isTie?'var(--wrong)':'var(--wrong)'))}; background:${p2Wins?'#e8f8f5':'var(--bg)'}; position:relative;">
+                       <div style="flex:1; padding:10px; border-radius:8px; border:2px solid ${p2Wins?'var(--correct)':(p2Correct?'#2ecc71':(isTie&&p2Correct?'var(--correct)':'var(--wrong)'))}; background:${p2Wins?'#e8f8f5':'var(--bg)'}; position:relative;">
                            ${p2Wins ? '<span style="position:absolute; top:-10px; left:-5px; font-size:1.2rem;">🏆</span>' : ''}
-                           <b style="color:var(--p);">${p2.name.split(" ")[0]}</b><br> ${ans2!==null && q.a[ans2] ? q.a[ans2] : 'לא ענה'}<br>
-                           <span style="font-size:0.8rem; color:#777; font-weight:bold;">⏱️ ${t2} שניות</span>
+                           <b style="color:var(--p);">${p2.name.split(" ")[0]}</b><br> ${ans2!==null && q.a[ans2] ? q.a[ans2] : 'לא ענה'}<br><span style="font-size:0.8rem; color:#777; font-weight:bold;">⏱️ ${t2} שניות</span>
                        </div>
                    </div>
                </div>`;
@@ -884,7 +969,7 @@
                     
                     let devicesHtml = "";
                     if (u.devices && u.devices.length > 0) {
-                        u.devices.forEach((d, i) => { devicesHtml += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); color:var(--txt); border:1px solid var(--p); padding:8px; border-radius:5px; margin-bottom:5px;"><div>📱 מכשיר ${i+1} <br><span style="font-size:0.75rem; color:#777;">נוצר: ${d.added}</span></div><button class="review-btn" style="background:var(--wrong); flex:none; padding:5px 10px;" onclick="removeDevice('${u.id}', '${d.id}')">🗑️ נתק</button></div>`; });
+                        u.devices.forEach((d, i) => { devicesHtml += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card); color:var(--txt); border:1px solid #888; padding:8px; border-radius:5px; margin-bottom:5px;"><div>📱 מכשיר ${i+1} <br><span style="font-size:0.75rem; color:#777;">נוצר: ${d.added}</span></div><button class="review-btn" style="background:var(--wrong); flex:none; padding:5px 10px;" onclick="removeDevice('${u.id}', '${d.id}')">🗑️ נתק</button></div>`; });
                     } else { devicesHtml = "<div style='font-size:0.8rem; margin:10px 0;'>אין מכשירים רשומים</div>"; }
                     
                     let tempApprHtml = "";
@@ -1023,6 +1108,7 @@
         let newOpts = [document.getElementById('s-opt0').value, document.getElementById('s-opt1').value, document.getElementById('s-opt2').value, document.getElementById('s-opt3').value];
         let newC = parseInt(document.getElementById('sugg-correct').value)-1;
         let isSame = qText.trim() === orig.q.trim() && newC === orig.c && newOpts.every((v,i) => v.trim() === String(orig.a[i]).trim());
+        
         if (isSame) return alert("לא זיהינו שינוי בהצעה. בשביל מה אנחנו פה? נא לערוך משהו לפני השליחה.");
         
         const data = { action: 'submitSuggestion', qId: qId, userId: currentUser.id, userName: currentUser.name, qText: qText, opts: newOpts, correct: newC, comment: document.getElementById('sugg-comment').value };
