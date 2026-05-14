@@ -44,7 +44,7 @@
         .practice-correct { background: #e8f8f5 !important; border-color: var(--correct) !important; color: #27ae60; font-weight: bold;}
         .practice-wrong { background: #fdf2e9 !important; border-color: var(--wrong) !important; color: #e74c3c; text-decoration: line-through; }
         
-        .nav-footer { fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 12px 15px; display: flex; justify-content: space-between; gap: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 1000; }
+        .nav-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 12px 15px; display: flex; justify-content: space-between; gap: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 1000; }
         .btn-nav { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer; font-size: 1.05rem; }
         
         .hidden { display: none !important; }
@@ -57,7 +57,6 @@
         .dark #loader-overlay { background: rgba(0,0,0,0.95); }
         .loader-icon { font-size: 5rem; margin-bottom: 15px; display: inline-block; }
         
-        /* האנימציות הדינמיות המקוריות שלך */
         .anim-write { animation: write 1.2s infinite ease-in-out; }
         .anim-lift { animation: lift 1s infinite alternate ease-in-out; }
         .anim-shine { animation: shine 1.5s infinite ease-in-out; }
@@ -84,8 +83,8 @@
         .del-btn { background: var(--wrong); color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; }
         .sugg-label { font-size: 0.85rem; font-weight: bold; color: var(--p); display: block; margin-bottom: 6px; }
         
-        /* תגית ה-ID העגולה והיפה */
         .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; display: inline-block;}
+        .jackie-highlight { border: 3px solid #f39c12 !important; box-shadow: 0 0 15px rgba(243, 156, 18, 0.4) !important; }
     </style>
 </head>
 <body>
@@ -172,6 +171,9 @@
         <div class="card">
             <button id="admin-edit-q-btn" class="top-btn hidden" style="position:absolute; top:10px; left:10px; font-size:0.75rem; background:var(--p); color:white;" onclick="openEditQModalFromQuiz()">✏️ ערוך אדמין</button>
             <div id="q-text" style="font-weight: bold; font-size: 1.25em; margin-top: 20px; line-height:1.5;"></div>
+            
+            <div id="jackie-warning" class="hidden" style="background:#fff3cd; color:#856404; padding:10px; border-radius:8px; font-weight:bold; margin-top:15px; text-align:center; border:1px solid #ffeeba;">⚠️ שאלה זו נמצאת ברשימה לבדיקה מול ג'קי המרצה!</div>
+            
             <div id="options" style="margin-top: 20px;"></div>
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:15px; font-size:1.1rem;"></div>
             
@@ -282,7 +284,7 @@
     let myDeviceId = localStorage.getItem('qbDeviceId') || (Math.random().toString(36).substr(2,9)+Date.now().toString(36));
     localStorage.setItem('qbDeviceId', myDeviceId);
     let appSettings = { dark: false, fontStep: 1, font: 16, autoNext: true, shareReview: true };
-    let userWeaknesses = [], globalPracticeAnswers = [], globalHardQuestions = [];
+    let userWeaknesses = [], globalPracticeAnswers = [], globalHardQuestions = [], jackieQuestions = [];
     let timerInterval = null;
     let weeklyHarshan = null, weeklyTzalaf = null, weeklyKambek = null;
 
@@ -387,6 +389,8 @@
         globalPracticeAnswers = j.practiceAnswers || []; state.answers = [...globalPracticeAnswers];
         if (j.settings) { appSettings = {...appSettings, ...j.settings}; applySettings(); }
         
+        jackieQuestions = j.jackieList || [];
+        
         document.getElementById('top-name').innerText = j.name.split(" ")[0];
         document.getElementById('user-menu-btn').style.display = 'flex';
         document.getElementById('login-screen').classList.add('hidden');
@@ -475,7 +479,12 @@
         const q = state.questions[state.index]; showLoader("default");
         try {
             const res = await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'saveJackieQuestion', qId: q.id, qText: q.q, userName: currentUser.name }) });
-            const j = await res.json(); hideLoader(); if(j.success) alert("השאלה נשמרה לרשימה של ג'קי! 🙋‍♂️"); else alert(j.msg);
+            const j = await res.json(); hideLoader(); 
+            if(j.success) {
+                alert("השאלה נשמרה לרשימה של ג'קי! 🙋‍♂️"); 
+                jackieQuestions.push(String(q.id));
+                renderQuestion(); 
+            } else alert(j.msg);
         } catch(e) { hideLoader(); alert("שגיאה."); }
     }
 
@@ -485,13 +494,36 @@
         try {
             const res = await fetch(`${apiURL}?action=getJackieQuestions`); const j = await res.json(); hideLoader();
             let h = ''; j.list.forEach(item => {
-                h += `<div class="card" style="border-right: 5px solid #8e44ad;"><div style="font-weight:bold; margin-bottom:8px;">ID: ${item.id} | ${item.qText}</div><div style="font-size:0.8rem; color:#777;">הוסיף: ${item.addedBy} (${item.date})</div>${currentUser.role === 0 ? `<button class="del-btn" style="margin-top:10px; width:40px; padding:5px;" onclick="deleteJackie('${item.id}')">🗑️</button>` : ''}</div>`;
+                const fullQ = allQuestionsDB.find(x => String(x.id) === String(item.id));
+                let optsHtml = '';
+                if (fullQ && fullQ.a) {
+                    fullQ.a.forEach((opt, idx) => {
+                        if(opt) {
+                           let isCorrect = (idx === fullQ.c) ? 'font-weight:bold; color:var(--correct);' : 'color:#555;';
+                           optsHtml += `<div style="margin-top:5px; padding:8px; background:var(--bg); border-radius:5px; border:1px solid #ddd; ${isCorrect}">${idx+1}. ${opt}</div>`;
+                        }
+                    });
+                }
+                h += `<div class="card" style="border-right: 5px solid #8e44ad; margin-bottom:15px;">
+                        <div style="font-weight:bold; margin-bottom:10px; font-size:1.1rem; line-height:1.4;">ID: ${item.id} | ${item.qText}</div>
+                        <div style="margin-bottom:15px;">${optsHtml}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #ccc; padding-top:10px;">
+                            <span style="font-size:0.8rem; color:#777;">הוסיף: ${item.addedBy} (${item.date})</span>
+                            ${currentUser.role === 0 ? `<button class="del-btn" style="width:40px; padding:5px;" onclick="deleteJackie('${item.id}')">🗑️</button>` : ''}
+                        </div>
+                      </div>`;
             });
-            document.getElementById('jackie-list').innerHTML = h || "אין שאלות ברשימה כרגע.";
+            document.getElementById('jackie-list').innerHTML = h || `<div style="text-align:center; color:#777; font-weight:bold;">אין שאלות ברשימה כרגע. עשיתם הכל מושלם!</div>`;
         } catch(e) { hideLoader(); }
     }
 
-    async function deleteJackie(id) { if(!confirm("למחוק?")) return; showLoader("default"); await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'deleteJackieQuestion', qId: id, adminId: currentUser.id }) }); showJackiePanel(); }
+    async function deleteJackie(id) { 
+        if(!confirm("למחוק?")) return; 
+        showLoader("default"); 
+        await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'deleteJackieQuestion', qId: id, adminId: currentUser.id }) }); 
+        jackieQuestions = jackieQuestions.filter(x => x !== String(id));
+        showJackiePanel(); 
+    }
 
     function startApp(m) {
         showLoader(m);
@@ -538,6 +570,16 @@
         document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active')); document.getElementById(`bubble-${state.index}`).classList.add('active'); document.getElementById(`bubble-${state.index}`).scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
         document.getElementById('q-text').innerHTML = `${state.index+1}. <span class="id-tag">ID: ${q.id}</span> ${q.q}`;
         if ((currentUser.role === 0 || currentUser.role === 1) && !state.mode.toLowerCase().includes('exam')) document.getElementById('admin-edit-q-btn').classList.remove('hidden'); else document.getElementById('admin-edit-q-btn').classList.add('hidden');
+
+        const qCard = document.querySelector('#quiz-screen .card');
+        const jWarn = document.getElementById('jackie-warning');
+        if(jackieQuestions.includes(String(q.id))) {
+            qCard.classList.add('jackie-highlight');
+            jWarn.classList.remove('hidden');
+        } else {
+            qCard.classList.remove('jackie-highlight');
+            jWarn.classList.add('hidden');
+        }
 
         const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
         q.a.forEach((t, i) => {
