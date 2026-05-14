@@ -44,7 +44,7 @@
         .practice-correct { background: #e8f8f5 !important; border-color: var(--correct) !important; color: #27ae60; font-weight: bold;}
         .practice-wrong { background: #fdf2e9 !important; border-color: var(--wrong) !important; color: #e74c3c; text-decoration: line-through; }
         
-        .nav-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 12px 15px; display: flex; justify-content: space-between; gap: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 1000; }
+        .nav-footer { fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 12px 15px; display: flex; justify-content: space-between; gap: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 1000; }
         .btn-nav { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer; font-size: 1.05rem; }
         
         .hidden { display: none !important; }
@@ -57,7 +57,7 @@
         .dark #loader-overlay { background: rgba(0,0,0,0.95); }
         .loader-icon { font-size: 5rem; margin-bottom: 15px; display: inline-block; }
         
-        /* החזרת האנימציות הדינמיות והקופצות המקוריות */
+        /* האנימציות הדינמיות המקוריות שלך */
         .anim-write { animation: write 1.2s infinite ease-in-out; }
         .anim-lift { animation: lift 1s infinite alternate ease-in-out; }
         .anim-shine { animation: shine 1.5s infinite ease-in-out; }
@@ -84,7 +84,7 @@
         .del-btn { background: var(--wrong); color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; }
         .sugg-label { font-size: 0.85rem; font-weight: bold; color: var(--p); display: block; margin-bottom: 6px; }
         
-        /* תגית ה-ID חזרה להיות כדורית וכחולה */
+        /* תגית ה-ID העגולה והיפה */
         .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; display: inline-block;}
     </style>
 </head>
@@ -174,10 +174,11 @@
             <div id="q-text" style="font-weight: bold; font-size: 1.25em; margin-top: 20px; line-height:1.5;"></div>
             <div id="options" style="margin-top: 20px;"></div>
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:15px; font-size:1.1rem;"></div>
+            
             <div style="display:flex; justify-content:space-between; margin-top: 20px; font-size: 0.9rem; padding-top:15px; border-top:1px solid #eee;">
                 <span style="color:var(--wrong); cursor:pointer; font-weight:bold;" onclick="openSuggestionModal()">💡 דווח על טעות</span>
-                <span style="color:#8e44ad; cursor:pointer; font-weight:bold;" onclick="saveToJackie()">🙋‍♂️ שמור לג'קי</span>
-                <span style="color:var(--p); cursor:pointer; font-weight:bold;" onclick="shareQuestion()">📤 שתף לשאלה</span>
+                <span style="color:#8e44ad; cursor:pointer; font-weight:bold;" onclick="saveToJackie()">🙋‍♂️ שמור לג'קי (לשיעור)</span>
+                <span style="color:var(--p); cursor:pointer; font-weight:bold;" onclick="shareQuestion()">📤 שתף בוואטסאפ</span>
             </div>
         </div>
     </div>
@@ -499,7 +500,7 @@
             let pool = m.includes('num') ? numQuestionsDB : questionsDB;
             if(pool.length === 0) return alert("אין שאלות במאגר זה כרגע.");
             
-            if(m.includes('Exam')) {
+            if(m.toLowerCase().includes('exam')) {
                 state.questions = shuffleArray(pool).slice(0,50); state.answers = new Array(state.questions.length).fill(null); 
                 document.getElementById('exam-timer').classList.remove('hidden');
                 document.getElementById('quiz-header-title').innerText = m === 'exam' ? '🎓 מבחן - כללי' : '🏆 מבחן - מספריות';
@@ -510,7 +511,7 @@
                 if (m === 'practice') {
                     state.answers = (globalPracticeAnswers.length === pool.length) ? [...globalPracticeAnswers] : new Array(pool.length).fill(null);
                     globalPracticeAnswers = state.answers;
-                    state.index = Math.min(currentUser.lastIdx || 0, pool.length > 0 ? pool.length - 1 : 0); // מונע קריסה מחוץ לגבולות
+                    state.index = Math.min(currentUser.lastIdx || 0, pool.length > 0 ? pool.length - 1 : 0);
                 } else if (m === 'numPractice') {
                     state.answers = new Array(pool.length).fill(null);
                     state.index = 0;
@@ -527,7 +528,7 @@
         const c = document.getElementById('bubbles-container'); c.innerHTML = '';
         state.questions.forEach((q, i) => {
             const b = document.createElement('div'); b.className = 'bubble'; b.id = `bubble-${i}`; b.innerText = i+1;
-            if(state.answers[i] !== null) b.classList.add(state.mode.includes('Exam') ? 'exam-answered' : (state.answers[i]===q.c ? 'answered' : 'empty'));
+            if(state.answers[i] !== null) b.classList.add(state.mode.toLowerCase().includes('exam') ? 'exam-answered' : (state.answers[i]===q.c ? 'answered' : 'empty'));
             b.onclick = () => { saveQTime(); state.index = i; renderQuestion(); }; c.appendChild(b);
         });
     }
@@ -536,7 +537,7 @@
         currentQStart = Date.now(); const q = state.questions[state.index];
         document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active')); document.getElementById(`bubble-${state.index}`).classList.add('active'); document.getElementById(`bubble-${state.index}`).scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
         document.getElementById('q-text').innerHTML = `${state.index+1}. <span class="id-tag">ID: ${q.id}</span> ${q.q}`;
-        if ((currentUser.role === 0 || currentUser.role === 1) && !state.mode.includes('Exam')) document.getElementById('admin-edit-q-btn').classList.remove('hidden'); else document.getElementById('admin-edit-q-btn').classList.add('hidden');
+        if ((currentUser.role === 0 || currentUser.role === 1) && !state.mode.toLowerCase().includes('exam')) document.getElementById('admin-edit-q-btn').classList.remove('hidden'); else document.getElementById('admin-edit-q-btn').classList.add('hidden');
 
         const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
         q.a.forEach((t, i) => {
@@ -545,19 +546,17 @@
             
             if(state.answers[state.index] === i) d.classList.add('selected');
             
-            // הצגת ירוק/אדום אך ורק אם אנחנו לא במבחן
-            if(!state.mode.includes('Exam') && state.answers[state.index] !== null) { 
+            if(!state.mode.toLowerCase().includes('exam') && state.answers[state.index] !== null) { 
                 let cls = i === q.c ? 'practice-correct' : (state.answers[state.index] === i ? 'practice-wrong' : ''); 
                 if (cls !== '') d.classList.add(cls); 
             }
             d.innerText = t; 
             d.onclick = () => {
-                // במבחן, מקצה שיפורים והמוציא להורג - אפשר לשנות תשובה תמיד. בתרגול - ברגע שענית ננעל.
-                if(state.answers[state.index] !== null && state.mode === 'practice' && !state.mode.includes('Exam')) return;
+                if(state.answers[state.index] !== null && state.mode === 'practice' && !state.mode.toLowerCase().includes('exam')) return;
                 
                 state.answers[state.index] = i; 
                 
-                if(!state.mode.includes('Exam')) {
+                if(!state.mode.toLowerCase().includes('exam')) {
                     if (i !== q.c && !userWeaknesses.includes(String(q.id))) { userWeaknesses.push(String(q.id)); updateBadges(); }
                     else if (i === q.c && userWeaknesses.includes(String(q.id))) { userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); updateBadges(); }
                     let origIndex = questionsDB.findIndex(x => String(x.id) === String(q.id));
@@ -574,7 +573,7 @@
             optCont.appendChild(d);
         });
         let btn = document.getElementById('main-action-btn');
-        if(state.index === state.questions.length - 1 && state.mode.includes('Exam')) { btn.innerText = "סיים והגש 🚀"; btn.style.background = "linear-gradient(135deg, #27ae60, #2ecc71)"; btn.onclick = submitExam; } 
+        if(state.index === state.questions.length - 1 && state.mode.toLowerCase().includes('exam')) { btn.innerText = "סיים והגש 🚀"; btn.style.background = "linear-gradient(135deg, #27ae60, #2ecc71)"; btn.onclick = submitExam; } 
         else { btn.innerText = "הבא ⬅️"; btn.style.background = "var(--p-grad)"; btn.onclick = () => move(1); }
     }
 
@@ -627,9 +626,9 @@
             globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
             calculateWeeklyTitles();
             let titlesHtml = ``;
-            if(weeklyHarshan) titlesHtml += `<div>🚜<br><b>${weeklyHarshan}</b><br><span style="color:var(--p); font-weight:bold;">חרשן השבוע</span></div>`;
-            if(weeklyTzalaf) titlesHtml += `<div>🎯<br><b>${weeklyTzalaf}</b><br><span style="color:var(--p); font-weight:bold;">הצלף</span></div>`;
-            if(weeklyKambek) titlesHtml += `<div>🚀<br><b>${weeklyKambek}</b><br><span style="color:var(--p); font-weight:bold;">המתקמבק</span></div>`;
+            if(weeklyHarshan) titlesHtml += `<div style="text-align:center;"><div style="font-size:1.5rem;">🚜</div><b style="font-size:1rem;">${weeklyHarshan}</b><br><span style="color:var(--p); font-size:0.85rem; font-weight:bold;">חרשן השבוע</span></div>`;
+            if(weeklyTzalaf) titlesHtml += `<div style="text-align:center;"><div style="font-size:1.5rem;">🎯</div><b style="font-size:1rem;">${weeklyTzalaf}</b><br><span style="color:var(--p); font-size:0.85rem; font-weight:bold;">הצלף</span></div>`;
+            if(weeklyKambek) titlesHtml += `<div style="text-align:center;"><div style="font-size:1.5rem;">🚀</div><b style="font-size:1rem;">${weeklyKambek}</b><br><span style="color:var(--p); font-size:0.85rem; font-weight:bold;">המתקמבק</span></div>`;
             if(titlesHtml !== '') { document.getElementById('titles-container').innerHTML = titlesHtml; document.getElementById('titles-container').classList.remove('hidden'); }
 
             const myExams = globalLB.filter(ex => String(ex.id).replace(/^0+/, '') === String(currentUser.id).replace(/^0+/, '')).sort((a,b) => a.examId - b.examId);
@@ -827,7 +826,7 @@
         if (navigator.share) { navigator.share({ title: 'שאלה לדיון', text: txt }).catch(console.error); } else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
     }
 
-    async function saveProgress() { if (state.mode === 'practice' || state.mode === 'numPractice') currentUser.lastIdx = state.index; await fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: currentUser.lastIdx || 0, practiceAnswers: globalPracticeAnswers, weaknesses: userWeaknesses }) }); }
+    async function saveProgress() { if (state.mode === 'practice' || state.mode === 'numPractice') currentUser.lastIdx = state.index; fetch(apiURL, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: currentUser.id, lastIdx: currentUser.lastIdx || 0, practiceAnswers: globalPracticeAnswers, weaknesses: userWeaknesses }) }); }
     function closeModals() { document.querySelectorAll('.card[style*="fixed"], #modal-backdrop').forEach(m => m.classList.add('hidden')); }
     function goHomeFull() { location.href = window.location.pathname; }
     function goHome() { document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('menu').classList.remove('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden');}
