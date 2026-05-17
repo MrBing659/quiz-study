@@ -26,7 +26,6 @@
         .container { max-width: 550px; margin: auto; position: relative;}
         .card { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 6px 15px rgba(0,0,0,0.06); margin-bottom: 20px; position: relative; border: 1px solid rgba(0,0,0,0.02);}
         
-        /* 2026 Admin Card & Clean Grid Design */
         .admin-card { border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); padding: 25px; margin-bottom: 20px; background: var(--card); transition: 0.3s; }
         .admin-device { background: rgba(0,0,0,0.02); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(0,0,0,0.03); }
         .dark .admin-device { background: #3d3d3d; border-color: #555; }
@@ -73,13 +72,9 @@
         .lb-item { border-bottom: 1px solid #f0f0f0; padding: 18px 0; display: flex; flex-direction: column; gap: 8px; }
         .stats-box { background: rgba(0,0,0,0.03); padding: 12px; border-radius: 10px; font-size: 0.85rem; line-height: 1.5; border: 1px solid rgba(0,0,0,0.05);}
         
-        /* תפריט שיאים ופילטרים עגולים ונקיים כבשבראשונה */
         .lb-filters { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 8px; }
         .lb-filter-btn { flex: 1; padding: 10px; border: 1px solid var(--p); background: transparent; color: var(--txt); border-radius: 20px; cursor: pointer; white-space: nowrap; font-size: 0.9rem; font-weight:bold; transition: 0.2s;}
         .lb-filter-btn.active { background: var(--p-grad); color: white; border:none; box-shadow: 0 4px 10px rgba(52,152,219,0.3);}
-        
-        .diff-del { color: var(--wrong); text-decoration: line-through; display: block; margin-bottom: 5px; font-size: 0.85rem;}
-        .diff-add { color: #2980b9; font-weight: bold !important; }
         
         .review-btn { background: var(--p-grad); color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 0.9rem; flex:1; text-align:center; font-weight:bold; transition:0.2s;}
         .review-btn:active { transform: scale(0.95); }
@@ -177,7 +172,7 @@
         <h3 id="quiz-header-title" style="text-align:center; color:var(--p); margin-top:0; margin-bottom:15px; font-size:1.5rem;" class="hidden"></h3>
         <div class="bubbles" id="bubbles-container"></div>
         <div class="card">
-            <button id="admin-edit-q-btn" class="top-btn hidden" style="position:absolute; top:10px; left:10px; font-size:0.75rem; background:var(--p); color:white;" onclick="openEditQModalFromQuiz()">✏️ ערוך אדמין</button>
+            <button id="admin-edit-q-btn" class="top-btn hidden admin-only" style="position:absolute; top:10px; left:10px; font-size:0.75rem; background:var(--p); color:white;" onclick="openEditQModalFromQuiz()">✏️ ערוך אדמין</button>
             <div id="q-text" style="font-weight: bold; font-size: 1.25em; margin-top: 20px; line-height:1.5;"></div>
             
             <div id="jackie-warning" class="hidden" style="background:#fff3cd; color:#856404; padding:10px; border-radius:8px; font-weight:bold; margin-top:15px; text-align:center; border:1px solid #ffeeba;">⚠️ שאלה זו נמצאת ברשימה לבדיקה מול ג'קי המרצה!</div>
@@ -242,7 +237,6 @@
     <div id="review-screen" class="hidden card"><h2 style="text-align:center; color:var(--p);">📋 תחקיר מבחן</h2><div id="review-shared-name" class="hidden" style="text-align:center; font-size:1.2rem; margin-bottom:10px; color:#666; font-weight:bold;"></div><h3 id="review-score" style="text-align:center; font-size:3.5rem; margin:10px 0;"></h3><div id="review-duration" style="text-align:center; margin-bottom:20px; color:#777; font-weight:bold;"></div><div id="review-list"></div><button id="btn-back-review" class="btn" style="background:#95a5a6; margin-top:25px;" onclick="document.getElementById('review-screen').classList.add('hidden'); document.getElementById('history-page').classList.remove('hidden'); window.scrollTo(0,0);">חזור לטבלה</button></div>
     <div id="exam-summary-screen" class="hidden card" style="text-align: center; padding:40px 20px;"><h2 id="summary-main-title" style="font-size:2.5rem; color:var(--p);">🎉 סיימת! 🎉</h2><div style="font-size:6.5rem; font-weight:bold; margin:20px 0;" id="summary-score-display">0</div><div id="summary-stats-display" style="font-size:1.2rem; margin-bottom:30px; line-height:1.6; color:#555;"></div><div style="display:flex; flex-direction:column; gap:12px;"><button class="btn" style="background:#25D366;" id="summary-share-btn" onclick="shareToWhatsApp()">📲 השווץ בוואטסאפ</button><button class="btn" style="background:var(--p);" id="summary-review-btn" onclick="reviewExam(window.lastExamId)">📋 תחקיר מבחן (טעויות)</button><button class="btn" style="background:#95a5a6;" onclick="goHomeFull()">חזור לראשי</button></div></div>
 
-    <div id="edit-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:350px;"><h3>✏️ עריכת משתמש</h3><input type="text" id="edit-name-input" class="input-pass" placeholder="שם מלא"><input type="tel" id="edit-id-input" class="input-pass" placeholder="תעודת זהות"><input type="hidden" id="edit-old-id"><button class="btn" style="background:var(--correct);" id="btn-save-edit" onclick="saveEditUser()">שמור שינויים</button><button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button></div>
     <div id="edit-q-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:400px; max-height: 90vh; overflow-y: auto;"><h3 style="margin-top:0;">✏️ עריכת שאלה מלאה</h3><input type="hidden" id="edit-q-id"><label>שאלה:</label><textarea id="edit-q-text" class="input-pass" style="text-align:right;"> </textarea><label>תשובה 1 (0):</label><input type="text" id="edit-q-opt0" class="input-pass"><label>תשובה 2 (1):</label><input type="text" id="edit-q-opt1" class="input-pass"><label>תשובה 3 (2):</label><input type="text" id="edit-q-opt2" class="input-pass"><label>תשובה 4 (3):</label><input type="text" id="edit-q-opt3" class="input-pass"><label>תשובה נכונה (0-3):</label><input type="number" id="edit-q-correct" class="input-pass" min="0" max="3"><button class="btn" style="background:var(--correct);" id="btn-save-q" onclick="saveEditQuestion()">שמור בענן</button><button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button></div>
     <div id="sugg-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:95%; max-width:500px; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.5);"><h3 style="color:var(--wrong); margin-top:0; text-align:center;">💡 דיווח על טעות</h3><div id="sugg-q-display" style="background: rgba(52, 152, 219, 0.08); padding: 15px; border-radius: 10px; border-right: 5px solid var(--p); margin-bottom: 20px; font-weight:bold; line-height: 1.4;"></div><div id="sugg-inputs"></div><span class="sugg-label" style="margin-top:15px;">התשובה הנכונה לדעתך:</span><select id="sugg-correct" class="input-pass" style="font-weight:bold;"><option value="1">תשובה 1</option><option value="2">תשובה 2</option><option value="3">תשובה 3</option><option value="4">תשובה 4</option><option value="5">תשובה אחרת לחלוטין</option></select><textarea id="sugg-comment" class="input-pass" style="height:80px; text-align:right;" placeholder="הערה חופשית..."></textarea><div style="display:flex; gap:12px; margin-top:20px;"><button class="btn" style="background:var(--correct); margin:0; flex:2;" onclick="submitSuggestion()">שלח למנהל</button><button class="btn" style="background:#bdc3c7; margin:0; flex:1;" onclick="closeModals()">ביטול</button></div></div>
 </div>
@@ -255,9 +249,10 @@
 <div id="modal-backdrop" class="hidden" onclick="closeModals()"></div>
 
 <script>
-    // לעדכן פה את ה-URL החדש שאתה מקבל לאחר ה-Deploy באקסל!
+    // ========= שים כאן את הלינק המעודכן שלך ===========
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
-    
+    // ====================================================
+
     const ANIM_MAP = {
         login: { t: ["בודק שאתה לא בוט...", "מכין את הקפה לשרת...", "פותח שערים, נא לא לדחוף..."], i: "🚪", a: "anim-shine" },
         exam: { t: ["מכין את הטישו לבכי...", "מדפיס שאלות קשות במיוחד..."], i: "📝", a: "anim-write" },
@@ -340,7 +335,7 @@
         try {
             const res = await fetch(`${apiURL}?action=login&id=${id}&auto=true&deviceId=${myDeviceId}`);
             handleLoginResponse(await res.json(), id);
-        } catch(e) { hideLoader(); document.getElementById('login-screen').classList.remove('hidden'); }
+        } catch(e) { hideLoader(); document.getElementById('sys-msg').innerText = "שגיאת רשת (השרת לא מגיב). פנה למנהל."; document.getElementById('login-screen').classList.remove('hidden'); }
     }
 
     async function manualLogin() {
@@ -350,7 +345,7 @@
         try {
             const res = await fetch(`${apiURL}?action=login&id=${id}&fname=${encodeURIComponent(fn)}&lname=${encodeURIComponent(ln)}&auto=false&deviceId=${myDeviceId}`);
             handleLoginResponse(await res.json(), id);
-        } catch(e) { hideLoader(); document.getElementById('sys-msg').innerText = "שגיאת רשת. נסה שוב."; }
+        } catch(e) { hideLoader(); document.getElementById('sys-msg').innerText = "שגיאת רשת. פנה למנהל."; }
     }
 
     function handleLoginResponse(j, id) {
@@ -420,7 +415,13 @@
             userWeaknesses = (currentCourse === 1 ? j.weaknesses1 : j.weaknesses2 || []).map(String);
             jackieQuestions = j.jackieList || [];
             
-            try { if (currentUser.role === 0 || currentUser.role === 1) { document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden')); } } catch(e) {}
+            try { 
+                if (currentUser.role === 0) { 
+                    document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden')); 
+                } else {
+                    document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden')); 
+                }
+            } catch(e) {}
             
             updateBadges();
             backgroundFetchStats();
@@ -594,7 +595,7 @@
         currentQStart = Date.now(); const q = state.questions[state.index];
         document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active')); document.getElementById(`bubble-${state.index}`).classList.add('active'); document.getElementById(`bubble-${state.index}`).scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
         document.getElementById('q-text').innerHTML = `${state.index+1}. <span class="id-tag">ID: ${q.id}</span> ${q.q}`;
-        if ((currentUser.role === 0 || currentUser.role === 1) && !state.mode.toLowerCase().includes('exam')) document.getElementById('admin-edit-q-btn').classList.remove('hidden'); else document.getElementById('admin-edit-q-btn').classList.add('hidden');
+        if ((currentUser.role === 0) && !state.mode.toLowerCase().includes('exam')) document.getElementById('admin-edit-q-btn').classList.remove('hidden'); else document.getElementById('admin-edit-q-btn').classList.add('hidden');
 
         const qCard = document.querySelector('#quiz-screen .card'); 
         const jWarn = document.getElementById('jackie-warning');
@@ -698,7 +699,7 @@
             if(weeklyKambek) titlesHtml += `<div style="text-align:center;"><div style="font-size:2.5rem;">🚀</div><b style="font-size:1.1rem;">${weeklyKambek}</b><br><span style="color:var(--p); font-size:0.9rem; font-weight:bold;">המתקמבק</span></div>`;
             if(titlesHtml !== '') { document.getElementById('titles-container').innerHTML = titlesHtml; document.getElementById('titles-container').classList.remove('hidden'); }
 
-            const myExams = globalLB.filter(ex => String(ex.id).replace(/^0+/, '') === String(currentUser.id).replace(/^0+/, '')).sort((a,b) => a.examId - b.examId);
+            const myExams = globalLB.filter(ex => String(ex.id).trim() === String(currentUser.id).trim()).sort((a,b) => a.examId - b.examId);
             if (myExams.length > 0) { document.getElementById('stats-container').classList.remove('hidden'); renderChart(myExams); } 
             else { document.getElementById('stats-container').classList.add('hidden'); }
             sortLB('score', document.getElementById('sort-score'));
@@ -726,7 +727,8 @@
             let sorted = [...globalLB].sort((a,b) => b.score - a.score || a.duration - b.duration);
             sorted.forEach((ex, i) => {
                 let medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`;
-                list.innerHTML += `<div class="lb-item"><div style="display:flex; justify-content:space-between; align-items:center;"><b style="font-size:1.1rem;">${medal} ${ex.name} ${getTitleIcon(ex.name)}</b> <span style="font-size:0.75rem; color:#777; background:#eee; padding:3px 6px; border-radius:5px; font-weight:bold;">${ex.date.split(',')[0]}</span></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;"><span style="font-size:1.1rem;">ציון: <b style="color:${ex.score>=70?'var(--correct)':'var(--wrong)'}">${ex.score}</b></span><span style="font-size:0.9rem; color:#555;">זמן: <b>${ex.duration}</b> דק'</span></div><div class="stats-box">📍 ${ex.stats.type}</div></div>`;
+                let isMine = String(ex.id).trim() === String(currentUser.id).trim();
+                list.innerHTML += `<div class="lb-item"><div style="display:flex; justify-content:space-between; align-items:center;"><b style="font-size:1.1rem;">${medal} ${ex.name} ${getTitleIcon(ex.name)}</b> <span style="font-size:0.75rem; color:#777; background:#eee; padding:3px 6px; border-radius:5px; font-weight:bold;">${ex.date.split(',')[0]}</span></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;"><span style="font-size:1.1rem;">ציון: <b style="color:${ex.score>=70?'var(--correct)':'var(--wrong)'}">${ex.score}</b></span><span style="font-size:0.9rem; color:#555;">זמן: <b>${ex.duration}</b> דק'</span></div><div class="stats-box">📍 ${ex.stats.type}</div>${(isMine || currentUser.role === 0) ? `<button class="review-btn" style="margin-top:10px;" onclick="reviewExam(${ex.examId})">📋 תחקיר אישי</button>` : ''}</div>`;
             });
         } else if (t === 'practice') {
             globalPracticeLB.sort((a,b)=>b.count-a.count).forEach((u, i) => { let m = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`; list.innerHTML += `<div class="lb-item" style="flex-direction:row; justify-content:space-between; align-items:center;"><b style="font-size:1.1rem;">${m} ${u.name} ${getTitleIcon(u.name)}</b><span style="background:var(--p-grad); color:white; padding:5px 15px; border-radius:20px; font-weight:bold;">${u.count} שאלות</span></div>`; });
@@ -744,7 +746,7 @@
             const res = await fetch(`${apiURL}?action=getAdminData&adminId=${localStorage.getItem('qbSavedID')}&course=${currentCourse}`); const json = await res.json(); hideLoader();
             let html = "", alertDouble = false;
             json.users.forEach(u => {
-                if (String(u.id).trim() === "012345678") return;
+                let isMe = String(u.id).trim() === String(currentUser.id).trim();
                 let isDouble = u.devices && u.devices.length >= 2; if (isDouble) alertDouble = true;
                 let styleCard = isDouble ? "border: 2px solid var(--wrong); background: rgba(231,76,60,0.02);" : "";
                 
@@ -773,7 +775,7 @@
                         <label style="display:block; font-weight:bold;"><input type="checkbox" ${u.access2?'checked':''} onchange="toggleUserAccess('${u.id}', 2, this.checked)"> מורשה: תפקידי קצין בטיחות</label>
                     </div>
                     <div style="margin-bottom:15px;">${devsHtml}</div>
-                    <button class="btn" style="background:var(--wrong); border-radius:12px; margin:0;" onclick="blockUser('${u.id}', '${u.name}')">חסום משתמש לחלוטין 🚫</button>
+                    ${!isMe ? `<button class="btn" style="background:var(--wrong); border-radius:12px; margin:0;" onclick="blockUser('${u.id}', '${u.name}')">חסום משתמש לחלוטין 🚫</button>` : `<div style="text-align:center; font-weight:bold; color:#777; font-size:0.85rem;">(זה אתה, המנהל. אי אפשר לחסום את עצמך)</div>`}
                 </div>`;
             });
             document.getElementById('admin-list').innerHTML = html;
