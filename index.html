@@ -49,7 +49,7 @@
         .practice-correct { background: #e8f8f5 !important; border-color: var(--correct) !important; color: #27ae60; font-weight: bold;}
         .practice-wrong { background: #fdf2e9 !important; border-color: var(--wrong) !important; color: #e74c3c; text-decoration: line-through; }
         
-        .nav-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 12px 15px; display: flex; justify-content: space-between; gap: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 1000; }
+        .nav-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 12px 15px; display: flex; justify-content: space-between; gap: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 1000; height: 50px; }
         .btn-nav { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer; font-size: 1.05rem; }
         
         .hidden { display: none !important; }
@@ -68,7 +68,6 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         #loader-text { font-size: 1.4rem; font-weight: bold; color: var(--p); text-align: center;}
-
         .lb-item { border-bottom: 1px solid #f0f0f0; padding: 18px 0; display: flex; flex-direction: column; gap: 8px; }
         .stats-box { background: rgba(0,0,0,0.03); padding: 12px; border-radius: 10px; font-size: 0.85rem; line-height: 1.5; border: 1px solid rgba(0,0,0,0.05);}
         
@@ -79,7 +78,6 @@
         .review-btn { background: var(--p-grad); color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 0.9rem; flex:1; text-align:center; font-weight:bold; transition:0.2s;}
         .review-btn:active { transform: scale(0.95); }
         .del-btn { background: var(--wrong); color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; }
-        .sugg-label { font-size: 0.85rem; font-weight: bold; color: var(--p); display: block; margin-bottom: 6px; }
         
         .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 3px 8px; border-radius: 12px; margin-left: 5px; vertical-align: middle; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
         .jackie-highlight { border: 3px solid #f39c12 !important; box-shadow: 0 0 15px rgba(243, 156, 18, 0.4) !important; }
@@ -249,10 +247,8 @@
 <div id="modal-backdrop" class="hidden" onclick="closeModals()"></div>
 
 <script>
-    // ========= שים כאן את הלינק המעודכן שלך ===========
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
-    // ====================================================
-
+    
     const ANIM_MAP = {
         login: { t: ["בודק שאתה לא בוט...", "מכין את הקפה לשרת...", "פותח שערים, נא לא לדחוף..."], i: "🚪", a: "anim-shine" },
         exam: { t: ["מכין את הטישו לבכי...", "מדפיס שאלות קשות במיוחד..."], i: "📝", a: "anim-write" },
