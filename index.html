@@ -18,9 +18,9 @@
         .badge { background: var(--wrong); color: white; border-radius: 50%; padding: 2px 7px; font-size: 0.75rem; position: absolute; top: -5px; right: -8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1002; min-width: 14px; text-align: center; }
         .badge-cat { top: -10px; right: -10px; font-size: 0.85rem; padding: 3px 8px; }
 
-        .dropdown { position: absolute; top: 35px; left: 0; background: var(--card); border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); display: none; flex-direction: column; width: 220px; overflow: hidden; z-index: 1001; }
+        .dropdown { position: absolute; top: 35px; left: 0; background: var(--card); border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); display: none; flex-direction: column; width: 260px; overflow: hidden; z-index: 1001; }
         .dropdown.show { display: flex; }
-        .drop-item { padding: 14px 15px; border-bottom: 1px solid #eee; color: var(--txt); font-size: 0.95rem; cursor: pointer; transition: 0.2s;}
+        .drop-item { padding: 14px 15px; border-bottom: 1px solid #eee; color: var(--txt); font-size: 0.95rem; cursor: pointer; transition: 0.2s; line-height: 1.4;}
         .drop-item:hover { background: #e7f1ff; color: var(--p); padding-right: 20px; }
 
         .container { max-width: 550px; margin: auto; position: relative;}
@@ -50,7 +50,10 @@
         
         .hidden { display: none !important; }
         .input-pass { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; box-sizing: border-box; text-align: center; font-family: inherit; transition: 0.2s; background: var(--bg); color:var(--txt);}
-        
+        .input-pass:focus { border-color: var(--p); background: var(--card); outline: none;}
+
+        .dark .device-box { background: #3d3d3d !important; color: #eee !important; border: 1px solid #555 !important; }
+
         #loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .dark #loader-overlay { background: rgba(0,0,0,0.95); }
         .loader-icon { font-size: 5rem; margin-bottom: 15px; display: inline-block; }
@@ -58,10 +61,14 @@
         .anim-write { animation: write 1.2s infinite ease-in-out; }
         .anim-lift { animation: lift 1s infinite alternate ease-in-out; }
         .anim-spin { animation: spin 1s infinite linear; }
+        @keyframes write { 0%, 100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(15px, -15px) rotate(-20deg); } }
+        @keyframes lift { 0% { transform: translateY(0); } 100% { transform: translateY(-20px) scale(1.1); } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         #loader-text { font-size: 1.4rem; font-weight: bold; color: var(--p); text-align: center;}
-        .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; display: inline-block;}
+        
+        /* תגית ה-ID עגולה ואלגנטית */
+        .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 2px 8px; border-radius: 12px; margin-left: 5px; vertical-align: middle; display: inline-block;}
         .jackie-highlight { border: 3px solid #f39c12 !important; box-shadow: 0 0 15px rgba(243, 156, 18, 0.4) !important; }
     </style>
 </head>
@@ -73,17 +80,18 @@
 </div>
 
 <div class="top-bar">
-    <button class="top-btn" onclick="goHomeFull()">🏠 ראשי</button>
+    <button class="top-btn" onclick="goHome()">🏠 ראשי</button>
     <div id="exam-timer" class="timer hidden" style="font-weight:bold; color:var(--wrong);">90:00</div>
     <div style="display:flex; align-items:center; gap:12px;">
         <span onclick="toggleDark(!appSettings.dark); event.stopPropagation();" id="dark-toggle-icon" style="cursor:pointer; font-size:1.3rem;">🌞</span>
-        <div class="user-nav" id="user-menu-btn" onclick="document.getElementById('dropdown').classList.toggle('show'); event.stopPropagation();">
+        
+        <div class="user-nav" id="user-menu-btn" style="display:none;" onclick="document.getElementById('dropdown').classList.toggle('show'); event.stopPropagation();">
             <span style="position:relative;">
                 שלום <span id="top-name"></span> ▼
                 <div id="notif-badge" class="badge hidden"></div>
             </span>
             <div class="dropdown" id="dropdown">
-                <div class="drop-item" id="switch-course-btn" onclick="switchCourseContext()"></div>
+                <div class="drop-item hidden" id="switch-course-btn" onclick="switchCourseContext()"></div>
                 <div class="drop-item" onclick="showSettings()">⚙️ הגדרות מערכת</div>
                 <div class="drop-item" onclick="showJackiePanel()">🙋‍♂️ שאלות לג'קי</div>
                 <div class="drop-item hidden admin-only" id="admin-sugg-btn" onclick="showSuggestionsPanel()">🔔 הצעות לשינוי <span id="sugg-inner-count"></span></div>
@@ -160,7 +168,7 @@
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:15px; font-size:1.1rem;"></div>
             <div style="display:flex; justify-content:space-between; margin-top: 20px; font-size: 0.9rem; padding-top:15px; border-top:1px solid #eee;">
                 <span style="color:var(--wrong); cursor:pointer; font-weight:bold;" onclick="openSuggestionModal()">💡 דווח על טעות</span>
-                <span style="color:#8e44ad; cursor:pointer; font-weight:bold;" onclick="saveToJackie()">🙋‍♂️ שמור לג'קי</span>
+                <span style="color:#8e44ad; cursor:pointer; font-weight:bold;" onclick="saveToJackie()">🙋‍♂️ שמור לג'קי (לשיעור)</span>
                 <span style="color:var(--p); cursor:pointer; font-weight:bold;" onclick="shareQuestion()">📤 שתף בוואטסאפ</span>
             </div>
         </div>
@@ -168,7 +176,7 @@
 
     <div id="jackie-screen" class="hidden card">
         <h2 style="color:var(--p); text-align:center;">🙋‍♂️ שאלות להבהרה (ג'קי)</h2>
-        <p style="font-size:0.9rem; text-align:center; color:#666;" id="jackie-explainer"></p>
+        <p style="font-size:0.9rem; text-align:center; color:#666;">כאן מרוכזות שאלות שביקשתם לעבור עליהן יחד בשיעור.</p>
         <div id="jackie-list" style="margin-top:20px;"></div>
         <button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור לתפריט</button>
     </div>
@@ -212,8 +220,12 @@
     <div id="qdb-screen" class="hidden card"><h2>📚 עריכת שאלות זריזה</h2><input type="text" id="qdb-search" class="input-pass" placeholder="חפש לפי ID או מילה..." onkeyup="filterQDB()"><div id="qdb-list" style="margin-top: 15px; max-height:60vh; overflow-y:auto;"></div><button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור</button></div>
     <div id="changelog-screen" class="hidden card"><h2>📝 היסטוריית עריכות</h2><div id="changelog-list" style="margin-top: 15px; max-height:60vh; overflow-y:auto; font-size:0.9rem;"></div><button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור</button></div>
     <div id="admin-sugg-screen" class="hidden card"><h2 style="color:var(--p); text-align:center;">🔔 הצעות לשינוי</h2><div id="admin-sugg-list" style="margin-top:20px;"></div><button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור</button></div>
-    <div id="review-screen" class="hidden card"><h2 style="text-align:center; color:var(--p);">📋 תחקיר מבחן</h2><div id="review-shared-name" class="hidden" style="text-align:center; font-size:1.2rem; margin-bottom:10px; color:#666; font-weight:bold;"></div><h3 id="review-score" style="text-align:center; font-size:3.5rem; margin:10px 0;"></h3><div id="review-duration" style="text-align:center; margin-bottom:20px; color:#777; font-weight:bold;"></div><div id="review-list"></div><button id="btn-back-review" class="btn" style="background:#95a5a6; margin-top:25px;" onclick="document.getElementById('review-screen').classList.add('hidden'); document.getElementById('history-page').classList.remove('hidden'); window.scrollTo(0,0);">חזור לטבלה</button></div>
+    <div id="review-screen" class="hidden card"><h2 style="text-align:center; color:var(--p);">📋 תחקיר מבחן</h2><div id="review-shared-name" class="hidden" style="text-align:center; font-size:1.2rem; margin-bottom:10px; color:#666; font-weight:bold;"></div><h3 id="review-score" style="text-align:center; font-size:3.5rem; margin:10px 0;"></h3><div id="review-duration" style="text-align:center; margin-bottom:20px; color:#777; font-weight:bold;"></div><div style="display:flex; justify-content:center; margin-bottom:25px;"><button id="btn-share-review" class="review-btn" style="background:#25D366; max-width:250px;" onclick="shareReviewLink()">🔗 שתף תחקיר</button></div><div id="review-list"></div><div id="shared-review-footer" class="hidden" style="text-align:center; margin-top:30px;"><button class="btn" onclick="goHomeFull()">היכנס למערכת 🚀</button></div><button id="btn-back-review" class="btn" style="background:#95a5a6; margin-top:25px;" onclick="document.getElementById('review-screen').classList.add('hidden'); document.getElementById('history-page').classList.remove('hidden'); window.scrollTo(0,0);">חזור לטבלה</button></div>
     <div id="exam-summary-screen" class="hidden card" style="text-align: center; padding:40px 20px;"><h2 id="summary-main-title" style="font-size:2.5rem; color:var(--p);">🎉 סיימת! 🎉</h2><div style="font-size:6.5rem; font-weight:bold; margin:20px 0;" id="summary-score-display">0</div><div id="summary-stats-display" style="font-size:1.2rem; margin-bottom:30px; line-height:1.6; color:#555;"></div><div style="display:flex; flex-direction:column; gap:12px;"><button class="btn" style="background:#25D366;" id="summary-share-btn" onclick="shareToWhatsApp()">📲 השווץ בוואטסאפ</button><button class="btn" style="background:var(--p);" id="summary-review-btn" onclick="reviewExam(window.lastExamId)">📋 תחקיר מבחן (טעויות)</button><button class="btn" style="background:#95a5a6;" onclick="goHomeFull()">חזור לראשי</button></div></div>
+
+    <div id="edit-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:350px;"><h3>✏️ עריכת משתמש</h3><input type="text" id="edit-name-input" class="input-pass" placeholder="שם מלא"><input type="tel" id="edit-id-input" class="input-pass" placeholder="תעודת זהות"><input type="hidden" id="edit-old-id"><button class="btn" style="background:var(--correct);" id="btn-save-edit" onclick="saveEditUser()">שמור שינויים</button><button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button></div>
+    <div id="edit-q-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:400px; max-height: 90vh; overflow-y: auto;"><h3 style="margin-top:0;">✏️ עריכת שאלה מלאה</h3><input type="hidden" id="edit-q-id"><label>שאלה:</label><textarea id="edit-q-text" class="input-pass" style="text-align:right;"></textarea><label>תשובה 1 (0):</label><input type="text" id="edit-q-opt0" class="input-pass"><label>תשובה 2 (1):</label><input type="text" id="edit-q-opt1" class="input-pass"><label>תשובה 3 (2):</label><input type="text" id="edit-q-opt2" class="input-pass"><label>תשובה 4 (3):</label><input type="text" id="edit-q-opt3" class="input-pass"><label>תשובה נכונה (0-3):</label><input type="number" id="edit-q-correct" class="input-pass" min="0" max="3"><button class="btn" style="background:var(--correct);" id="btn-save-q" onclick="saveEditQuestion()">שמור בענן</button><button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button></div>
+    <div id="sugg-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:95%; max-width:500px; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.5);"><h3 style="color:var(--wrong); margin-top:0; text-align:center;">💡 דיווח על טעות</h3><div id="sugg-q-display" style="background: rgba(52, 152, 219, 0.08); padding: 15px; border-radius: 10px; border-right: 5px solid var(--p); margin-bottom: 20px; font-weight:bold; line-height: 1.4;"></div><div id="sugg-inputs"></div><span class="sugg-label" style="margin-top:15px;">התשובה הנכונה לדעתך:</span><select id="sugg-correct" class="input-pass" style="font-weight:bold;"><option value="1">תשובה 1</option><option value="2">תשובה 2</option><option value="3">תשובה 3</option><option value="4">תשובה 4</option><option value="5">תשובה אחרת לחלוטין</option></select><textarea id="sugg-comment" class="input-pass" style="height:80px; text-align:right;" placeholder="הערה חופשית..."></textarea><div style="display:flex; gap:12px; margin-top:20px;"><button class="btn" style="background:var(--correct); margin:0; flex:2;" onclick="submitSuggestion()">שלח למנהל</button><button class="btn" style="background:#bdc3c7; margin:0; flex:1;" onclick="closeModals()">ביטול</button></div></div>
 </div>
 
 <div id="nav-footer" class="nav-footer hidden">
@@ -224,16 +236,31 @@
 <div id="modal-backdrop" class="hidden" onclick="closeModals()"></div>
 
 <script>
+    const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
+    
+    const ANIM_MAP = {
+        login: { t: ["בודק שאתה לא בוט...", "מכין את הקפה לשרת...", "פותח שערים, נא לא לדחוף..."], i: "🚪", a: "anim-shine" },
+        exam: { t: ["מכין את הטישו לבכי...", "מדפיס שאלות קשות במיוחד..."], i: "📝", a: "anim-write" },
+        numExam: { t: ["מחמם את המחשבון...", "מעמיס שאלות עם מספרים מוגזמים..."], i: "🏋️‍♂️", a: "anim-lift" },
+        practice: { t: ["שולף שאלות מהבוידעם...", "מארגן לך אימון קליל..."], i: "📚", a: "anim-lift" },
+        weak: { t: ["מגרד קצת בפצעים...", "מרכז את כל הפאדיחות שלך..."], i: "🛠️", a: "anim-lift" },
+        hard: { t: ["מעמיס מלכודות...", "אוסף את הטעויות של כולם..."], i: "☠️", a: "anim-spin" },
+        lb: { t: ["בודק מי חרשן השבוע...", "מבריק את הפדיחות של כולם..."], i: "🏆", a: "anim-shine" },
+        stats: { t: ["מחשב כמה פעמים טעית...", "מצייר גרף של תקווה..."], i: "📈", a: "anim-write" },
+        sugg: { t: ["קורא את התלונות שלך על המערכת..."], i: "🕵️", a: "anim-shine" },
+        default: { t: ["מערבב נתונים ואנשים...", "רק שניה, השרת שותה מים..."], i: "⏳", a: "anim-spin" }
+    };
+
     let questionsDB = [], numQuestionsDB = [], allQuestionsDB = [], globalLB = [], globalPracticeLB = [], globalContribLB = [];
     let state = { mode: '', questions: [], index: 0, answers: [], start: null, qTimes: {} };
     let currentUser = { id: "", name: "", role: 2, lastIdx: 0, access1: true, access2: true };
-    let currentCourse = null; // 1 או 2
+    let currentCourse = null; 
     let currentQStart = 0, myChart = null, currentReviewExamId = null;
     let myDeviceId = localStorage.getItem('qbDeviceId') || (Math.random().toString(36).substr(2,9)+Date.now().toString(36));
     localStorage.setItem('qbDeviceId', myDeviceId);
     let appSettings = { dark: false, fontStep: 1, font: 16, autoNext: true, shareReview: true };
     let userWeaknesses = [], globalPracticeAnswers = [], globalHardQuestions = [], jackieQuestions = [];
-    let timerInterval = null, doubleDeviceAlertActive = false;
+    let timerInterval = null;
     let weeklyHarshan = null, weeklyTzalaf = null, weeklyKambek = null;
 
     const COURSE_NAMES = {
@@ -245,9 +272,21 @@
         try { let s = localStorage.getItem('qbSettings'); if(s) appSettings = {...appSettings, ...JSON.parse(s)}; } catch(e){}
         applySettings();
         const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('review')) { document.getElementById('login-screen').classList.add('hidden'); document.querySelector('.top-bar').style.display = 'none'; document.getElementById('main-container').style.marginTop = '20px'; showLoader("stats"); try { const res = await fetch(`${apiURL}?action=getSharedReview&examId=${urlParams.get('review')}`); const j = await res.json(); hideLoader(); if(j.error) { alert(j.msg); goHomeFull(); return; } window.sharedExamData = j; reviewExam(j.examId, true); } catch(e) { hideLoader(); alert("שגיאה בטעינת המבחן."); } return; }
+        if (urlParams.has('stats')) { document.getElementById('login-screen').classList.add('hidden'); document.querySelector('.top-bar').style.display = 'none'; document.getElementById('main-container').style.marginTop = '20px'; showLoader("stats"); try { const res = await fetch(`${apiURL}?action=getSharedStats&targetId=${urlParams.get('stats')}`); const j = await res.json(); hideLoader(); if(j.error || !j.exams || j.exams.length === 0) { alert("אין נתונים."); goHomeFull(); return; } renderSharedStats(j); } catch(e) { hideLoader(); alert("שגיאה בטעינת הגרף."); } return; }
+
         const savedID = localStorage.getItem('qbSavedID');
         if (savedID) { document.getElementById('login-screen').classList.add('hidden'); autoLogin(savedID); }
     };
+
+    function showLoader(type = "default") {
+        const iconEl = document.getElementById('loader-icon'); const textEl = document.getElementById('loader-text');
+        const conf = ANIM_MAP[type] || ANIM_MAP.default;
+        iconEl.innerText = conf.i; iconEl.className = "loader-icon " + conf.a; textEl.innerText = conf.t[Math.floor(Math.random() * conf.t.length)];
+        document.getElementById('loader-overlay').classList.remove('hidden');
+    }
+    
+    function hideLoader() { document.getElementById('loader-overlay').classList.add('hidden'); }
 
     function applySettings() {
         if(appSettings.dark) document.body.classList.add('dark'); else document.body.classList.remove('dark');
@@ -262,7 +301,7 @@
 
     async function saveSettings() { 
         localStorage.setItem('qbSettings', JSON.stringify(appSettings)); 
-        if (currentUser.id) { try { await fetch(`${apiURL}?course=${currentCourse}`, { method: 'POST', body: JSON.stringify({ action: 'saveSettings', id: currentUser.id, settings: appSettings }) }); } catch(e){} }
+        if (currentUser.id && currentCourse) { try { await fetch(`${apiURL}?course=${currentCourse}`, { method: 'POST', body: JSON.stringify({ action: 'saveSettings', id: currentUser.id, settings: appSettings }) }); } catch(e){} }
     }
 
     function toggleDark(isDark) { appSettings.dark = isDark; applySettings(); saveSettings(); }
@@ -274,6 +313,8 @@
         if(el.classList.contains('hidden')) { document.querySelectorAll('.sub-menu').forEach(m => m.classList.add('hidden')); el.classList.remove('hidden'); } 
         else { el.classList.add('hidden'); }
     }
+
+    window.globalLoginCache = null;
 
     async function autoLogin(id) {
         showLoader("login");
@@ -293,7 +334,6 @@
         } catch(e) { hideLoader(); document.getElementById('sys-msg').innerText = "שגיאת רשת. נסה שוב."; }
     }
 
-    window.globalLoginCache = null;
     function handleLoginResponse(j, id) {
         hideLoader();
         if(j.error) { document.getElementById('sys-msg').innerText = j.msg; localStorage.removeItem('qbSavedID'); document.getElementById('login-screen').classList.remove('hidden'); return; }
@@ -312,7 +352,6 @@
             document.getElementById('sugg-inner-count').innerText = `(${j.suggestionsCount})`; 
         }
 
-        // ניתוח הרשאות וניתוב חכם
         if (j.access1 && j.access2) {
             document.getElementById('lobby-screen').classList.remove('hidden');
         } else if (j.access1) {
@@ -346,7 +385,6 @@
             hideLoader();
             questionsDB = j.data || []; numQuestionsDB = j.numData || []; allQuestionsDB = [...questionsDB, ...numQuestionsDB];
             
-            // הזרקת הקידומת ל-ID באופן אוטומטי
             let prefix = currentCourse === 1 ? "A-" : "B-";
             allQuestionsDB.forEach(q => { if(!String(q.id).startsWith(prefix)) q.id = prefix + q.id; });
             questionsDB.forEach(q => { if(!String(q.id).startsWith(prefix)) q.id = prefix + q.id; });
@@ -357,14 +395,16 @@
             userWeaknesses = (currentCourse === 1 ? j.weaknesses1 : j.weaknesses2 || []).map(String);
             jackieQuestions = j.jackieList || [];
             
+            try { if (currentUser.role === 0 || currentUser.role === 1) { document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden')); } } catch(e) {}
+            
             updateBadges();
             backgroundFetchStats();
         } catch(e) { hideLoader(); }
     }
 
     function switchCourseContext() {
-        document.getElementById('menu').classList.add('hidden');
-        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('dropdown').classList.remove('show');
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); 
         document.getElementById('nav-footer').classList.add('hidden');
         selectCourse(currentCourse === 1 ? 2 : 1);
     }
@@ -388,6 +428,102 @@
        } catch(e){}
     }
 
+    function calculateWeeklyTitles() {
+        let now = new Date();
+        let weekExams = globalLB.filter(ex => { 
+            if(!ex.date) return false;
+            let parts = String(ex.date).split(',')[0].split('.'); 
+            if(parts.length < 3) return false;
+            let d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`); 
+            return (now - d) / (1000*60*60*24) <= 7; 
+        });
+        let hMap = {}; weekExams.forEach(ex => hMap[ex.name] = (hMap[ex.name]||0) + ex.total);
+        weeklyHarshan = Object.keys(hMap).sort((a,b) => hMap[b] - hMap[a])[0];
+        let tExams = weekExams.filter(ex => ex.score >= 90).sort((a,b) => b.score - a.score || a.duration - b.duration);
+        weeklyTzalaf = tExams.length > 0 ? tExams[0].name : null;
+        let sMap = {}; weekExams.forEach(ex => { if(!sMap[ex.name]) sMap[ex.name] = []; sMap[ex.name].push(ex.score); });
+        let maxDiff = 0; Object.keys(sMap).forEach(name => { if(sMap[name].length > 1) { let max = Math.max(...sMap[name]), min = Math.min(...sMap[name]); if(max - min > maxDiff) { maxDiff = max - min; weeklyKambek = name; } } });
+    }
+
+    function getTitleIcon(name) {
+       let t = [];
+       if(name === weeklyHarshan) t.push('<span title="חרשן השבוע">🚜</span>');
+       if(name === weeklyTzalaf) t.push('<span title="הצלף">🎯</span>');
+       if(name === weeklyKambek) t.push('<span title="המתקמבק">🚀</span>');
+       return t.join(' ');
+    }
+
+    function shuffleArray(arr) { let array = [...arr]; for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
+
+    function startWeaknesses() {
+        let wq = allQuestionsDB.filter(q => userWeaknesses.includes(String(q.id)));
+        if(wq.length === 0) return alert("אין לך חולשות במאגר!");
+        showLoader('weak');
+        setTimeout(() => {
+            hideLoader(); state.mode = 'weak'; state.questions = wq; state.answers = new Array(wq.length).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
+            document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); document.getElementById('quiz-header-title').classList.add('hidden'); renderBubbles(); renderQuestion();
+        }, 400);
+    }
+
+    function startHardQuestions() {
+        if(globalHardQuestions.length === 0) return alert("אין מספיק נתונים על שאלות קשות כרגע. איזה כיתה של גאונים!");
+        showLoader('hard');
+        setTimeout(() => {
+            hideLoader(); state.mode = 'hard'; state.questions = shuffleArray(globalHardQuestions).slice(0, 50); state.answers = new Array(state.questions.length).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
+            document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); document.getElementById('quiz-header-title').classList.add('hidden'); renderBubbles(); renderQuestion();
+        }, 400);
+    }
+
+    async function saveToJackie() {
+        const q = state.questions[state.index]; showLoader("default");
+        try {
+            const res = await fetch(`${apiURL}?course=${currentCourse}`, { method: 'POST', body: JSON.stringify({ action: 'saveJackieQuestion', qId: q.id, qText: q.q, userName: currentUser.name }) });
+            const j = await res.json(); hideLoader(); 
+            if(j.success) {
+                alert("השאלה נשמרה לרשימה של ג'קי! 🙋‍♂️"); 
+                jackieQuestions.push(String(q.id));
+                renderQuestion(); 
+            } else alert(j.msg);
+        } catch(e) { hideLoader(); alert("שגיאה."); }
+    }
+
+    async function showJackiePanel() {
+        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); 
+        document.getElementById('jackie-screen').classList.remove('hidden'); showLoader("default");
+        try {
+            const res = await fetch(`${apiURL}?action=getJackieQuestions&course=${currentCourse}`); const j = await res.json(); hideLoader();
+            let h = ''; j.list.forEach(item => {
+                const fullQ = allQuestionsDB.find(x => String(x.id) === String(item.id));
+                let optsHtml = '';
+                if (fullQ && fullQ.a) {
+                    fullQ.a.forEach((opt, idx) => {
+                        if(opt) {
+                           let isCorrect = (idx === fullQ.c) ? 'font-weight:bold; color:var(--correct);' : 'color:#555;';
+                           optsHtml += `<div style="margin-top:5px; padding:8px; background:var(--bg); border-radius:5px; border:1px solid #ddd; ${isCorrect}">${idx+1}. ${opt}</div>`;
+                        }
+                    });
+                }
+                h += `<div class="card" style="border-right: 5px solid #8e44ad; margin-bottom:15px;">
+                        <div style="font-weight:bold; margin-bottom:10px; font-size:1.1rem; line-height:1.4;"><span class="id-tag">ID: ${item.id}</span> ${item.qText}</div>
+                        <div style="margin-bottom:15px;">${optsHtml}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #ccc; padding-top:10px;">
+                            <span style="font-size:0.8rem; color:#777;">הוסיף: ${item.addedBy} (${item.date})</span>
+                            ${currentUser.role === 0 ? `<button class="del-btn" style="width:40px; padding:5px;" onclick="deleteJackie('${item.id}')">🗑️</button>` : ''}
+                        </div>
+                      </div>`;
+            });
+            document.getElementById('jackie-list').innerHTML = h || `<div style="text-align:center; color:#777; font-weight:bold;">אין שאלות ברשימה כרגע. עשיתם הכל מושלם!</div>`;
+        } catch(e) { hideLoader(); }
+    }
+
+    async function deleteJackie(id) { 
+        if(!confirm("למחוק?")) return; 
+        showLoader("default"); 
+        await fetch(`${apiURL}?course=${currentCourse}`, { method: 'POST', body: JSON.stringify({ action: 'deleteJackieQuestion', qId: id, adminId: currentUser.id }) }); 
+        jackieQuestions = jackieQuestions.filter(x => x !== String(id));
+        showJackiePanel(); 
+    }
+
     function startApp(m) {
         showLoader(m);
         setTimeout(() => {
@@ -408,7 +544,10 @@
                     globalPracticeAnswers = state.answers;
                     let lastIdxFromCache = currentCourse === 1 ? window.globalLoginCache.lastIdx1 : window.globalLoginCache.lastIdx2;
                     state.index = Math.min(lastIdxFromCache || 0, pool.length > 0 ? pool.length - 1 : 0);
-                } else { state.index = 0; state.answers = new Array(pool.length).fill(null); }
+                } else if (m === 'numPractice') {
+                    state.answers = new Array(pool.length).fill(null);
+                    state.index = 0;
+                } else { state.answers = new Array(pool.length).fill(null); }
                 document.getElementById('exam-timer').classList.add('hidden');
                 document.getElementById('quiz-header-title').classList.add('hidden');
             }
@@ -432,28 +571,41 @@
         document.getElementById('q-text').innerHTML = `${state.index+1}. <span class="id-tag">ID: ${q.id}</span> ${q.q}`;
         if ((currentUser.role === 0 || currentUser.role === 1) && !state.mode.toLowerCase().includes('exam')) document.getElementById('admin-edit-q-btn').classList.remove('hidden'); else document.getElementById('admin-edit-q-btn').classList.add('hidden');
 
-        const qCard = document.querySelector('#quiz-screen .card'); const jWarn = document.getElementById('jackie-warning');
-        if(jackieQuestions.includes(String(q.id))) { qCard.classList.add('jackie-highlight'); jWarn.classList.remove('hidden'); } 
-        else { qCard.classList.remove('jackie-highlight'); jWarn.classList.add('hidden'); }
+        const qCard = document.querySelector('#quiz-screen .card'); 
+        const jWarn = document.getElementById('jackie-warning');
+        if(jackieQuestions.includes(String(q.id))) { 
+            qCard.classList.add('jackie-highlight'); 
+            jWarn.classList.remove('hidden'); 
+        } else { 
+            qCard.classList.remove('jackie-highlight'); 
+            jWarn.classList.add('hidden'); 
+        }
 
         const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
         q.a.forEach((t, i) => {
             if(!t && t!==0) return;
             const d = document.createElement('div'); d.className = 'option';
+            
             if(state.answers[state.index] === i) d.classList.add('selected');
-            if(!state.mode.toLowerCase().includes('exam') && state.answers[state.index] !== null) { let cls = i === q.c ? 'practice-correct' : (state.answers[state.index] === i ? 'practice-wrong' : ''); if (cls !== '') d.classList.add(cls); }
+            
+            if(!state.mode.toLowerCase().includes('exam') && state.answers[state.index] !== null) { 
+                let cls = i === q.c ? 'practice-correct' : (state.answers[state.index] === i ? 'practice-wrong' : ''); 
+                if (cls !== '') d.classList.add(cls); 
+            }
             d.innerText = t; 
             d.onclick = () => {
                 if(state.answers[state.index] !== null && state.mode === 'practice' && !state.mode.toLowerCase().includes('exam')) return;
+                
                 state.answers[state.index] = i; 
+                
                 if(!state.mode.toLowerCase().includes('exam')) {
                     if (i !== q.c && !userWeaknesses.includes(String(q.id))) { userWeaknesses.push(String(q.id)); updateBadges(); }
                     else if (i === q.c && userWeaknesses.includes(String(q.id))) { userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); updateBadges(); }
                     let origIndex = questionsDB.findIndex(x => String(x.id) === String(q.id));
-                    if (origIndex > -1) { globalPracticeAnswers[origIndex] = i; }
+                    if (origIndex > -1) { if (globalPracticeAnswers.length !== questionsDB.length) globalPracticeAnswers = new Array(questionsDB.length).fill(null); globalPracticeAnswers[origIndex] = i; }
                     const fb = document.getElementById('feedback');
                     if(i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; 
-                        if (state.mode === 'weak' || state.mode === 'hard') { setTimeout(() => { if (state.questions[state.index] && String(state.questions[state.index].id) === String(q.id)) { state.questions.splice(state.index, 1); state.answers.splice(state.index, 1); if (state.questions.length === 0) { alert("🎉 סיימת את מקצה השיפורים בהצלחה!"); goHome(); } else { if (state.index >= state.questions.length) state.index = Math.max(0, state.questions.length - 1); renderBubbles(); renderQuestion(); } } }, 1200); 
+                        if (state.mode === 'weak' || state.mode === 'hard') { setTimeout(() => { if ((state.mode === 'weak' || state.mode === 'hard') && state.questions[state.index] && String(state.questions[state.index].id) === String(q.id)) { state.questions.splice(state.index, 1); state.answers.splice(state.index, 1); if (state.questions.length === 0) { alert("🎉 סיימת את מקצה השיפורים בהצלחה!"); goHome(); } else { if (state.index >= state.questions.length) state.index = Math.max(0, state.questions.length - 1); renderBubbles(); renderQuestion(); } } }, 1200); 
                         } else if(appSettings.autoNext) { setTimeout(() => move(1), 600); }
                     } else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; }
                     saveProgress();
@@ -469,15 +621,44 @@
 
     function saveQTime() { if(currentQStart > 0) { const elapsed = Math.round((Date.now() - currentQStart) / 1000); state.qTimes[state.index] = (state.qTimes[state.index] || 0) + elapsed; currentQStart = Date.now(); } }
     function move(s) { saveQTime(); state.index += s; if(state.index < 0) state.index=0; if(state.index >= state.questions.length) state.index = state.questions.length-1; renderQuestion(); }
-    function startTimer() { state.time = 90 * 60; clearInterval(timerInterval); timerInterval = setInterval(() => { state.time--; let m = Math.floor(state.time / 60); let s = state.time % 60; document.getElementById('exam-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`; if (state.time <= 0) { clearInterval(timerInterval); submitExam(); } }, 1000); }
+
+    function startTimer() {
+        state.time = 90 * 60; clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            state.time--; let m = Math.floor(state.time / 60); let s = state.time % 60;
+            document.getElementById('exam-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+            if (state.time <= 0) { clearInterval(timerInterval); alert('הזמן נגמר!'); submitExam(); }
+        }, 1000);
+    }
 
     async function submitExam() {
-        saveQTime(); if (state.answers.filter(a => a === null).length > 0 && !confirm(`לא ענית על הכל. להגיש?`)) return;
+        saveQTime();
+        if (state.answers.filter(a => a === null).length > 0 && !confirm(`לא ענית על הכל. להגיש?`)) return;
         showLoader("default"); clearInterval(timerInterval);
-        let correct = 0; state.questions.forEach((q, i) => { if(state.answers[i] === q.c) { correct++; userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); } else { if(!userWeaknesses.includes(String(q.id))) userWeaknesses.push(String(q.id)); } });
-        let score = Math.round((correct / state.questions.length) * 100); let dur = Math.round((new Date() - state.start) / 60000);
-        let data = { action: 'saveExam', course: currentCourse, examId: Date.now(), id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: dur, date: new Date().toLocaleString('he-IL'), stats: { type: state.mode, avg: 0 }, examData: { questions: state.questions, answers: state.answers, qTimes: state.qTimes } };
-        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify(data) }); window.lastExamId = data.examId; hideLoader(); document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden'); document.getElementById('summary-score-display').innerText = score; document.getElementById('summary-score-display').style.color = score >= 70 ? 'var(--correct)' : 'var(--wrong)'; document.getElementById('exam-summary-screen').classList.remove('hidden'); saveProgress(); } catch(e){ hideLoader(); }
+        let correct = 0; state.questions.forEach((q, i) => { 
+            if(state.answers[i] === q.c) { correct++; userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); }
+            else { if(!userWeaknesses.includes(String(q.id))) userWeaknesses.push(String(q.id)); }
+        });
+        updateBadges();
+
+        let score = Math.round((correct / state.questions.length) * 100);
+        let dur = Math.round((new Date() - state.start) / 1000 / 60);
+        let timesArr = Object.values(state.qTimes), avg = timesArr.length ? (timesArr.reduce((a,b)=>a+b,0)/state.questions.length).toFixed(1) : 0;
+        let eType = state.mode === 'numExam' ? 'מבחן מספריות' : 'מבחן כולל';
+        
+        let newExamId = Date.now();
+
+        const data = { action: 'saveExam', course: currentCourse, examId: newExamId, id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: dur, date: new Date().toLocaleString('he-IL'), stats: { type: eType, avg: avg }, examData: { questions: state.questions, answers: state.answers, qTimes: state.qTimes } };
+        
+        try {
+            await fetch(apiURL, { method: 'POST', body: JSON.stringify(data) }); hideLoader(); 
+            document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden'); document.getElementById('quiz-header-title').classList.add('hidden');
+            window.lastExamId = newExamId;
+            document.getElementById('summary-score-display').innerText = score; document.getElementById('summary-score-display').style.color = score >= 70 ? 'var(--correct)' : 'var(--wrong)';
+            document.getElementById('summary-stats-display').innerHTML = `זמן כולל: <b>${dur}</b> דק'<br>ממוצע לשאלה: <b>${avg}</b> שניות<br><br>נכון: ${correct} | טעויות: ${state.questions.length - correct}`;
+            document.getElementById('exam-summary-screen').classList.remove('hidden');
+            saveProgress(); 
+        } catch(e) { hideLoader(); alert("שגיאה בשמירת התוצאה."); }
     }
 
     async function loadLeaderboard() {
@@ -487,13 +668,65 @@
             globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
             calculateWeeklyTitles();
             let titlesHtml = ``;
-            // האימוג'ים הוגדלו משמעותית רק בתוך חלונית התצוגה העליונה לפי הבקשה
             if(weeklyHarshan) titlesHtml += `<div style="text-align:center;"><div style="font-size:2.5rem;">🚜</div><b style="font-size:1.1rem;">${weeklyHarshan}</b><br><span style="color:var(--p); font-size:0.9rem; font-weight:bold;">חרשן השבוע</span></div>`;
             if(weeklyTzalaf) titlesHtml += `<div style="text-align:center;"><div style="font-size:2.5rem;">🎯</div><b style="font-size:1.1rem;">${weeklyTzalaf}</b><br><span style="color:var(--p); font-size:0.9rem; font-weight:bold;">הצלף</span></div>`;
-            if(weeklyKambek) titlesHtml += `<div style="text-align:center;"><div style="font-size:2.5rem;">🚀</div><b style="font-size:1:1rem;">${weeklyKambek}</b><br><span style="color:var(--p); font-size:0.9rem; font-weight:bold;">המתקמבק</span></div>`;
+            if(weeklyKambek) titlesHtml += `<div style="text-align:center;"><div style="font-size:2.5rem;">🚀</div><b style="font-size:1.1rem;">${weeklyKambek}</b><br><span style="color:var(--p); font-size:0.9rem; font-weight:bold;">המתקמבק</span></div>`;
             if(titlesHtml !== '') { document.getElementById('titles-container').innerHTML = titlesHtml; document.getElementById('titles-container').classList.remove('hidden'); }
+
+            const myExams = globalLB.filter(ex => String(ex.id).replace(/^0+/, '') === String(currentUser.id).replace(/^0+/, '')).sort((a,b) => a.examId - b.examId);
+            if (myExams.length > 0) { document.getElementById('stats-container').classList.remove('hidden'); renderChart(myExams); } 
+            else { document.getElementById('stats-container').classList.add('hidden'); }
             sortLB('score', document.getElementById('sort-score'));
-        } catch(e) { hideLoader(); }
+        } catch(e) { hideLoader(); alert("שגיאה בטעינת טבלת שיאים."); }
+    }
+
+    function renderChart(data) {
+        if (myChart) myChart.destroy();
+        const ctx = document.getElementById('statsChart').getContext('2d');
+        const labels = data.map(ex => ex.date.split(',')[0]); const scores = data.map(ex => ex.score);
+        myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'ציון במבחן', data: scores, borderColor: '#3498db', backgroundColor: 'rgba(52,152,219,0.2)', borderWidth: 3, pointBackgroundColor: '#2980b9', pointRadius: 5, fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, grid: { color: '#eee' } }, x: { grid: { display: false } } } } });
+    }
+
+    function renderSharedStats(data) {
+        document.getElementById('history-page').classList.remove('hidden'); document.getElementById('lb-title').innerText = `ההתקדמות של ${data.name.split(" ")[0]} 📈`;
+        document.getElementById('stats-container').classList.remove('hidden'); document.querySelector('.lb-filters').classList.add('hidden'); document.getElementById('titles-container').classList.add('hidden');
+        document.getElementById('history-list').innerHTML = `<div style="text-align:center; margin-top:30px;"><button class="btn" style="background:var(--correct);" onclick="goHomeFull()">בא לי גם לתרגל 🚀</button></div>`;
+        renderChart(data.exams);
+    }
+
+    function shareMyStats() { let txt = `תראו את ההתקדמות שלי במבחני קציני בטיחות! 📈💪\nכנסו לראות את הגרף שלי בלייב:\n${window.location.origin}${window.location.pathname}?stats=${currentUser.id}`; if (navigator.share) navigator.share({ title: 'הגרף שלי', text: txt }).catch(console.error); else window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
+    function shareReviewLink() { if(!currentReviewExamId) return; let url = window.location.origin + window.location.pathname + '?review=' + currentReviewExamId; let txt = `כנסו לראות את המבחן המלא שלי בקציני בטיחות (תחקיר פתוח לכולם): 🧐\n${url}`; if (navigator.share) navigator.share({ title: 'תחקיר מבחן', text: txt }).catch(console.error); else window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
+
+    function sortLB(t, btn) {
+        document.querySelectorAll('.lb-filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+        const list = document.getElementById('history-list'); list.innerHTML = '';
+        if (t === 'score') {
+            let sorted = [...globalLB].sort((a,b) => b.score - a.score || a.duration - b.duration);
+            sorted.forEach((ex, i) => {
+                let medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`; let isMine = String(ex.id).replace(/^0+/, '') === String(currentUser.id).replace(/^0+/, '');
+                list.innerHTML += `<div class="lb-item"><div style="display:flex; justify-content:space-between; align-items:center;"><b style="font-size:1.1rem;">${medal} ${ex.name} ${getTitleIcon(ex.name)}</b> <span style="font-size:0.75rem; color:#777; background:#eee; padding:3px 6px; border-radius:5px; font-weight:bold;">${ex.date.split(',')[0]}</span></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;"><span style="font-size:1.1rem;">ציון: <b style="color:${ex.score>=70?'var(--correct)':'var(--wrong)'}">${ex.score}</b></span><span style="font-size:0.9rem; color:#555;">זמן כולל: <b>${ex.duration}</b> דק'</span></div><div class="stats-box" style="margin-top:10px; display:flex; justify-content:space-between;"><span>📍 ${ex.stats.type || 'מבחן כולל'}</span><span>⏱️ <b>${ex.stats.avg || 0}</b> שניות לשאלה</span></div><div style="display:flex; gap:8px; margin-top:10px;">${(isMine || currentUser.role === 0) ? `<button class="review-btn" onclick="reviewExam(${ex.examId})">📋 תחקיר אישי</button>` : ''}${(currentUser.role === 0) ? `<button class="del-btn" onclick="deleteExam(${ex.examId})">🗑️</button>` : ''}</div></div>`;
+            });
+        } else if (t === 'practice') {
+            globalPracticeLB.sort((a,b)=>b.count-a.count).forEach((u, i) => { let m = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`; list.innerHTML += `<div class="lb-item" style="flex-direction:row; justify-content:space-between; align-items:center;"><b style="font-size:1.1rem;">${m} ${u.name} ${getTitleIcon(u.name)}</b><span style="background:var(--p-grad); color:white; padding:5px 10px; border-radius:15px; font-weight:bold;">${u.count} שאלות</span></div>`; });
+        } else if (t === 'contrib') {
+            globalContribLB.sort((a,b)=>b.count-a.count).forEach((u, i) => { let m = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`; list.innerHTML += `<div class="lb-item" style="flex-direction:row; justify-content:space-between; align-items:center;"><b style="font-size:1.1rem;">${m} ${u.name} 🎖️</b><span style="background:#27ae60; color:white; padding:5px 10px; border-radius:15px; font-weight:bold;">${u.count} אישורים</span></div>`; });
+        }
+    }
+
+    function reviewExam(examId, isShared = false) {
+        const ex = globalLB.find(e => e.examId === examId) || (isShared ? window.sharedExamData : null);
+        if(!ex || !ex.examData) return alert("נתונים לא זמינים.");
+        currentReviewExamId = examId; document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('review-screen').classList.remove('hidden');
+        document.getElementById('review-score').innerText = `${ex.score}%`; document.getElementById('review-score').style.color = ex.score >= 70 ? 'var(--correct)' : 'var(--wrong)';
+        document.getElementById('review-duration').innerHTML = `זמן כולל: <b>${ex.duration} דק'</b> | ממוצע: <b>${ex.stats.avg || 0} שניות</b> לשאלה`;
+        if (isShared) { document.getElementById('btn-share-review').classList.add('hidden'); document.getElementById('shared-review-footer').classList.remove('hidden'); document.getElementById('btn-back-review').classList.add('hidden'); document.getElementById('review-shared-name').innerText = `המבחן של ${ex.name}`; document.getElementById('review-shared-name').classList.remove('hidden'); } 
+        else { document.getElementById('btn-share-review').classList.remove('hidden'); document.getElementById('btn-back-review').classList.remove('hidden'); document.getElementById('shared-review-footer').classList.add('hidden'); document.getElementById('review-shared-name').classList.add('hidden'); }
+        let h = '';
+        ex.examData.questions.forEach((q, i) => {
+            let uAns = ex.examData.answers[i], qTime = (ex.examData.qTimes && ex.examData.qTimes[i]) ? ex.examData.qTimes[i] : '?';
+            h += `<div class="card" style="border: 2px solid ${uAns === q.c ? 'var(--correct)' : 'var(--wrong)'}; padding-top:35px;"><div style="position:absolute; top:10px; left:10px; font-size:0.75rem; color:#888; background:#f0f0f0; padding:3px 8px; border-radius:5px; font-weight:bold;">⏱️ ${qTime} שנ'</div><div style="position:absolute; top:10px; right:10px; font-size:0.75rem; color:white; background:var(--p); padding:3px 8px; border-radius:5px; font-weight:bold;">ID: ${q.id}</div><div style="font-weight:bold; margin-bottom:15px; font-size:1.1rem; line-height:1.4;">${i+1}. ${q.q}</div>${q.a.map((t, idx) => { if(!t && t!==0) return ''; let cls = "option"; if(idx === q.c) cls += " practice-correct"; else if(idx === uAns) cls += " practice-wrong"; return `<div class="${cls}" style="padding:12px; cursor:default; margin:5px 0;">${t}</div>`; }).join('')}${(!isShared && currentUser.id) ? `<div style="text-align:left; margin-top:15px; padding-top:10px; border-top:1px dashed #eee;"><button style="background:none; border:none; color:var(--wrong); font-size:0.85rem; font-weight:bold; text-decoration:underline; cursor:pointer;" onclick="openSuggestionModalById('${q.id}')">💡 מצאת טעות בשאלה זו? המלץ על שינוי</button></div>` : ''}</div>`;
+        });
+        document.getElementById('review-list').innerHTML = h; window.scrollTo(0,0);
     }
 
     async function showAdminPanel() {
@@ -506,10 +739,12 @@
                 let isDouble = u.devices && u.devices.length >= 2; if (isDouble) alertDouble = true;
                 let styleCard = isDouble ? "border: 2px solid var(--wrong); background: rgba(231,76,60,0.05);" : "";
                 html += `<div class="card" style="${styleCard}">
-                    <b>${u.name}</b> (ת"ז: ${u.id})<br>
-                    <label><input type="checkbox" ${u.access1?'checked':''} onchange="toggleUserAccess('${u.id}', 1, this.checked)"> גישה למבחן 1</label><br>
-                    <label><input type="checkbox" ${u.access2?'checked':''} onchange="toggleUserAccess('${u.id}', 2, this.checked)"> גישה למבחן 2</label><br>
-                    <div style="margin-top:10px;"><button class="review-btn" style="background:var(--wrong);" onclick="disconnectUser('${u.id}')">🔌 נתק משתמש</button></div>
+                    <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px;">${u.name} <span style="font-size:0.85rem; color:#666;">(ת"ז: ${u.id})</span></div>
+                    <div style="margin-bottom:10px;">
+                        <label style="display:block; margin-bottom:5px;"><input type="checkbox" style="transform:scale(1.2); margin-left:8px;" ${u.access1?'checked':''} onchange="toggleUserAccess('${u.id}', 1, this.checked)"> גישה למבחן: דיני תעבורה</label>
+                        <label style="display:block;"><input type="checkbox" style="transform:scale(1.2); margin-left:8px;" ${u.access2?'checked':''} onchange="toggleUserAccess('${u.id}', 2, this.checked)"> גישה למבחן: תפקידי קצין הבטיחות</label>
+                    </div>
+                    <div style="margin-top:10px;"><button class="review-btn" style="background:var(--wrong);" onclick="disconnectUser('${u.id}')">🔌 נתק משתמש לחלוטין</button></div>
                 </div>`;
             });
             document.getElementById('admin-list').innerHTML = html;
@@ -519,8 +754,10 @@
     }
 
     async function toggleUserAccess(targetId, courseNum, isChecked) {
-        await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'toggleAccess', adminId: localStorage.getItem('qbSavedID'), targetId: targetId, targetCourse: courseNum, access: isChecked }) });
+        await fetch(`${apiURL}?course=${currentCourse}`, { method: 'POST', body: JSON.stringify({ action: 'toggleAccess', adminId: localStorage.getItem('qbSavedID'), targetId: targetId, targetCourse: courseNum, access: isChecked }) });
     }
+
+    async function disconnectUser(userId) { if(!confirm(`לנתק משתמש זה?`)) return; showLoader("default"); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
 
     async function openSuggestionModal() {
         const q = state.questions[state.index];
@@ -545,7 +782,7 @@
             let h = ''; j.suggestions.forEach(s => {
                 h += `<div class="card"><b>הצעה מ: ${s.userName} (ID: ${s.qId})</b><br><p>${s.qText}</p><button class="review-btn" onclick="handleSugg(${s.row}, 'approved', '${s.qId}', '${s.userName}')">אשר והחל</button></div>`;
             });
-            document.getElementById('admin-sugg-list').innerHTML = h || "אין הצעות.";
+            document.getElementById('admin-sugg-list').innerHTML = h || `<div style="text-align:center; color:#777; font-weight:bold;">אין הצעות. הכל נקי!</div>`;
         } catch(e) { hideLoader(); }
     }
 
@@ -574,7 +811,23 @@
     }
 
     function closeModals() { document.querySelectorAll('.card[style*="fixed"], #modal-backdrop').forEach(m => m.classList.add('hidden')); }
-    function goHome() { document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('menu').classList.remove('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden'); document.getElementById('quiz-header-title').classList.add('hidden'); }
+    
+    function goHome() { 
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); 
+        document.getElementById('nav-footer').classList.add('hidden'); 
+        document.getElementById('exam-timer').classList.add('hidden');
+        document.getElementById('quiz-header-title').classList.add('hidden');
+        
+        if (!currentUser || !currentUser.id) {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('user-menu-btn').style.display = 'none';
+        } else if (!currentCourse && currentUser.access1 && currentUser.access2) {
+            document.getElementById('lobby-screen').classList.remove('hidden');
+        } else {
+            document.getElementById('menu').classList.remove('hidden');
+        }
+    }
+    
     function goHomeFull() { window.location.href = window.location.pathname; }
     function logout() { localStorage.removeItem('qbSavedID'); location.reload(); }
     async function saveProgress() { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', id: localStorage.getItem('qbSavedID'), course: currentCourse, lastIdx: state.index, practiceAnswers: globalPracticeAnswers, weaknesses: userWeaknesses }) }); }
