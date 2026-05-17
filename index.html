@@ -26,7 +26,7 @@
         .container { max-width: 550px; margin: auto; position: relative;}
         .card { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 6px 15px rgba(0,0,0,0.06); margin-bottom: 20px; position: relative; border: 1px solid rgba(0,0,0,0.02);}
         
-        /* 2026 Modern Card Design */
+        /* 2026 Admin Card & Clean Grid Design */
         .admin-card { border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); padding: 25px; margin-bottom: 20px; background: var(--card); transition: 0.3s; }
         .admin-device { background: rgba(0,0,0,0.02); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(0,0,0,0.03); }
         .dark .admin-device { background: #3d3d3d; border-color: #555; }
@@ -73,6 +73,7 @@
         .lb-item { border-bottom: 1px solid #f0f0f0; padding: 18px 0; display: flex; flex-direction: column; gap: 8px; }
         .stats-box { background: rgba(0,0,0,0.03); padding: 12px; border-radius: 10px; font-size: 0.85rem; line-height: 1.5; border: 1px solid rgba(0,0,0,0.05);}
         
+        /* תפריט שיאים ופילטרים עגולים ונקיים כבשבראשונה */
         .lb-filters { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 8px; }
         .lb-filter-btn { flex: 1; padding: 10px; border: 1px solid var(--p); background: transparent; color: var(--txt); border-radius: 20px; cursor: pointer; white-space: nowrap; font-size: 0.9rem; font-weight:bold; transition: 0.2s;}
         .lb-filter-btn.active { background: var(--p-grad); color: white; border:none; box-shadow: 0 4px 10px rgba(52,152,219,0.3);}
@@ -242,7 +243,7 @@
     <div id="exam-summary-screen" class="hidden card" style="text-align: center; padding:40px 20px;"><h2 id="summary-main-title" style="font-size:2.5rem; color:var(--p);">🎉 סיימת! 🎉</h2><div style="font-size:6.5rem; font-weight:bold; margin:20px 0;" id="summary-score-display">0</div><div id="summary-stats-display" style="font-size:1.2rem; margin-bottom:30px; line-height:1.6; color:#555;"></div><div style="display:flex; flex-direction:column; gap:12px;"><button class="btn" style="background:#25D366;" id="summary-share-btn" onclick="shareToWhatsApp()">📲 השווץ בוואטסאפ</button><button class="btn" style="background:var(--p);" id="summary-review-btn" onclick="reviewExam(window.lastExamId)">📋 תחקיר מבחן (טעויות)</button><button class="btn" style="background:#95a5a6;" onclick="goHomeFull()">חזור לראשי</button></div></div>
 
     <div id="edit-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:350px;"><h3>✏️ עריכת משתמש</h3><input type="text" id="edit-name-input" class="input-pass" placeholder="שם מלא"><input type="tel" id="edit-id-input" class="input-pass" placeholder="תעודת זהות"><input type="hidden" id="edit-old-id"><button class="btn" style="background:var(--correct);" id="btn-save-edit" onclick="saveEditUser()">שמור שינויים</button><button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button></div>
-    <div id="edit-q-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:400px; max-height: 90vh; overflow-y: auto;"><h3 style="margin-top:0;">✏️ עריכת שאלה מלאה</h3><input type="hidden" id="edit-q-id"><label>שאלה:</label><textarea id="edit-q-text" class="input-pass" style="text-align:right;"></textarea><label>תשובה 1 (0):</label><input type="text" id="edit-q-opt0" class="input-pass"><label>תשובה 2 (1):</label><input type="text" id="edit-q-opt1" class="input-pass"><label>תשובה 3 (2):</label><input type="text" id="edit-q-opt2" class="input-pass"><label>תשובה 4 (3):</label><input type="text" id="edit-q-opt3" class="input-pass"><label>תשובה נכונה (0-3):</label><input type="number" id="edit-q-correct" class="input-pass" min="0" max="3"><button class="btn" style="background:var(--correct);" id="btn-save-q" onclick="saveEditQuestion()">שמור בענן</button><button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button></div>
+    <div id="edit-q-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:400px; max-height: 90vh; overflow-y: auto;"><h3 style="margin-top:0;">✏️ עריכת שאלה מלאה</h3><input type="hidden" id="edit-q-id"><label>שאלה:</label><textarea id="edit-q-text" class="input-pass" style="text-align:right;"> </textarea><label>תשובה 1 (0):</label><input type="text" id="edit-q-opt0" class="input-pass"><label>תשובה 2 (1):</label><input type="text" id="edit-q-opt1" class="input-pass"><label>תשובה 3 (2):</label><input type="text" id="edit-q-opt2" class="input-pass"><label>תשובה 4 (3):</label><input type="text" id="edit-q-opt3" class="input-pass"><label>תשובה נכונה (0-3):</label><input type="number" id="edit-q-correct" class="input-pass" min="0" max="3"><button class="btn" style="background:var(--correct);" id="btn-save-q" onclick="saveEditQuestion()">שמור בענן</button><button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button></div>
     <div id="sugg-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:95%; max-width:500px; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.5);"><h3 style="color:var(--wrong); margin-top:0; text-align:center;">💡 דיווח על טעות</h3><div id="sugg-q-display" style="background: rgba(52, 152, 219, 0.08); padding: 15px; border-radius: 10px; border-right: 5px solid var(--p); margin-bottom: 20px; font-weight:bold; line-height: 1.4;"></div><div id="sugg-inputs"></div><span class="sugg-label" style="margin-top:15px;">התשובה הנכונה לדעתך:</span><select id="sugg-correct" class="input-pass" style="font-weight:bold;"><option value="1">תשובה 1</option><option value="2">תשובה 2</option><option value="3">תשובה 3</option><option value="4">תשובה 4</option><option value="5">תשובה אחרת לחלוטין</option></select><textarea id="sugg-comment" class="input-pass" style="height:80px; text-align:right;" placeholder="הערה חופשית..."></textarea><div style="display:flex; gap:12px; margin-top:20px;"><button class="btn" style="background:var(--correct); margin:0; flex:2;" onclick="submitSuggestion()">שלח למנהל</button><button class="btn" style="background:#bdc3c7; margin:0; flex:1;" onclick="closeModals()">ביטול</button></div></div>
 </div>
 
@@ -254,6 +255,7 @@
 <div id="modal-backdrop" class="hidden" onclick="closeModals()"></div>
 
 <script>
+    // לעדכן פה את ה-URL החדש שאתה מקבל לאחר ה-Deploy באקסל!
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
     
     const ANIM_MAP = {
@@ -387,7 +389,6 @@
         document.getElementById('menu').classList.remove('hidden');
         document.getElementById('active-course-title').innerText = COURSE_NAMES[courseId];
         
-        // הפרדה הרמטית לקורס 2 (תפקידי קצין בטיחות): מוחק כפתורי מספריות
         if(currentCourse === 2) {
             document.querySelectorAll('.btn-num').forEach(b => b.classList.add('hidden'));
         } else {
@@ -477,6 +478,77 @@
        return t.join(' ');
     }
 
+    function shuffleArray(arr) { let array = [...arr]; for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
+
+    function startWeaknesses() {
+        let wq = allQuestionsDB.filter(q => userWeaknesses.includes(String(q.id)));
+        if(wq.length === 0) return alert("אין לך חולשות במאגר!");
+        showLoader('weak');
+        setTimeout(() => {
+            hideLoader(); state.mode = 'weak'; state.questions = wq; state.answers = new Array(wq.length).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
+            document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); document.getElementById('quiz-header-title').classList.add('hidden'); renderBubbles(); renderQuestion();
+        }, 400);
+    }
+
+    function startHardQuestions() {
+        if(globalHardQuestions.length === 0) return alert("אין מספיק נתונים על שאלות קשות כרגע. איזה כיתה של גאונים!");
+        showLoader('hard');
+        setTimeout(() => {
+            hideLoader(); state.mode = 'hard'; state.questions = shuffleArray(globalHardQuestions).slice(0, 50); state.answers = new Array(state.questions.length).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
+            document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); document.getElementById('quiz-header-title').classList.add('hidden'); renderBubbles(); renderQuestion();
+        }, 400);
+    }
+
+    async function saveToJackie() {
+        const q = state.questions[state.index]; showLoader("default");
+        try {
+            const res = await fetch(`${apiURL}?course=${currentCourse}`, { method: 'POST', body: JSON.stringify({ action: 'saveJackieQuestion', qId: q.id, qText: q.q, userName: currentUser.name }) });
+            const j = await res.json(); hideLoader(); 
+            if(j.success) {
+                alert("השאלה נשמרה לרשימה של ג'קי! 🙋‍♂️"); 
+                jackieQuestions.push(String(q.id));
+                renderQuestion(); 
+            } else alert(j.msg);
+        } catch(e) { hideLoader(); alert("שגיאה."); }
+    }
+
+    async function showJackiePanel() {
+        document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); 
+        document.getElementById('jackie-screen').classList.remove('hidden'); showLoader("default");
+        try {
+            const res = await fetch(`${apiURL}?action=getJackieQuestions&course=${currentCourse}`); const j = await res.json(); hideLoader();
+            let h = ''; j.list.forEach(item => {
+                const fullQ = allQuestionsDB.find(x => String(x.id) === String(item.id));
+                let optsHtml = '';
+                if (fullQ && fullQ.a) {
+                    fullQ.a.forEach((opt, idx) => {
+                        if(opt) {
+                           let isCorrect = (idx === fullQ.c) ? 'font-weight:bold; color:var(--correct);' : 'color:#555;';
+                           optsHtml += `<div style="margin-top:5px; padding:8px; background:var(--bg); border-radius:5px; border:1px solid #ddd; ${isCorrect}">${idx+1}. ${opt}</div>`;
+                        }
+                    });
+                }
+                h += `<div class="card" style="border-right: 5px solid #8e44ad; margin-bottom:15px;">
+                        <div style="font-weight:bold; margin-bottom:10px; font-size:1.1rem; line-height:1.4;"><span class="id-tag">ID: ${item.id}</span> ${item.qText}</div>
+                        <div style="margin-bottom:15px;">${optsHtml}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #ccc; padding-top:10px;">
+                            <span style="font-size:0.8rem; color:#777;">הוסיף: ${item.addedBy} (${item.date})</span>
+                            ${currentUser.role === 0 ? `<button class="del-btn" style="width:40px; padding:5px;" onclick="deleteJackie('${item.id}')">🗑️</button>` : ''}
+                        </div>
+                      </div>`;
+            });
+            document.getElementById('jackie-list').innerHTML = h || `<div style="text-align:center; color:#777; font-weight:bold;">אין שאלות ברשימה כרגע. עשיתם הכל מושלם!</div>`;
+        } catch(e) { hideLoader(); }
+    }
+
+    async function deleteJackie(id) { 
+        if(!confirm("למחוק?")) return; 
+        showLoader("default"); 
+        await fetch(`${apiURL}?course=${currentCourse}`, { method: 'POST', body: JSON.stringify({ action: 'deleteJackieQuestion', qId: id, adminId: currentUser.id }) }); 
+        jackieQuestions = jackieQuestions.filter(x => x !== String(id));
+        showJackiePanel(); 
+    }
+
     function startApp(m) {
         showLoader(m);
         setTimeout(() => {
@@ -497,7 +569,10 @@
                     globalPracticeAnswers = state.answers;
                     let lastIdxFromCache = currentCourse === 1 ? window.globalLoginCache.lastIdx1 : window.globalLoginCache.lastIdx2;
                     state.index = Math.min(lastIdxFromCache || 0, pool.length > 0 ? pool.length - 1 : 0);
-                } else { state.index = 0; state.answers = new Array(pool.length).fill(null); }
+                } else if (m === 'numPractice') {
+                    state.answers = new Array(pool.length).fill(null);
+                    state.index = 0;
+                } else { state.answers = new Array(pool.length).fill(null); }
                 document.getElementById('exam-timer').classList.add('hidden');
                 document.getElementById('quiz-header-title').classList.add('hidden');
             }
@@ -521,28 +596,41 @@
         document.getElementById('q-text').innerHTML = `${state.index+1}. <span class="id-tag">ID: ${q.id}</span> ${q.q}`;
         if ((currentUser.role === 0 || currentUser.role === 1) && !state.mode.toLowerCase().includes('exam')) document.getElementById('admin-edit-q-btn').classList.remove('hidden'); else document.getElementById('admin-edit-q-btn').classList.add('hidden');
 
-        const qCard = document.querySelector('#quiz-screen .card'); const jWarn = document.getElementById('jackie-warning');
-        if(jackieQuestions.includes(String(q.id))) { qCard.classList.add('jackie-highlight'); jWarn.classList.remove('hidden'); } 
-        else { qCard.classList.remove('jackie-highlight'); jWarn.classList.add('hidden'); }
+        const qCard = document.querySelector('#quiz-screen .card'); 
+        const jWarn = document.getElementById('jackie-warning');
+        if(jackieQuestions.includes(String(q.id))) { 
+            qCard.classList.add('jackie-highlight'); 
+            jWarn.classList.remove('hidden'); 
+        } else { 
+            qCard.classList.remove('jackie-highlight'); 
+            jWarn.classList.add('hidden'); 
+        }
 
         const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
         q.a.forEach((t, i) => {
             if(!t && t!==0) return;
             const d = document.createElement('div'); d.className = 'option';
+            
             if(state.answers[state.index] === i) d.classList.add('selected');
-            if(!state.mode.toLowerCase().includes('exam') && state.answers[state.index] !== null) { let cls = i === q.c ? 'practice-correct' : (state.answers[state.index] === i ? 'practice-wrong' : ''); if (cls !== '') d.classList.add(cls); }
+            
+            if(!state.mode.toLowerCase().includes('exam') && state.answers[state.index] !== null) { 
+                let cls = i === q.c ? 'practice-correct' : (state.answers[state.index] === i ? 'practice-wrong' : ''); 
+                if (cls !== '') d.classList.add(cls); 
+            }
             d.innerText = t; 
             d.onclick = () => {
                 if(state.answers[state.index] !== null && state.mode === 'practice' && !state.mode.toLowerCase().includes('exam')) return;
+                
                 state.answers[state.index] = i; 
+                
                 if(!state.mode.toLowerCase().includes('exam')) {
                     if (i !== q.c && !userWeaknesses.includes(String(q.id))) { userWeaknesses.push(String(q.id)); updateBadges(); }
                     else if (i === q.c && userWeaknesses.includes(String(q.id))) { userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); updateBadges(); }
                     let origIndex = questionsDB.findIndex(x => String(x.id) === String(q.id));
-                    if (origIndex > -1) { globalPracticeAnswers[origIndex] = i; }
+                    if (origIndex > -1) { if (globalPracticeAnswers.length !== questionsDB.length) globalPracticeAnswers = new Array(questionsDB.length).fill(null); globalPracticeAnswers[origIndex] = i; }
                     const fb = document.getElementById('feedback');
                     if(i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; 
-                        if (state.mode === 'weak' || state.mode === 'hard') { setTimeout(() => { if (state.questions[state.index] && String(state.questions[state.index].id) === String(q.id)) { state.questions.splice(state.index, 1); state.answers.splice(state.index, 1); if (state.questions.length === 0) { alert("🎉 סיימת את מקצה השיפורים בהצלחה!"); goHome(); } else { if (state.index >= state.questions.length) state.index = Math.max(0, state.questions.length - 1); renderBubbles(); renderQuestion(); } } }, 1200); 
+                        if (state.mode === 'weak' || state.mode === 'hard') { setTimeout(() => { if ((state.mode === 'weak' || state.mode === 'hard') && state.questions[state.index] && String(state.questions[state.index].id) === String(q.id)) { state.questions.splice(state.index, 1); state.answers.splice(state.index, 1); if (state.questions.length === 0) { alert("🎉 סיימת את מקצה השיפורים בהצלחה!"); goHome(); } else { if (state.index >= state.questions.length) state.index = Math.max(0, state.questions.length - 1); renderBubbles(); renderQuestion(); } } }, 1200); 
                         } else if(appSettings.autoNext) { setTimeout(() => move(1), 600); }
                     } else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; }
                     saveProgress();
@@ -558,15 +646,44 @@
 
     function saveQTime() { if(currentQStart > 0) { const elapsed = Math.round((Date.now() - currentQStart) / 1000); state.qTimes[state.index] = (state.qTimes[state.index] || 0) + elapsed; currentQStart = Date.now(); } }
     function move(s) { saveQTime(); state.index += s; if(state.index < 0) state.index=0; if(state.index >= state.questions.length) state.index = state.questions.length-1; renderQuestion(); }
-    function startTimer() { state.time = 90 * 60; clearInterval(timerInterval); timerInterval = setInterval(() => { state.time--; let m = Math.floor(state.time / 60); let s = state.time % 60; document.getElementById('exam-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`; if (state.time <= 0) { clearInterval(timerInterval); submitExam(); } }, 1000); }
+
+    function startTimer() {
+        state.time = 90 * 60; clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            state.time--; let m = Math.floor(state.time / 60); let s = state.time % 60;
+            document.getElementById('exam-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+            if (state.time <= 0) { clearInterval(timerInterval); alert('הזמן נגמר!'); submitExam(); }
+        }, 1000);
+    }
 
     async function submitExam() {
-        saveQTime(); if (state.answers.filter(a => a === null).length > 0 && !confirm(`לא ענית על הכל. להגיש?`)) return;
+        saveQTime();
+        if (state.answers.filter(a => a === null).length > 0 && !confirm(`לא ענית על הכל. להגיש?`)) return;
         showLoader("default"); clearInterval(timerInterval);
-        let correct = 0; state.questions.forEach((q, i) => { if(state.answers[i] === q.c) { correct++; userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); } else { if(!userWeaknesses.includes(String(q.id))) userWeaknesses.push(String(q.id)); } });
-        let score = Math.round((correct / state.questions.length) * 100); let dur = Math.round((new Date() - state.start) / 60000);
-        let data = { action: 'saveExam', course: currentCourse, examId: Date.now(), id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: dur, date: new Date().toLocaleString('he-IL'), stats: { type: state.mode, avg: 0 }, examData: { questions: state.questions, answers: state.answers, qTimes: state.qTimes } };
-        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify(data) }); window.lastExamId = data.examId; hideLoader(); document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden'); document.getElementById('summary-score-display').innerText = score; document.getElementById('summary-score-display').style.color = score >= 70 ? 'var(--correct)' : 'var(--wrong)'; document.getElementById('exam-summary-screen').classList.remove('hidden'); saveProgress(); } catch(e){ hideLoader(); }
+        let correct = 0; state.questions.forEach((q, i) => { 
+            if(state.answers[i] === q.c) { correct++; userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); }
+            else { if(!userWeaknesses.includes(String(q.id))) userWeaknesses.push(String(q.id)); }
+        });
+        updateBadges();
+
+        let score = Math.round((correct / state.questions.length) * 100);
+        let dur = Math.round((new Date() - state.start) / 1000 / 60);
+        let timesArr = Object.values(state.qTimes), avg = timesArr.length ? (timesArr.reduce((a,b)=>a+b,0)/state.questions.length).toFixed(1) : 0;
+        let eType = state.mode === 'numExam' ? 'מבחן מספריות' : 'מבחן כולל';
+        
+        let newExamId = Date.now();
+
+        const data = { action: 'saveExam', course: currentCourse, examId: newExamId, id: currentUser.id, name: currentUser.name, score: score, correct: correct, total: state.questions.length, duration: dur, date: new Date().toLocaleString('he-IL'), stats: { type: eType, avg: avg }, examData: { questions: state.questions, answers: state.answers, qTimes: state.qTimes } };
+        
+        try {
+            await fetch(apiURL, { method: 'POST', body: JSON.stringify(data) }); hideLoader(); 
+            document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('nav-footer').classList.add('hidden'); document.getElementById('exam-timer').classList.add('hidden'); document.getElementById('quiz-header-title').classList.add('hidden');
+            window.lastExamId = newExamId;
+            document.getElementById('summary-score-display').innerText = score; document.getElementById('summary-score-display').style.color = score >= 70 ? 'var(--correct)' : 'var(--wrong)';
+            document.getElementById('summary-stats-display').innerHTML = `זמן כולל: <b>${dur}</b> דק'<br>ממוצע לשאלה: <b>${avg}</b> שניות<br><br>נכון: ${correct} | טעויות: ${state.questions.length - correct}`;
+            document.getElementById('exam-summary-screen').classList.remove('hidden');
+            saveProgress(); 
+        } catch(e) { hideLoader(); alert("שגיאה בשמירת התוצאה."); }
     }
 
     async function loadLeaderboard() {
@@ -580,8 +697,12 @@
             if(weeklyTzalaf) titlesHtml += `<div style="text-align:center;"><div style="font-size:2.5rem;">🎯</div><b style="font-size:1.1rem;">${weeklyTzalaf}</b><br><span style="color:var(--p); font-size:0.9rem; font-weight:bold;">הצלף</span></div>`;
             if(weeklyKambek) titlesHtml += `<div style="text-align:center;"><div style="font-size:2.5rem;">🚀</div><b style="font-size:1.1rem;">${weeklyKambek}</b><br><span style="color:var(--p); font-size:0.9rem; font-weight:bold;">המתקמבק</span></div>`;
             if(titlesHtml !== '') { document.getElementById('titles-container').innerHTML = titlesHtml; document.getElementById('titles-container').classList.remove('hidden'); }
+
+            const myExams = globalLB.filter(ex => String(ex.id).replace(/^0+/, '') === String(currentUser.id).replace(/^0+/, '')).sort((a,b) => a.examId - b.examId);
+            if (myExams.length > 0) { document.getElementById('stats-container').classList.remove('hidden'); renderChart(myExams); } 
+            else { document.getElementById('stats-container').classList.add('hidden'); }
             sortLB('score', document.getElementById('sort-score'));
-        } catch(e) { hideLoader(); }
+        } catch(e) { hideLoader(); alert("שגיאה בטעינת טבלת שיאים."); }
     }
 
     function renderChart(data) {
