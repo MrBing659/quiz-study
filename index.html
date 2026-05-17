@@ -18,13 +18,18 @@
         .badge { background: var(--wrong); color: white; border-radius: 50%; padding: 2px 7px; font-size: 0.75rem; position: absolute; top: -5px; right: -8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1002; min-width: 14px; text-align: center; }
         .badge-cat { top: -10px; right: -10px; font-size: 0.85rem; padding: 3px 8px; }
 
-        .dropdown { position: absolute; top: 35px; left: 0; background: var(--card); border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); display: none; flex-direction: column; width: 260px; overflow: hidden; z-index: 1001; }
+        .dropdown { position: absolute; top: 35px; left: 0; background: var(--card); border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); display: none; flex-direction: column; width: 280px; overflow: hidden; z-index: 1001; }
         .dropdown.show { display: flex; }
         .drop-item { padding: 14px 15px; border-bottom: 1px solid #eee; color: var(--txt); font-size: 0.95rem; cursor: pointer; transition: 0.2s; line-height: 1.4;}
         .drop-item:hover { background: #e7f1ff; color: var(--p); padding-right: 20px; }
 
         .container { max-width: 550px; margin: auto; position: relative;}
         .card { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 6px 15px rgba(0,0,0,0.06); margin-bottom: 20px; position: relative; border: 1px solid rgba(0,0,0,0.02);}
+        
+        /* 2026 Admin Card Design */
+        .admin-card { border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.04); border: none; padding: 25px; margin-bottom: 20px; background: var(--card); }
+        .admin-device { background: rgba(0,0,0,0.02); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(0,0,0,0.03); }
+        .dark .admin-device { background: #3d3d3d; border-color: #555; }
         
         .btn { display: flex; justify-content: center; align-items: center; width: 100%; padding: 16px; margin: 12px 0; border: none; border-radius: 12px; background: var(--p-grad); color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.15); position: relative;}
         .btn:active { transform: scale(0.97); }
@@ -52,23 +57,41 @@
         .input-pass { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; box-sizing: border-box; text-align: center; font-family: inherit; transition: 0.2s; background: var(--bg); color:var(--txt);}
         .input-pass:focus { border-color: var(--p); background: var(--card); outline: none;}
 
-        .dark .device-box { background: #3d3d3d !important; color: #eee !important; border: 1px solid #555 !important; }
-
         #loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .dark #loader-overlay { background: rgba(0,0,0,0.95); }
         .loader-icon { font-size: 5rem; margin-bottom: 15px; display: inline-block; }
         
+        /* האנימציות הדינמיות המקוריות - שוחזרו! */
         .anim-write { animation: write 1.2s infinite ease-in-out; }
         .anim-lift { animation: lift 1s infinite alternate ease-in-out; }
+        .anim-shine { animation: shine 1.5s infinite ease-in-out; }
         .anim-spin { animation: spin 1s infinite linear; }
+        
         @keyframes write { 0%, 100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(15px, -15px) rotate(-20deg); } }
         @keyframes lift { 0% { transform: translateY(0); } 100% { transform: translateY(-20px) scale(1.1); } }
+        @keyframes shine { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px gold); } 50% { transform: scale(1.2); filter: drop-shadow(0 0 20px gold); } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         #loader-text { font-size: 1.4rem; font-weight: bold; color: var(--p); text-align: center;}
+
+        .lb-item { border-bottom: 1px solid #f0f0f0; padding: 18px 0; display: flex; flex-direction: column; gap: 8px; }
+        .stats-box { background: rgba(0,0,0,0.03); padding: 12px; border-radius: 10px; font-size: 0.85rem; line-height: 1.5; border: 1px solid rgba(0,0,0,0.05);}
         
-        /* תגית ה-ID עגולה ואלגנטית */
-        .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 2px 8px; border-radius: 12px; margin-left: 5px; vertical-align: middle; display: inline-block;}
+        /* עיצוב התפריטים בטבלת השיאים חזרו להיות עגולים ויפים */
+        .lb-filters { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 8px; }
+        .lb-filter-btn { flex: 1; padding: 10px; border: 1px solid var(--p); background: transparent; color: var(--txt); border-radius: 20px; cursor: pointer; white-space: nowrap; font-size: 0.9rem; font-weight:bold; transition: 0.2s;}
+        .lb-filter-btn.active { background: var(--p-grad); color: white; border:none; box-shadow: 0 4px 10px rgba(52,152,219,0.3);}
+        
+        .diff-del { color: var(--wrong); text-decoration: line-through; display: block; margin-bottom: 5px; font-size: 0.85rem;}
+        .diff-add { color: #2980b9; font-weight: bold !important; }
+        
+        .review-btn { background: var(--p-grad); color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 0.9rem; flex:1; text-align:center; font-weight:bold; transition:0.2s;}
+        .review-btn:active { transform: scale(0.95); }
+        .del-btn { background: var(--wrong); color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; }
+        .sugg-label { font-size: 0.85rem; font-weight: bold; color: var(--p); display: block; margin-bottom: 6px; }
+        
+        /* תגית ה-ID עגולה ואלגנטית - שנת 2026 */
+        .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 3px 8px; border-radius: 12px; margin-left: 5px; vertical-align: middle; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
         .jackie-highlight { border: 3px solid #f39c12 !important; box-shadow: 0 0 15px rgba(243, 156, 18, 0.4) !important; }
     </style>
 </head>
@@ -120,7 +143,7 @@
     <div id="lobby-screen" class="hidden text-center card" style="padding:30px;">
         <h2 style="color:var(--p); margin-bottom:20px; text-align:center;">בחר מסלול לימוד 🎓</h2>
         <button class="btn" onclick="selectCourse(1)" style="margin:15px 0;">📚 דיני תעבורה וחוק שירותי תובלה</button>
-        <button class="btn btn-num" onclick="selectCourse(2)" style="margin:15px 0;">🛡️ תפקידי קצין הבטיחות לתעבורה</button>
+        <button class="btn" style="background: linear-gradient(135deg, #16a085, #2ecc71); margin:15px 0;" onclick="selectCourse(2)">🛡️ תפקידי קצין הבטיחות לתעבורה</button>
     </div>
 
     <div id="menu" class="hidden">
@@ -156,7 +179,7 @@
     </div>
 
     <div id="quiz-screen" class="hidden">
-        <h3 id="quiz-header-title" style="text-align:center; color:var(--p); margin-top:0; margin-bottom:15px;" class="hidden"></h3>
+        <h3 id="quiz-header-title" style="text-align:center; color:var(--p); margin-top:0; margin-bottom:15px; font-size:1.5rem;" class="hidden"></h3>
         <div class="bubbles" id="bubbles-container"></div>
         <div class="card">
             <button id="admin-edit-q-btn" class="top-btn hidden" style="position:absolute; top:10px; left:10px; font-size:0.75rem; background:var(--p); color:white;" onclick="openEditQModalFromQuiz()">✏️ ערוך אדמין</button>
@@ -166,7 +189,8 @@
             
             <div id="options" style="margin-top: 20px;"></div>
             <div id="feedback" style="text-align: center; font-weight: bold; min-height: 25px; margin-top:15px; font-size:1.1rem;"></div>
-            <div style="display:flex; justify-content:space-between; margin-top: 20px; font-size: 0.9rem; padding-top:15px; border-top:1px solid #eee;">
+            
+            <div style="display:flex; justify-content:space-between; margin-top: 20px; font-size: 0.95rem; padding-top:15px; border-top:1px solid #eee;">
                 <span style="color:var(--wrong); cursor:pointer; font-weight:bold;" onclick="openSuggestionModal()">💡 דווח על טעות</span>
                 <span style="color:#8e44ad; cursor:pointer; font-weight:bold;" onclick="saveToJackie()">🙋‍♂️ שמור לג'קי (לשיעור)</span>
                 <span style="color:var(--p); cursor:pointer; font-weight:bold;" onclick="shareQuestion()">📤 שתף בוואטסאפ</span>
@@ -212,16 +236,37 @@
     </div>
 
     <div id="admin-screen" class="hidden card">
-        <h2>👑 פאנל ניהול</h2>
-        <div id="admin-double-device-alert" class="hidden" style="background:var(--wrong); color:#fff; padding:12px; border-radius:8px; font-weight:bold; margin-bottom:15px; text-align:center;">⚠️ שים לב! זוהו משתמשים עם התחברויות ממכשירים כפולים!</div>
+        <h2>👑 פאנל ניהול (2026 Edition)</h2>
+        <div id="admin-double-device-alert" class="hidden" style="background:var(--wrong); color:#fff; padding:15px; border-radius:12px; font-weight:bold; margin-bottom:20px; text-align:center; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);">⚠️ התראת מערכת! זוהו משתמשים המחוברים מיותר ממכשיר אחד.</div>
         <div id="admin-list"></div>
-        <button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור</button>
+        <button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור לתפריט</button>
     </div>
+    
     <div id="qdb-screen" class="hidden card"><h2>📚 עריכת שאלות זריזה</h2><input type="text" id="qdb-search" class="input-pass" placeholder="חפש לפי ID או מילה..." onkeyup="filterQDB()"><div id="qdb-list" style="margin-top: 15px; max-height:60vh; overflow-y:auto;"></div><button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור</button></div>
     <div id="changelog-screen" class="hidden card"><h2>📝 היסטוריית עריכות</h2><div id="changelog-list" style="margin-top: 15px; max-height:60vh; overflow-y:auto; font-size:0.9rem;"></div><button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור</button></div>
     <div id="admin-sugg-screen" class="hidden card"><h2 style="color:var(--p); text-align:center;">🔔 הצעות לשינוי</h2><div id="admin-sugg-list" style="margin-top:20px;"></div><button class="btn" style="background:#95a5a6;" onclick="goHome()">חזור</button></div>
-    <div id="review-screen" class="hidden card"><h2 style="text-align:center; color:var(--p);">📋 תחקיר מבחן</h2><div id="review-shared-name" class="hidden" style="text-align:center; font-size:1.2rem; margin-bottom:10px; color:#666; font-weight:bold;"></div><h3 id="review-score" style="text-align:center; font-size:3.5rem; margin:10px 0;"></h3><div id="review-duration" style="text-align:center; margin-bottom:20px; color:#777; font-weight:bold;"></div><div style="display:flex; justify-content:center; margin-bottom:25px;"><button id="btn-share-review" class="review-btn" style="background:#25D366; max-width:250px;" onclick="shareReviewLink()">🔗 שתף תחקיר</button></div><div id="review-list"></div><div id="shared-review-footer" class="hidden" style="text-align:center; margin-top:30px;"><button class="btn" onclick="goHomeFull()">היכנס למערכת 🚀</button></div><button id="btn-back-review" class="btn" style="background:#95a5a6; margin-top:25px;" onclick="document.getElementById('review-screen').classList.add('hidden'); document.getElementById('history-page').classList.remove('hidden'); window.scrollTo(0,0);">חזור לטבלה</button></div>
-    <div id="exam-summary-screen" class="hidden card" style="text-align: center; padding:40px 20px;"><h2 id="summary-main-title" style="font-size:2.5rem; color:var(--p);">🎉 סיימת! 🎉</h2><div style="font-size:6.5rem; font-weight:bold; margin:20px 0;" id="summary-score-display">0</div><div id="summary-stats-display" style="font-size:1.2rem; margin-bottom:30px; line-height:1.6; color:#555;"></div><div style="display:flex; flex-direction:column; gap:12px;"><button class="btn" style="background:#25D366;" id="summary-share-btn" onclick="shareToWhatsApp()">📲 השווץ בוואטסאפ</button><button class="btn" style="background:var(--p);" id="summary-review-btn" onclick="reviewExam(window.lastExamId)">📋 תחקיר מבחן (טעויות)</button><button class="btn" style="background:#95a5a6;" onclick="goHomeFull()">חזור לראשי</button></div></div>
+    
+    <div id="review-screen" class="hidden card">
+        <h2 style="text-align:center; color:var(--p);">📋 תחקיר מבחן</h2>
+        <div id="review-shared-name" class="hidden" style="text-align:center; font-size:1.2rem; margin-bottom:10px; color:#666; font-weight:bold;"></div>
+        <h3 id="review-score" style="text-align:center; font-size:3.5rem; margin:10px 0;"></h3>
+        <div id="review-duration" style="text-align:center; margin-bottom:20px; color:#777; font-weight:bold;"></div>
+        <div style="display:flex; justify-content:center; margin-bottom:25px;"><button id="btn-share-review" class="review-btn" style="background:#25D366; max-width:250px;" onclick="shareReviewLink()">🔗 שתף תחקיר</button></div>
+        <div id="review-list"></div>
+        <div id="shared-review-footer" class="hidden" style="text-align:center; margin-top:30px;"><button class="btn" onclick="goHomeFull()">היכנס למערכת 🚀</button></div>
+        <button id="btn-back-review" class="btn" style="background:#95a5a6; margin-top:25px;" onclick="document.getElementById('review-screen').classList.add('hidden'); document.getElementById('history-page').classList.remove('hidden'); window.scrollTo(0,0);">חזור לטבלה</button>
+    </div>
+    
+    <div id="exam-summary-screen" class="hidden card" style="text-align: center; padding:40px 20px;">
+        <h2 id="summary-main-title" style="font-size:2.5rem; color:var(--p);">🎉 סיימת! 🎉</h2>
+        <div style="font-size:6.5rem; font-weight:bold; margin:20px 0;" id="summary-score-display">0</div>
+        <div id="summary-stats-display" style="font-size:1.2rem; margin-bottom:30px; line-height:1.6; color:#555;"></div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <button class="btn" style="background:#25D366;" id="summary-share-btn" onclick="shareToWhatsApp()">📲 השווץ בוואטסאפ</button>
+            <button class="btn" style="background:var(--p);" id="summary-review-btn" onclick="reviewExam(window.lastExamId)">📋 תחקיר מבחן (טעויות)</button>
+            <button class="btn" style="background:#95a5a6;" onclick="goHomeFull()">חזור לראשי</button>
+        </div>
+    </div>
 
     <div id="edit-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:350px;"><h3>✏️ עריכת משתמש</h3><input type="text" id="edit-name-input" class="input-pass" placeholder="שם מלא"><input type="tel" id="edit-id-input" class="input-pass" placeholder="תעודת זהות"><input type="hidden" id="edit-old-id"><button class="btn" style="background:var(--correct);" id="btn-save-edit" onclick="saveEditUser()">שמור שינויים</button><button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button></div>
     <div id="edit-q-modal" class="hidden card" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2001; width:90%; max-width:400px; max-height: 90vh; overflow-y: auto;"><h3 style="margin-top:0;">✏️ עריכת שאלה מלאה</h3><input type="hidden" id="edit-q-id"><label>שאלה:</label><textarea id="edit-q-text" class="input-pass" style="text-align:right;"></textarea><label>תשובה 1 (0):</label><input type="text" id="edit-q-opt0" class="input-pass"><label>תשובה 2 (1):</label><input type="text" id="edit-q-opt1" class="input-pass"><label>תשובה 3 (2):</label><input type="text" id="edit-q-opt2" class="input-pass"><label>תשובה 4 (3):</label><input type="text" id="edit-q-opt3" class="input-pass"><label>תשובה נכונה (0-3):</label><input type="number" id="edit-q-correct" class="input-pass" min="0" max="3"><button class="btn" style="background:var(--correct);" id="btn-save-q" onclick="saveEditQuestion()">שמור בענן</button><button class="btn" style="background:#bdc3c7;" onclick="closeModals()">ביטול</button></div>
@@ -285,7 +330,6 @@
         iconEl.innerText = conf.i; iconEl.className = "loader-icon " + conf.a; textEl.innerText = conf.t[Math.floor(Math.random() * conf.t.length)];
         document.getElementById('loader-overlay').classList.remove('hidden');
     }
-    
     function hideLoader() { document.getElementById('loader-overlay').classList.add('hidden'); }
 
     function applySettings() {
@@ -352,6 +396,7 @@
             document.getElementById('sugg-inner-count').innerText = `(${j.suggestionsCount})`; 
         }
 
+        // ניתוח הרשאות וניתוב חכם
         if (j.access1 && j.access2) {
             document.getElementById('lobby-screen').classList.remove('hidden');
         } else if (j.access1) {
@@ -370,6 +415,13 @@
         document.getElementById('menu').classList.remove('hidden');
         document.getElementById('active-course-title').innerText = COURSE_NAMES[courseId];
         
+        // הסתרת "מבחן מספריות" לקורס 2 כבקשתך
+        if(currentCourse === 2) {
+            document.querySelectorAll('.btn-num').forEach(b => b.classList.add('hidden'));
+        } else {
+            document.querySelectorAll('.btn-num').forEach(b => b.classList.remove('hidden'));
+        }
+
         let switchBtn = document.getElementById('switch-course-btn');
         if (currentUser.access1 && currentUser.access2) {
             switchBtn.classList.remove('hidden');
@@ -385,6 +437,7 @@
             hideLoader();
             questionsDB = j.data || []; numQuestionsDB = j.numData || []; allQuestionsDB = [...questionsDB, ...numQuestionsDB];
             
+            // הזרקת הקידומת ל-ID באופן אוטומטי
             let prefix = currentCourse === 1 ? "A-" : "B-";
             allQuestionsDB.forEach(q => { if(!String(q.id).startsWith(prefix)) q.id = prefix + q.id; });
             questionsDB.forEach(q => { if(!String(q.id).startsWith(prefix)) q.id = prefix + q.id; });
@@ -588,6 +641,7 @@
             
             if(state.answers[state.index] === i) d.classList.add('selected');
             
+            // במבחן לא מראים ירוק/אדום, רק צובעים ב'selected' את הבחירה
             if(!state.mode.toLowerCase().includes('exam') && state.answers[state.index] !== null) { 
                 let cls = i === q.c ? 'practice-correct' : (state.answers[state.index] === i ? 'practice-wrong' : ''); 
                 if (cls !== '') d.classList.add(cls); 
@@ -729,22 +783,57 @@
         document.getElementById('review-list').innerHTML = h; window.scrollTo(0,0);
     }
 
+    function parseHebrewDate(dStr) {
+        if(!dStr) return new Date();
+        try {
+            let p = dStr.split(', ');
+            let d = p[0].split('.'); let t = p[1].split(':');
+            return new Date(d[2], d[1]-1, d[0], t[0], t[1], t[2]||0);
+        } catch(e) { return new Date(); }
+    }
+
+    function calcSessionTime(addStr, lastStr) {
+        let s = parseHebrewDate(addStr); let e = parseHebrewDate(lastStr);
+        let m = Math.round((e - s) / 60000);
+        if(m < 0) m = 0; if(m < 60) return m + " דקות";
+        return Math.floor(m/60) + " שעות ו-" + (m%60) + " דקות";
+    }
+
     async function showAdminPanel() {
         document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('admin-screen').classList.remove('hidden'); showLoader("default");
         try {
-            const res = await fetch(`${apiURL}?action=getAdminData&adminId=${localStorage.getItem('qbSavedID')}`); const json = await res.json(); hideLoader();
+            const res = await fetch(`${apiURL}?action=getAdminData&adminId=${localStorage.getItem('qbSavedID')}&course=${currentCourse}`); const json = await res.json(); hideLoader();
             let html = "", alertDouble = false;
             json.users.forEach(u => {
                 if (String(u.id).trim() === "12345678") return;
                 let isDouble = u.devices && u.devices.length >= 2; if (isDouble) alertDouble = true;
-                let styleCard = isDouble ? "border: 2px solid var(--wrong); background: rgba(231,76,60,0.05);" : "";
-                html += `<div class="card" style="${styleCard}">
-                    <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px;">${u.name} <span style="font-size:0.85rem; color:#666;">(ת"ז: ${u.id})</span></div>
-                    <div style="margin-bottom:10px;">
-                        <label style="display:block; margin-bottom:5px;"><input type="checkbox" style="transform:scale(1.2); margin-left:8px;" ${u.access1?'checked':''} onchange="toggleUserAccess('${u.id}', 1, this.checked)"> גישה למבחן: דיני תעבורה</label>
-                        <label style="display:block;"><input type="checkbox" style="transform:scale(1.2); margin-left:8px;" ${u.access2?'checked':''} onchange="toggleUserAccess('${u.id}', 2, this.checked)"> גישה למבחן: תפקידי קצין הבטיחות</label>
+                
+                let devsHtml = "";
+                if(u.devices && u.devices.length > 0) {
+                    u.devices.forEach((d, i) => {
+                        devsHtml += `<div class="admin-device">
+                            <div>
+                                <strong>📱 מכשיר ${i+1}</strong><br>
+                                <span style="font-size:0.8rem; color:#777;">התחברות ראשונה: ${d.added}</span><br>
+                                <span style="font-size:0.8rem; color:#777;">נראה לאחרונה: ${d.lastSeen}</span><br>
+                                <span style="font-size:0.8rem; color:var(--p); font-weight:bold;">זמן מחובר משוער: ${calcSessionTime(d.added, d.lastSeen)}</span>
+                            </div>
+                            <button class="review-btn" style="background:#bdc3c7; color:#333; max-width:100px; font-size:0.8rem;" onclick="removeDevice('${u.id}', '${d.id}')">ניתוק מכשיר זה</button>
+                        </div>`;
+                    });
+                }
+
+                html += `<div class="admin-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #f0f0f0; padding-bottom:15px; margin-bottom:15px;">
+                        <div style="font-size:1.2rem; font-weight:bold; color:var(--p);">${u.name} <span style="font-size:0.85rem; color:#888;">(ת"ז: ${u.id})</span></div>
+                        ${isDouble ? `<span style="background:var(--wrong); color:white; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:bold;">⚠️ כפול</span>` : ''}
                     </div>
-                    <div style="margin-top:10px;"><button class="review-btn" style="background:var(--wrong);" onclick="disconnectUser('${u.id}')">🔌 נתק משתמש לחלוטין</button></div>
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block; margin-bottom:8px; font-weight:bold; color:#555;"><input type="checkbox" style="transform:scale(1.2); margin-left:8px;" ${u.access1?'checked':''} onchange="toggleUserAccess('${u.id}', 1, this.checked)"> גישה מורשית: דיני תעבורה</label>
+                        <label style="display:block; font-weight:bold; color:#555;"><input type="checkbox" style="transform:scale(1.2); margin-left:8px;" ${u.access2?'checked':''} onchange="toggleUserAccess('${u.id}', 2, this.checked)"> גישה מורשית: תפקידי קצין הבטיחות</label>
+                    </div>
+                    <div style="margin-bottom:15px;">${devsHtml}</div>
+                    <button class="btn" style="background:var(--wrong); border-radius:12px; margin:0;" onclick="blockUser('${u.id}', '${u.name}')">חסום משתמש לחלוטין 🚫</button>
                 </div>`;
             });
             document.getElementById('admin-list').innerHTML = html;
@@ -757,7 +846,19 @@
         await fetch(`${apiURL}?course=${currentCourse}`, { method: 'POST', body: JSON.stringify({ action: 'toggleAccess', adminId: localStorage.getItem('qbSavedID'), targetId: targetId, targetCourse: courseNum, access: isChecked }) });
     }
 
-    async function disconnectUser(userId) { if(!confirm(`לנתק משתמש זה?`)) return; showLoader("default"); try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'disconnectUser', adminId: currentUser.id, targetId: userId }) }); showAdminPanel(); } catch(e) { hideLoader(); alert("שגיאה."); } }
+    async function blockUser(userId, userName) {
+        if(!confirm(`האם אתה בטוח שברצונך לחסום את ${userName} לחלוטין? המשתמש לא יוכל להיכנס יותר למערכת.`)) return;
+        showLoader("default");
+        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'blockUser', adminId: currentUser.id, targetId: userId }) }); showAdminPanel(); } 
+        catch(e) { hideLoader(); alert("שגיאה."); }
+    }
+
+    async function removeDevice(userId, devId) { 
+        if(!confirm(`לנתק את המכשיר הזה? המשתמש יידרש להתחבר מחדש.`)) return; 
+        showLoader("default"); 
+        try { await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'removeDevice', adminId: currentUser.id, targetId: userId, deviceId: devId }) }); showAdminPanel(); } 
+        catch(e) { hideLoader(); alert("שגיאה."); } 
+    }
 
     async function openSuggestionModal() {
         const q = state.questions[state.index];
