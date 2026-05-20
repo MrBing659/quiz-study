@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>מערכת מבחנים - קציני בטיחות</title>
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -88,7 +89,7 @@
         .del-btn { background: var(--wrong); color: white; border: none; border-radius: 8px; padding: 10px; cursor: pointer; }
         
         .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 3px 8px; border-radius: 12px; margin-left: 5px; vertical-align: middle; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
-        .jackie-highlight { border: 3px solid #f39c12 !important; box-shadow: 0 0 15px rgba(243, 156, 18, 0.4) !important; }
+        .q-badge-tag { font-size: 0.75rem; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; }
     </style>
 </head>
 <body>
@@ -155,14 +156,11 @@
             <div id="menu-practice" class="sub-menu hidden">
                  <button class="btn" onclick="startApp('practice')">📝 תרגול כללי</button>
                  <button class="btn btn-num" onclick="startApp('numPractice')">🔢 תרגול מספריות</button>
-                 <button class="btn btn-focus hidden" onclick="startApp('focusPractice')">🎯 תרגול ממוקד</button>
+                 <button class="btn btn-focus hidden" onclick="startApp('focusPractice')">🎯 תרגול ממוקד למבחן</button>
+                 <button class="btn btn-focus hidden" style="background: linear-gradient(135deg, #2980b9, #2c3e50);" onclick="startApp('verifiedPractice')">✨ שאלות מהמבחן הארצי</button>
                  <button class="btn btn-weak" id="weakness-btn" onclick="startWeaknesses()">
-                     <div style="line-height:1.2;">🛠️ מקצה שיפורים<br><span style="font-size:0.75rem; font-weight:normal; color:#eee;">שאלות שטעית בהן אישית</span></div>
+                     <div style="line-height:1.2;">🛠️ מקצה שיפורים<br><span style="font-size:0.75rem; font-weight:normal; color:#eee;">שאלות שטעית בהן או קשות</span></div>
                      <div id="btn-weak-badge" class="badge hidden">0</div>
-                 </button>
-                 <button class="btn btn-hard" id="hard-btn" onclick="startHardQuestions()">
-                     <div style="line-height:1.2;">☠️ המוציא להורג<br><span style="font-size:0.75rem; font-weight:normal; color:#eee;">שאלות שכולם נופלים בהן</span></div>
-                     <div id="btn-hard-badge" class="badge hidden">0</div>
                  </button>
             </div>
             
@@ -181,7 +179,10 @@
         <div class="bubbles" id="bubbles-container"></div>
         <div class="card">
             <button id="admin-edit-q-btn" class="top-btn hidden admin-only" style="position:absolute; top:10px; left:10px; font-size:0.75rem; background:var(--p); color:white;" onclick="openEditQModalFromQuiz()">✏️ ערוך אדמין</button>
-            <div id="q-text" style="font-weight: bold; font-size: 1.25em; margin-top: 20px; line-height:1.5;"></div>
+            
+            <div id="q-badges" style="margin-top: 15px; display:flex; gap:6px; flex-wrap:wrap;"></div>
+            
+            <div id="q-text" style="font-weight: bold; font-size: 1.25em; margin-top: 15px; line-height:1.5;"></div>
             
             <div id="jackie-warning" class="hidden" style="background:#fff3cd; color:#856404; padding:10px; border-radius:8px; font-weight:bold; margin-top:15px; text-align:center; border:1px solid #ffeeba;">⚠️ שאלה זו נמצאת ברשימה לבדיקה מול ג'קי המרצה!</div>
             
@@ -260,9 +261,7 @@
 <div id="modal-backdrop" class="hidden" onclick="closeModals()"></div>
 
 <script>
-    // ========= שים כאן את הלינק המעודכן שלך מה-Deploy האחרון ===========
     const apiURL = "https://script.google.com/macros/s/AKfycbxEAmDkBOMyYrbF3yqKnyh_G7vPSKC02gNZ7UoR66_K7JFWVlzP2D1wAdEch98l4Cv2xA/exec";
-    // ====================================================================
 
     const ANIM_MAP = {
         login: { t: ["בודק שאתה לא בוט...", "מכין את הקפה לשרת...", "פותח שערים, נא לא לדחוף..."], i: "🚪", a: "anim-shine" },
@@ -456,8 +455,7 @@
 
     function updateBadges() {
         const weakCount = userWeaknesses.length; const hardCount = globalHardQuestions.length; const total = weakCount + hardCount;
-        document.getElementById('btn-weak-badge').innerText = weakCount; document.getElementById('btn-weak-badge').className = weakCount > 0 ? 'badge' : 'badge hidden';
-        document.getElementById('btn-hard-badge').innerText = hardCount; document.getElementById('btn-hard-badge').className = hardCount > 0 ? 'badge' : 'badge hidden';
+        document.getElementById('btn-weak-badge').innerText = total; document.getElementById('btn-weak-badge').className = total > 0 ? 'badge' : 'badge hidden';
         document.getElementById('cat-practice-badge').innerText = total; document.getElementById('cat-practice-badge').className = total > 0 ? 'badge badge-cat' : 'badge badge-cat hidden';
     }
 
@@ -468,7 +466,7 @@
            globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
            let fails = {};
            globalLB.forEach(ex => { if(ex.examData && ex.examData.questions && ex.examData.answers) { ex.examData.questions.forEach((q, idx) => { if(ex.examData.answers[idx] !== q.c) fails[q.id] = (fails[q.id] || 0) + 1; }); } });
-           globalHardQuestions = allQuestionsDB.filter(q => fails[q.id] > 2);
+           globalHardQuestions = allQuestionsDB.filter(q => fails[q.id] >= 2);
            updateBadges();
        } catch(e){}
     }
@@ -501,20 +499,14 @@
     function shuffleArray(arr) { let array = [...arr]; for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
 
     function startWeaknesses() {
-        let wq = allQuestionsDB.filter(q => userWeaknesses.includes(String(q.id)));
-        if(wq.length === 0) return alert("אין לך חולשות במאגר!");
+        let combinedIds = new Set([...userWeaknesses]);
+        globalHardQuestions.forEach(q => combinedIds.add(String(q.id)));
+        let wq = allQuestionsDB.filter(q => combinedIds.has(String(q.id)));
+        
+        if(wq.length === 0) return alert("אין לך חולשות או שאלות קשות במאגר כרגע!");
         showLoader('weak');
         setTimeout(() => {
             hideLoader(); state.mode = 'weak'; state.questions = wq; state.answers = new Array(wq.length).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
-            document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); document.getElementById('quiz-header-title').classList.add('hidden'); renderBubbles(); renderQuestion();
-        }, 400);
-    }
-
-    function startHardQuestions() {
-        if(globalHardQuestions.length === 0) return alert("אין מספיק נתונים על שאלות קשות כרגע. איזה כיתה של גאונים!");
-        showLoader('hard');
-        setTimeout(() => {
-            hideLoader(); state.mode = 'hard'; state.questions = shuffleArray(globalHardQuestions).slice(0, 50); state.answers = new Array(state.questions.length).fill(null); state.index = 0; state.qTimes = {}; state.start = new Date();
             document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('quiz-screen').classList.remove('hidden'); document.getElementById('nav-footer').classList.remove('hidden'); document.getElementById('quiz-header-title').classList.add('hidden'); renderBubbles(); renderQuestion();
         }, 400);
     }
@@ -544,7 +536,7 @@
                     fullQ.a.forEach((opt, idx) => {
                         if(opt) {
                            let isCorrect = (idx === fullQ.c) ? 'background:#e8f8f5; border-color:var(--correct); color:var(--correct); font-weight:bold;' : 'color:#555;';
-                           optsHtml += `<div style="margin-top:5px; padding:8px; background:var(--bg); border-radius:5px; border:1px solid #ddd; ${isCorrect}">${idx+1}. ${opt} ${idx === fullQ.c ? '✅' : ''}</div>`;
+                           optsHtml += `<div style="margin-top:5px; padding:8px; background:var(--bg); border-radius:5px; border:1px solid #ddd; ${isCorrect}">${idx+1}. ${opt} ${idx === fullQ.c ? '✅ (תשובה נכונה לפי המערכת)' : ''}</div>`;
                         }
                     });
                 }
@@ -569,6 +561,28 @@
         showJackiePanel(); 
     }
 
+    async function toggleVerifiedOnServer(qId, currentVal) {
+        showLoader("default");
+        let poolType = "General";
+        if (questionsDB.some(x => String(x.id) === String(qId))) poolType = "General";
+        else if (numQuestionsDB.some(x => String(x.id) === String(qId))) poolType = "Num";
+        else if (focusQuestionsDB.some(x => String(x.id) === String(qId))) poolType = "Focus";
+        
+        try {
+            const res = await fetch(apiURL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'toggleVerified', course: currentCourse, adminId: currentUser.id, qId: qId, poolType: poolType, verified: !currentVal })
+            });
+            const j = await res.json(); hideLoader();
+            if (j.success) {
+                alert("סטטוס אימות השאלה עודכן בהצלחה!");
+                let found = allQuestionsDB.find(x => String(x.id) === String(qId));
+                if (found) found.v = !currentVal;
+                renderQuestion();
+            } else { alert(j.msg || "שגיאה"); }
+        } catch(e) { hideLoader(); alert("שגיאת רשת"); }
+    }
+
     function startApp(m) {
         showLoader(m);
         setTimeout(() => {
@@ -576,8 +590,13 @@
             let pool = questionsDB;
             if(m.includes('num')) pool = numQuestionsDB;
             if(m.includes('focus')) pool = focusQuestionsDB;
+            if(m === 'verifiedPractice') pool = allQuestionsDB.filter(q => q.v === true);
             
-            if(pool.length === 0) return alert("אין שאלות במאגר זה כרגע.");
+            if(pool.length === 0) {
+                if (m === 'verifiedPractice') alert("אין עדיין שאלות מאומתות מהמבחן הארצי במאגר זה.");
+                else alert("אין שאלות במאגר זה כרגע.");
+                return;
+            }
             
             if(m.toLowerCase().includes('exam')) {
                 state.questions = shuffleArray(pool).slice(0,50); state.answers = new Array(state.questions.length).fill(null); 
@@ -611,7 +630,7 @@
         const c = document.getElementById('bubbles-container'); c.innerHTML = '';
         state.questions.forEach((q, i) => {
             const b = document.createElement('div'); b.className = 'bubble'; b.id = `bubble-${i}`; b.innerText = i+1;
-            if(state.answers[i] !== null) b.classList.add(state.mode.toLowerCase().includes('exam') ? 'exam-answered' : (state.answers[i]===q.c ? 'answered' : 'empty'));
+            if(state.answers[i] !== null) b.classList.add((state.mode.toLowerCase().includes('exam') || state.mode === 'verifiedPractice') ? 'exam-answered' : (state.answers[i]===q.c ? 'answered' : 'empty'));
             b.onclick = () => { saveQTime(); state.index = i; renderQuestion(); }; c.appendChild(b);
         });
     }
@@ -619,18 +638,33 @@
     function renderQuestion() {
         currentQStart = Date.now(); const q = state.questions[state.index];
         document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active')); document.getElementById(`bubble-${state.index}`).classList.add('active'); document.getElementById(`bubble-${state.index}`).scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+        
+        // יצירת תגיות סטטוס מרובות מעל השאלה
+        const badgesCont = document.getElementById('q-badges'); badgesCont.innerHTML = "";
+        let isHard = globalHardQuestions.some(hx => String(hx.id) === String(q.id));
+        let isJackie = jackieQuestions.includes(String(q.id));
+        if (isJackie) badgesCont.innerHTML += `<span class="q-badge-tag" style="background:#e67e22; margin-left:4px;">🙋‍♂️ שאלה לג'קי</span>`;
+        if (isHard) badgesCont.innerHTML += `<span class="q-badge-tag" style="background:#e74c3c; margin-left:4px;">☠️ שאלה קשה</span>`;
+        if (q.v) badgesCont.innerHTML += `<span class="q-badge-tag" style="background:#2980b9; margin-left:4px;">✨ במבחן הארצי</span>`;
+
         document.getElementById('q-text').innerHTML = `${state.index+1}. <span class="id-tag">ID: ${q.id}</span> ${q.q}`;
         if ((currentUser.role === 0) && !state.mode.toLowerCase().includes('exam')) document.getElementById('admin-edit-q-btn').classList.remove('hidden'); else document.getElementById('admin-edit-q-btn').classList.add('hidden');
 
+        // עיצוב מסגרות קשיח לפי חוקיות הצבעים שנקבעה
         const qCard = document.querySelector('#quiz-screen .card'); 
         const jWarn = document.getElementById('jackie-warning');
-        if(jackieQuestions.includes(String(q.id))) { 
-            qCard.classList.add('jackie-highlight'); 
-            jWarn.classList.remove('hidden'); 
-        } else { 
-            qCard.classList.remove('jackie-highlight'); 
-            jWarn.classList.add('hidden'); 
+        
+        if (q.v) {
+            qCard.style.border = "3px solid #2980b9"; qCard.style.boxShadow = "0 0 15px rgba(41, 128, 185, 0.4)";
+        } else if (isJackie) {
+            qCard.style.border = "3px solid #f39c12"; qCard.style.boxShadow = "0 0 15px rgba(243, 156, 18, 0.4)";
+        } else if (isHard) {
+            qCard.style.border = "3px solid #e74c3c"; qCard.style.boxShadow = "0 0 15px rgba(231, 76, 60, 0.3)";
+        } else {
+            qCard.style.border = "1px solid rgba(0,0,0,0.02)"; qCard.style.boxShadow = "0 6px 15px rgba(0,0,0,0.06)";
         }
+
+        if (isJackie) jWarn.classList.remove('hidden'); else jWarn.classList.add('hidden');
 
         const optCont = document.getElementById('options'); optCont.innerHTML = ''; document.getElementById('feedback').innerText = '';
         q.a.forEach((t, i) => {
@@ -639,17 +673,19 @@
             
             if(state.answers[state.index] === i) d.classList.add('selected');
             
-            if(!state.mode.toLowerCase().includes('exam') && state.answers[state.index] !== null) { 
+            // תצוגת סימון נכון/לא נכון: מוסתרת לחלוטין במצב מבחן, ומוסתרת בתרגל המבחן הארצי כדי לאפשר שינוי
+            if(!state.mode.toLowerCase().includes('exam') && state.mode !== 'verifiedPractice' && state.answers[state.index] !== null) { 
                 let cls = i === q.c ? 'practice-correct' : (state.answers[state.index] === i ? 'practice-wrong' : ''); 
                 if (cls !== '') d.classList.add(cls); 
             }
             d.innerText = t; 
             d.onclick = () => {
-                if(state.answers[state.index] !== null && state.mode.includes('ractice')) return;
+                // חוק החרגת שינוי תשובה לתרגול המבחן הארצי
+                if(state.answers[state.index] !== null && state.mode.includes('ractice') && state.mode !== 'verifiedPractice') return;
                 
                 state.answers[state.index] = i; 
                 
-                if(!state.mode.toLowerCase().includes('exam')) {
+                if(!state.mode.toLowerCase().includes('exam') && state.mode !== 'verifiedPractice') {
                     if (i !== q.c && !userWeaknesses.includes(String(q.id))) { userWeaknesses.push(String(q.id)); updateBadges(); }
                     else if (i === q.c && userWeaknesses.includes(String(q.id))) { userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); updateBadges(); }
                     
@@ -660,10 +696,9 @@
                         let origIndex = focusQuestionsDB.findIndex(x => String(x.id) === String(q.id));
                         if (origIndex > -1) { if (globalFocusAnswers.length !== focusQuestionsDB.length) globalFocusAnswers = new Array(focusQuestionsDB.length).fill(null); globalFocusAnswers[origIndex] = i; }
                     }
-
                     const fb = document.getElementById('feedback');
                     if(i === q.c) { fb.innerText = "מעולה! 👏"; fb.style.color = "var(--correct)"; 
-                        if (state.mode === 'weak' || state.mode === 'hard') { setTimeout(() => { if ((state.mode === 'weak' || state.mode === 'hard') && state.questions[state.index] && String(state.questions[state.index].id) === String(q.id)) { state.questions.splice(state.index, 1); state.answers.splice(state.index, 1); if (state.questions.length === 0) { alert("🎉 סיימת את מקצה השיפורים בהצלחה!"); goHome(); } else { if (state.index >= state.questions.length) state.index = Math.max(0, state.questions.length - 1); renderBubbles(); renderQuestion(); } } }, 1200); 
+                        if (state.mode === 'weak') { setTimeout(() => { if (state.mode === 'weak' && state.questions[state.index] && String(state.questions[state.index].id) === String(q.id)) { state.questions.splice(state.index, 1); state.answers.splice(state.index, 1); if (state.questions.length === 0) { alert("🎉 סיימת את מקצה השיפורים בהצלחה!"); goHome(); } else { if (state.index >= state.questions.length) state.index = Math.max(0, state.questions.length - 1); renderBubbles(); renderQuestion(); } } }, 1200); 
                         } else if(appSettings.autoNext) { setTimeout(() => move(1), 600); }
                     } else { fb.innerText = `טעות. התשובה הנכונה: ${q.a[q.c]}`; fb.style.color = "var(--wrong)"; }
                     saveProgress();
@@ -672,6 +707,16 @@
             };
             optCont.appendChild(d);
         });
+
+        // כפתור אימות אדמין מהיר בתחתית האפשרויות
+        if (currentUser.role === 0) {
+            let vBtn = document.createElement('button'); vBtn.className = "top-btn";
+            vBtn.style = "margin-top:20px; background:" + (q.v ? "#27ae60" : "#7f8c8d") + "; color:white; width:100%; padding:10px; border-radius:10px;";
+            vBtn.innerText = q.v ? "🌟 מאומת שהופיע במבחן ארצי (לחץ לביטול)" : "✖️ סמן כשאלה שהופיעה במבחן הארצי";
+            vBtn.onclick = (e) => { e.stopPropagation(); toggleVerifiedOnServer(q.id, q.v); };
+            optCont.appendChild(vBtn);
+        }
+
         let btn = document.getElementById('main-action-btn');
         if(state.index === state.questions.length - 1 && state.mode.toLowerCase().includes('exam')) { btn.innerText = "סיים והגש 🚀"; btn.style.background = "linear-gradient(135deg, #27ae60, #2ecc71)"; btn.onclick = submitExam; } 
         else { btn.innerText = "הבא ⬅️"; btn.style.background = "var(--p-grad)"; btn.onclick = () => move(1); }
@@ -729,7 +774,6 @@
             globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
             calculateWeeklyTitles();
             
-            // תצוגת הציון הארצי הרשמי
             let natScore = currentCourse === 1 ? currentUser.nat1 : currentUser.nat2;
             if (natScore && String(natScore).trim() !== "") {
                 document.getElementById('national-score-container').innerHTML = `<div style="text-align:center; padding:20px; background: linear-gradient(135deg, #27ae60, #2ecc71); color:white; border-radius:15px; margin-bottom:20px; box-shadow:0 4px 15px rgba(39, 174, 96, 0.3);"><h3 style="margin:0 0 5px 0; font-size:1.2rem;">ציון מבחן ארצי רשמי 🎓</h3><div style="font-size:3.5rem; font-weight:bold; line-height:1;">${natScore}</div></div>`;
