@@ -90,7 +90,6 @@
         
         .id-tag { font-size: 0.75rem; color: #fff; background: var(--p); padding: 3px 8px; border-radius: 12px; margin-left: 5px; vertical-align: middle; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
         .q-badge-tag { font-size: 0.75rem; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; }
-        .subtext-desc { display: block; text-align: center; color: #7f8c8d; font-size: 0.8rem; margin-top: -6px; margin-bottom: 12px; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -156,13 +155,15 @@
             <div id="menu-practice" class="sub-menu hidden">
                  <button class="btn" onclick="startApp('practice')">📝 תרגול כללי</button>
                  
-                 <button class="btn btn-num" onclick="startApp('numPractice')">🔢 תרגול מספריות</button>
-                 <span class="subtext-desc btn-num">תרגול של כל מה שקשור לגבהים, משקלים, מטרים, אורכים ורוחבים</span>
+                 <button class="btn btn-num" onclick="startApp('numPractice')">
+                     <div style="line-height:1.2;">🔢 תרגול מספריות<br><span style="font-size:0.75rem; font-weight:normal; color:#ddd; opacity:0.8;">תרגול של כל מה שקשור לגבהים, משקלים, מטרים, אורכים ורוחבים</span></div>
+                 </button>
                  
                  <button class="btn btn-focus hidden" id="focus-practice-btn" onclick="startApp('focusPractice')">🎯 תרגול ממוקד למבחן</button>
                  
-                 <button class="btn btn-focus hidden" style="background: linear-gradient(135deg, #2980b9, #2c3e50);" onclick="startApp('verifiedPractice')">✨ שאלות מהמבחן הארצי</button>
-                 <span class="subtext-desc btn-focus hidden">שאלות שאחרים אימתו שהיו להם במבחן הארצי</span>
+                 <button class="btn btn-focus hidden" style="background: linear-gradient(135deg, #2980b9, #2c3e50);" onclick="startApp('verifiedPractice')">
+                     <div style="line-height:1.2;">✨ שאלות מהמבחן הארצי<br><span style="font-size:0.75rem; font-weight:normal; color:#ddd; opacity:0.8;">שאלות שאחרים אימתו שהיו להם במבחן הארצי</span></div>
+                 </button>
 
                  <button class="btn" style="background: linear-gradient(135deg, #8e44ad, #732d91);" onclick="startApp('jackiePractice')">🙋‍♂️ שאלות לג'קי</button>
                  
@@ -176,8 +177,9 @@
             <div id="menu-exams" class="sub-menu hidden">
                  <button class="btn" style="background:var(--p-grad);" onclick="startApp('exam')">🎓 מבחן כללי (50 שאלות)</button>
                  
-                 <button class="btn btn-num" onclick="startApp('numExam')">🏆 מבחן מספריות (50)</button>
-                 <span class="subtext-desc btn-num">מבחן של כל מה שקשור לגבהים, משקלים, מטרים, אורכים ורוחבים</span>
+                 <button class="btn btn-num" onclick="startApp('numExam')">
+                     <div style="line-height:1.2;">🏆 מבחן מספריות (50)<br><span style="font-size:0.75rem; font-weight:normal; color:#ddd; opacity:0.8;">מבחן של כל מה שקשור לגבהים, משקלים, מטרים, אורכים ורוחבים</span></div>
+                 </button>
                  
                  <button class="btn btn-focus hidden" id="focus-exam-btn" onclick="startApp('focusExam')">🎯 מבחן ממוקד</button>
             </div>
@@ -436,9 +438,8 @@
             userWeaknesses = (currentCourse === 1 ? j.weaknesses1 : j.weaknesses2 || []).map(String);
             jackieQuestions = j.jackieList || [];
             
-            // עדכון דינמי של השאלות הממוקדות על גבי הכפתורים
-            document.getElementById('focus-practice-btn').innerText = `🎯 תרגול ממוקד למבחן (${focusQuestionsDB.length} שאלות)`;
-            document.getElementById('focus-exam-btn').innerText = `🎯 מבחן ממוקד (${focusQuestionsDB.length} שאלות)`;
+            document.getElementById('focus-practice-btn').innerHTML = `<div style="line-height:1.2;">🎯 תרגול ממוקד למבחן<br><span style="font-size:0.75rem; font-weight:normal; color:#eee;">(${focusQuestionsDB.length} שאלות במאגר)</span></div>`;
+            document.getElementById('focus-exam-btn').innerHTML = `<div style="line-height:1.2;">🎯 מבחן ממוקד<br><span style="font-size:0.75rem; font-weight:normal; color:#eee;">(${focusQuestionsDB.length} שאלות במאגר)</span></div>`;
 
             try { 
                 if (currentUser.role === 0) { 
@@ -461,8 +462,10 @@
     }
 
     function updateBadges() {
-        let combinedIds = new Set([...userWeaknesses]);
-        globalHardQuestions.forEach(q => combinedIds.add(String(q.id)));
+        let combinedIds = new Set();
+        userWeaknesses.forEach(id => combinedIds.add(String(id).replace(/^[ABF]-/, '').trim()));
+        globalHardQuestions.forEach(q => combinedIds.add(String(q.id).replace(/^[ABF]-/, '').trim()));
+        
         const total = combinedIds.size;
         document.getElementById('btn-weak-badge').innerText = total; document.getElementById('btn-weak-badge').className = total > 0 ? 'badge' : 'badge hidden';
         document.getElementById('cat-practice-badge').innerText = total; document.getElementById('cat-practice-badge').className = total > 0 ? 'badge badge-cat' : 'badge badge-cat hidden';
@@ -508,9 +511,11 @@
     function shuffleArray(arr) { let array = [...arr]; for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
 
     function startWeaknesses() {
-        let combinedIds = new Set([...userWeaknesses]);
-        globalHardQuestions.forEach(q => combinedIds.add(String(q.id)));
-        let wq = allQuestionsDB.filter(q => combinedIds.has(String(q.id)));
+        let combinedIds = new Set();
+        userWeaknesses.forEach(id => combinedIds.add(String(id).replace(/^[ABF]-/, '').trim()));
+        globalHardQuestions.forEach(q => combinedIds.add(String(q.id).replace(/^[ABF]-/, '').trim()));
+        
+        let wq = allQuestionsDB.filter(q => combinedIds.has(String(q.id).replace(/^[ABF]-/, '').trim()));
         
         if(wq.length === 0) return alert("אין לך חולשות או שאלות קשות במאגר כרגע!");
         showLoader('weak');
@@ -562,8 +567,14 @@
             let pool = questionsDB;
             if(m.includes('num')) pool = numQuestionsDB;
             if(m.includes('focus')) pool = focusQuestionsDB;
-            if(m === 'verifiedPractice') pool = allQuestionsDB.filter(q => q.v === true);
-            if(m === 'jackiePractice') pool = allQuestionsDB.filter(q => jackieQuestions.includes(String(q.id)));
+            
+            if(m === 'verifiedPractice') {
+                pool = allQuestionsDB.filter(q => q.v === true);
+            }
+            if(m === 'jackiePractice') {
+                let cleanJackieIds = jackieQuestions.map(id => String(id).replace(/^[ABF]-/, '').trim());
+                pool = allQuestionsDB.filter(q => cleanJackieIds.includes(String(q.id).replace(/^[ABF]-/, '').trim()));
+            }
             
             if(pool.length === 0) {
                 if (m === 'verifiedPractice') alert("אין עדיין שאלות מאומתות מהמבחן הארצי במאגר זה.");
@@ -614,8 +625,9 @@
         document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active')); document.getElementById(`bubble-${state.index}`).classList.add('active'); document.getElementById(`bubble-${state.index}`).scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
         
         const badgesCont = document.getElementById('q-badges'); badgesCont.innerHTML = "";
-        let isHard = globalHardQuestions.some(hx => String(hx.id) === String(q.id));
-        let isJackie = jackieQuestions.includes(String(q.id));
+        let isHard = globalHardQuestions.some(hx => String(hx.id).replace(/^[ABF]-/, '').trim() === String(q.id).replace(/^[ABF]-/, '').trim());
+        let isJackie = jackieQuestions.map(id => String(id).replace(/^[ABF]-/, '').trim()).includes(String(q.id).replace(/^[ABF]-/, '').trim());
+        
         if (isJackie) badgesCont.innerHTML += `<span class="q-badge-tag" style="background:#e67e22; margin-left:4px;">🙋‍♂️ שאלה לג'קי</span>`;
         if (isHard) badgesCont.innerHTML += `<span class="q-badge-tag" style="background:#e74c3c; margin-left:4px;">☠️ שאלה קשה</span>`;
         if (q.v) badgesCont.innerHTML += `<span class="q-badge-tag" style="background:#2980b9; margin-left:4px;">✨ במבחן הארצי</span>`;
@@ -662,8 +674,9 @@
                 state.answers[state.index] = i; 
                 
                 if(!state.mode.toLowerCase().includes('exam') && state.mode !== 'verifiedPractice') {
-                    if (i !== q.c && !userWeaknesses.includes(String(q.id))) { userWeaknesses.push(String(q.id)); updateBadges(); }
-                    else if (i === q.c && userWeaknesses.includes(String(q.id))) { userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); updateBadges(); }
+                    let cleanId = String(q.id).replace(/^[ABF]-/, '').trim();
+                    if (i !== q.c && !userWeaknesses.map(String).includes(cleanId)) { userWeaknesses.push(cleanId); updateBadges(); }
+                    else if (i === q.c && userWeaknesses.map(String).includes(cleanId)) { userWeaknesses = userWeaknesses.filter(id => String(id) !== cleanId); updateBadges(); }
                     
                     if (state.mode === 'practice') {
                         let origIndex = questionsDB.findIndex(x => String(x.id) === String(q.id));
@@ -714,8 +727,9 @@
         if (state.answers.filter(a => a === null).length > 0 && !confirm(`לא ענית על הכל. להגיש?`)) return;
         showLoader("default"); clearInterval(timerInterval);
         let correct = 0; state.questions.forEach((q, i) => { 
-            if(state.answers[i] === q.c) { correct++; userWeaknesses = userWeaknesses.filter(id => id !== String(q.id)); }
-            else { if(!userWeaknesses.includes(String(q.id))) userWeaknesses.push(String(q.id)); }
+            let cleanId = String(q.id).replace(/^[ABF]-/, '').trim();
+            if(state.answers[i] === q.c) { correct++; userWeaknesses = userWeaknesses.filter(id => String(id) !== cleanId); }
+            else { if(!userWeaknesses.map(String).includes(cleanId)) userWeaknesses.push(cleanId); }
         });
         updateBadges();
 
@@ -745,7 +759,7 @@
     async function loadLeaderboard() {
         document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('history-page').classList.remove('hidden'); showLoader("lb");
         try {
-            const res = await fetch(`${apiURL}?action=getLeaderboard&course=${currentCourse}`); const j = await res.json(); hideLoader();
+            const res = await fetch(`${apiURL}?action=getLeaderboard&course=${currentCourse}`); const j = await res.json();
             globalLB = j.leaderboard; globalPracticeLB = j.practiceLb; globalContribLB = j.contributors;
             calculateWeeklyTitles();
             
@@ -771,6 +785,9 @@
             if (myExams.length > 0) { document.getElementById('stats-container').classList.remove('hidden'); renderChart(myExams); } 
             else { document.getElementById('stats-container').classList.add('hidden'); }
             sortLB('score', document.getElementById('sort-score'));
+            
+            // הזזת העלמת הטעינה לסוף מוחלט של ביצוע הציור
+            hideLoader();
         } catch(e) { hideLoader(); alert("שגיאה בטעינת טבלת שיאים."); }
     }
 
