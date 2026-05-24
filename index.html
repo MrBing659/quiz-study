@@ -553,8 +553,14 @@
             const j = await res.json(); hideLoader();
             if (j.success) {
                 alert("סטטוס אימות השאלה עודכן בהצלחה!");
-                let found = allQuestionsDB.find(x => String(x.id) === String(qId));
-                if (found) found.v = !currentVal;
+                let foundAll = allQuestionsDB.find(x => String(x.id) === String(qId));
+                if (foundAll) foundAll.v = !currentVal;
+                let foundQ = questionsDB.find(x => String(x.id) === String(qId));
+                if (foundQ) foundQ.v = !currentVal;
+                let foundNum = numQuestionsDB.find(x => String(x.id) === String(qId));
+                if (foundNum) foundNum.v = !currentVal;
+                let foundFoc = focusQuestionsDB.find(x => String(x.id) === String(qId));
+                if (foundFoc) foundFoc.v = !currentVal;
                 renderQuestion();
             } else { alert(j.msg || "שגיאה"); }
         } catch(e) { hideLoader(); alert("שגיאת רשת"); }
@@ -925,7 +931,7 @@
 
     async function handleSugg(row, status, qId, uName) { showLoader("default"); await fetch(`${apiURL}`, { method: 'POST', body: JSON.stringify({ action: 'handleSuggestion', course: currentCourse, adminId: localStorage.getItem('qbSavedID'), adminName: window.globalLoginCache.name, row: row, status: status, qId: qId, suggUserName: uName }) }); showSuggestionsPanel(); }
     function showQDBPanel() { document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('qdb-screen').classList.remove('hidden'); filterQDB(); }
-    function filterQDB() { let val = document.getElementById('qdb-search').value.toLowerCase(); let html = ""; allQuestionsDB.filter(q => String(q.id).includes(val) || q.q.toLowerCase().includes(val)).slice(0, 50).forEach(q => { html += `<div style="padding:10px; background:var(--bg); border-radius:8px; margin-bottom:10px;"><b>ID: ${q.id}</b><div>${q.q}</div></div>`; }); document.getElementById('qdb-list').innerHTML = html || "אין תוצאות."; }
+    function filterQDB() { let val = document.getElementById('qdb-search').value.toLowerCase(); let html = ""; allQuestionsDB.filter(q => String(q.id).includes(val) || q.q.toLowerCase().includes(val)).slice(0, 50).forEach(q => { html += `<div style="padding:10px; background:var(--bg); border-radius:8px; margin-bottom:10px; cursor:pointer;" onclick="openEditModal('${q.id}')"><b>ID: ${q.id}</b><div>${q.q}</div></div>`; }); document.getElementById('qdb-list').innerHTML = html || "אין תוצאות."; }
     async function showChangelogPanel() { document.getElementById('dropdown').classList.remove('show'); document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden')); document.getElementById('changelog-screen').classList.remove('hidden'); showLoader("default"); try { const res = await fetch(`${apiURL}?action=getChangelog&adminId=${localStorage.getItem('qbSavedID')}&course=${currentCourse}`); const json = await res.json(); hideLoader(); let html = ""; json.logs.forEach(l => { html += `<div style="padding:10px; border-bottom:1px solid #ddd;"><b>${l.editor}</b> (${l.date})<br>שאלה: ${l.qId}</div>`; }); document.getElementById('changelog-list').innerHTML = html || "אין עריכות."; } catch(e) { hideLoader(); } }
     
     function reviewExam(examId, isShared = false) {
